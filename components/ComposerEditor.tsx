@@ -36,20 +36,12 @@ import {
 import { autoArrangeSongChords, autoArrangeVerseChords } from '@/lib/chordArranger';
 import { scrollToCardElement } from '@/lib/utils';
 import {
-  getStoredEditorEditMode,
-  setStoredEditorEditMode,
-  getStoredNoteSubMode,
-  setStoredNoteSubMode,
   getStoredAutoStepAdvance,
   setStoredAutoStepAdvance,
 } from '@/lib/storage';
 import { SongMetadataHeader } from './composer/SongMetadataHeader';
-import { NoteEditorHud } from './composer/NoteEditorHud';
 import { SectionRail } from './composer/SectionRail';
-import { NoteModeView } from './composer/NoteModeView';
-import { VerseModeView } from './composer/VerseModeView';
-import { MeasureModeView } from './composer/MeasureModeView';
-import { SheetModeView } from './composer/SheetModeView';
+import { RealSheetCanvas } from './composer/RealSheetCanvas';
 import { MeasureOrganizerModal } from './composer/MeasureOrganizerModal';
 import { KeyboardToScoreModal, InsertionMode } from './composer/KeyboardToScoreModal';
 import { InSongSearchBar } from './composer/InSongSearchBar';
@@ -87,6 +79,9 @@ interface ComposerEditorProps {
   onOpenScanner?: () => void;
   onStartFreshSong?: () => void;
   onPlayKaraoke?: (startMeasureIndex?: number) => void;
+  onOpenKeyboardModal?: () => void;
+  isKeyboardModalOpen?: boolean;
+  onCloseKeyboardModal?: () => void;
   targetMeasureIndex?: number | null;
   onTargetMeasureHandled?: () => void;
   karaokeReturnTarget?: {
@@ -124,6 +119,9 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
   onOpenScanner,
   onStartFreshSong,
   onPlayKaraoke,
+  onOpenKeyboardModal: propOnOpenKeyboardModal,
+  isKeyboardModalOpen: propIsKeyboardModalOpen,
+  onCloseKeyboardModal: propOnCloseKeyboardModal,
   targetMeasureIndex,
   onTargetMeasureHandled,
   karaokeReturnTarget,
@@ -137,42 +135,22 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
   futureCount = 0,
   suspendNoteHighlights = false,
 }) => {
-  // Edit Mode: 'note' (unified deck) vs 'sheet' (full score overview)
-  const [editMode, setEditModeState] = useState<EditorEditMode>(() => {
-    if (typeof window !== 'undefined') return getStoredEditorEditMode();
-    return 'note';
-  });
-  // Sub Mode inside Note Mode: 'verse' vs 'measure'
-  const [noteSubMode, setNoteSubModeState] = useState<NoteEditSubMode>(() => {
-    if (typeof window !== 'undefined') return getStoredNoteSubMode();
-    return 'verse';
-  });
-  const setNoteSubMode = useCallback((mode: NoteEditSubMode) => {
-    setNoteSubModeState(mode);
-    setStoredNoteSubMode(mode);
-  }, []);
+  const [internalKeyboardModalOpen, setInternalKeyboardModalOpen] = useState<boolean>(false);
+  const isKeyboardModalOpen = propIsKeyboardModalOpen ?? internalKeyboardModalOpen;
+  const handleOpenKeyboardModal = useCallback(() => {
+    if (propOnOpenKeyboardModal) propOnOpenKeyboardModal();
+    else setInternalKeyboardModalOpen(true);
+  }, [propOnOpenKeyboardModal]);
+  const handleCloseKeyboardModal = useCallback(() => {
+    if (propOnCloseKeyboardModal) propOnCloseKeyboardModal();
+    else setInternalKeyboardModalOpen(false);
+  }, [propOnCloseKeyboardModal]);
 
   const [selectedCoord, setSelectedCoord] = useState<[number, number] | null>([0, 0]);
-  const [sheetReturnTarget, setSheetReturnTarget] = useState<{
-    measureIndex: number;
-    originalMeasureIndex: number;
-  } | null>(null);
   const [autoStepAdvance, setAutoStepAdvanceState] = useState<boolean>(() => {
     if (typeof window !== 'undefined') return getStoredAutoStepAdvance(false);
     return false;
   });
-
-  const setEditMode = useCallback((mode: EditorEditMode) => {
-    if (mode === 'verse' || mode === 'measure') {
-      setNoteSubModeState(mode);
-      setStoredNoteSubMode(mode);
-      setEditModeState('note');
-      setStoredEditorEditMode('note');
-    } else {
-      setEditModeState(mode);
-      setStoredEditorEditMode(mode);
-    }
-  }, []);
 
   const setAutoStepAdvance = useCallback((adv: boolean | ((prev: boolean) => boolean)) => {
     setAutoStepAdvanceState(prev => {
@@ -191,7 +169,6 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
   const [measureBatchTexts, setMeasureBatchTexts] = useState<{ [mIdx: number]: string }>({});
   const [verseBatchTexts, setVerseBatchTexts] = useState<{ [vIdx: number]: string }>({});
   const [isOrganizerOpen, setIsOrganizerOpen] = useState<boolean>(false);
-  const [isKeyboardModalOpen, setIsKeyboardModalOpen] = useState<boolean>(false);
   const [isInSongSearchOpen, setIsInSongSearchOpen] = useState<boolean>(false);
   const [showRhythmTools, setShowRhythmTools] = useState<boolean>(false);
   const [inSongActiveMatch, setInSongActiveMatch] = useState<InSongMatchLocation | null>(null);
@@ -237,88 +214,30 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
       const note = song.measures[validMeasureIdx]?.notes[0];
       if (note) {
         audioEngine.previewNote(song.key, note);
-      }
-
-      if (editMode === 'sheet') {
-        scrollToCardElement(`sheet-measure-row-${validMeasureIdx}`, { align: 'top', headerOffset: 0 });
-        const el =
-          document.getElementById(`sheet-measure-row-${validMeasureIdx}`) ||
-          document.getElementById(`sheet-measure-flat-row-${validMeasureIdx}`);
+        const el = document.getElementById(`sheet-note-${note.id}`);
         if (el) {
-          el.classList.add('ring-4', 'ring-amber-500', 'bg-amber-100/30', 'dark:bg-amber-950/50');
-          setTimeout(() => {
-            el.classList.remove('ring-4', 'ring-amber-500', 'bg-amber-100/30', 'dark:bg-amber-950/50');
-          }, 2000);
-        }
-      } else if (noteSubMode === 'measure') {
-        scrollToCardElement(`measure-card-${validMeasureIdx}`, { align: 'top', headerOffset: 0 });
-        const el = document.getElementById(`measure-card-${validMeasureIdx}`);
-        if (el) {
-          el.classList.add('ring-4', 'ring-amber-500', 'bg-amber-100/30', 'dark:bg-amber-950/50');
-          setTimeout(() => {
-            el.classList.remove('ring-4', 'ring-amber-500', 'bg-amber-100/30', 'dark:bg-amber-950/50');
-          }, 2000);
-        }
-      } else {
-        // Verse mode
-        const vIdx = verses.findIndex(v => v.notes.some(n => n.measureIndex === validMeasureIdx));
-        const targetVIdx = vIdx !== -1 ? vIdx : 0;
-        scrollToCardElement(`verse-card-${targetVIdx}`, { align: 'top', headerOffset: 0 });
-        const el = document.getElementById(`verse-card-${targetVIdx}`);
-        if (el) {
-          el.classList.add('ring-4', 'ring-amber-500', 'bg-amber-100/30', 'dark:bg-amber-950/50');
-          setTimeout(() => {
-            el.classList.remove('ring-4', 'ring-amber-500', 'bg-amber-100/30', 'dark:bg-amber-950/50');
-          }, 2000);
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
       }
     },
-    [song.measures, song.key, audioEngine, editMode, noteSubMode, verses]
+    [song.measures, song.key, audioEngine]
   );
 
   const handleSearchJumpToVerse = useCallback(
-    (vIdx: number, startMeasureIdx: number) => {
+    (_vIdx: number, startMeasureIdx: number) => {
       const validMeasureIdx = Math.min(song.measures.length - 1, Math.max(0, startMeasureIdx));
       setSelectedCoord([validMeasureIdx, 0]);
 
       const note = song.measures[validMeasureIdx]?.notes[0];
       if (note) {
         audioEngine.previewNote(song.key, note);
-      }
-
-      if (editMode === 'sheet') {
-        scrollToCardElement(`sheet-measure-row-${validMeasureIdx}`, { align: 'top', headerOffset: 0 });
-        const el =
-          document.getElementById(`sheet-measure-row-${validMeasureIdx}`) ||
-          document.getElementById(`sheet-measure-flat-row-${validMeasureIdx}`);
+        const el = document.getElementById(`sheet-note-${note.id}`);
         if (el) {
-          el.classList.add('ring-4', 'ring-amber-500', 'bg-amber-100/30', 'dark:bg-amber-950/50');
-          setTimeout(() => {
-            el.classList.remove('ring-4', 'ring-amber-500', 'bg-amber-100/30', 'dark:bg-amber-950/50');
-          }, 2000);
-        }
-      } else if (noteSubMode === 'verse') {
-        scrollToCardElement(`verse-card-${vIdx}`, { align: 'top', headerOffset: 0 });
-        const el = document.getElementById(`verse-card-${vIdx}`);
-        if (el) {
-          el.classList.add('ring-4', 'ring-amber-500', 'bg-amber-100/30', 'dark:bg-amber-950/50');
-          setTimeout(() => {
-            el.classList.remove('ring-4', 'ring-amber-500', 'bg-amber-100/30', 'dark:bg-amber-950/50');
-          }, 2000);
-        }
-      } else {
-        // Measure mode
-        scrollToCardElement(`measure-card-${validMeasureIdx}`, { align: 'top', headerOffset: 0 });
-        const el = document.getElementById(`measure-card-${validMeasureIdx}`);
-        if (el) {
-          el.classList.add('ring-4', 'ring-amber-500', 'bg-amber-100/30', 'dark:bg-amber-950/50');
-          setTimeout(() => {
-            el.classList.remove('ring-4', 'ring-amber-500', 'bg-amber-100/30', 'dark:bg-amber-950/50');
-          }, 2000);
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
       }
     },
-    [song.measures, song.key, audioEngine, editMode, noteSubMode]
+    [song.measures, song.key, audioEngine]
   );
 
   const [isSongPlaying, setIsSongPlaying] = useState<boolean>(() => (audioEngine ? audioEngine.getIsPlaying() : false));
@@ -355,23 +274,9 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
   useEffect(() => {
     if (targetMeasureIndex !== null && targetMeasureIndex !== undefined && targetMeasureIndex >= 0) {
       const validMeasureIdx = Math.min(song.measures.length - 1, Math.max(0, targetMeasureIndex));
-      const currentSubMode = noteSubMode || (typeof window !== 'undefined' ? getStoredNoteSubMode() : 'verse');
-      const targetSubMode: NoteEditSubMode = currentSubMode === 'measure' ? 'measure' : 'verse';
-      const targetMode = karaokeReturnTarget
-        ? targetSubMode
-        : (editMode === 'sheet' ? 'sheet' : noteSubMode);
 
       // Smooth scroll and select corresponding note
       const timer = safeTimeout(() => {
-        if (karaokeReturnTarget) {
-          if (editMode !== 'note') {
-            setEditMode('note');
-          }
-          if (noteSubMode !== targetSubMode) {
-            setNoteSubMode(targetSubMode);
-          }
-        }
-
         // Find the first pitched/content note in this measure, defaulting to note 0
         const m = song.measures[validMeasureIdx];
         let targetNoteIdx = 0;
@@ -388,60 +293,14 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
         const note = song.measures[validMeasureIdx]?.notes[targetNoteIdx] || song.measures[validMeasureIdx]?.notes[0];
         if (note) {
           audioEngine.previewNote(song.key, note);
-        }
-
-        if (targetMode === 'verse') {
-          // Find the verse containing this measure and note, or starting in this measure
-          let vIdx = verses.findIndex(v =>
-            v.notes.some(n => n.measureIndex === validMeasureIdx && n.noteIndex === targetNoteIdx)
-          );
-          if (vIdx === -1) {
-            vIdx = verses.findIndex(v =>
-              v.notes.some(n => n.measureIndex === validMeasureIdx)
-            );
-          }
-          if (vIdx !== -1) {
-            scrollToCardElement(`verse-card-${vIdx}`, { align: 'top', headerOffset: 0 });
-            const highlightPoll = setInterval(() => {
-              const el = document.getElementById(`verse-card-${vIdx}`);
-              if (el) {
-                clearInterval(highlightPoll);
-                el.classList.add('ring-4', 'ring-amber-500', 'bg-amber-100/30', 'dark:bg-amber-950/50');
-                safeTimeout(() => {
-                  el.classList.remove('ring-4', 'ring-amber-500', 'bg-amber-100/30', 'dark:bg-amber-950/50');
-                }, 2200);
-              }
-            }, 40);
-            safeTimeout(() => clearInterval(highlightPoll), 1200);
-          }
-        } else if (targetMode === 'measure') {
-          scrollToCardElement(`measure-card-${validMeasureIdx}`, { align: 'top', headerOffset: 0 });
-          const highlightPoll = setInterval(() => {
-            const el = document.getElementById(`measure-card-${validMeasureIdx}`);
-            if (el) {
-              clearInterval(highlightPoll);
-              el.classList.add('ring-4', 'ring-amber-500', 'bg-amber-100/30', 'dark:bg-amber-950/50');
-              safeTimeout(() => {
-                el.classList.remove('ring-4', 'ring-amber-500', 'bg-amber-100/30', 'dark:bg-amber-950/50');
-              }, 2200);
-            }
-          }, 40);
-          safeTimeout(() => clearInterval(highlightPoll), 1200);
-        } else {
-          scrollToCardElement(`sheet-measure-row-${validMeasureIdx}`, { align: 'top', headerOffset: 0 });
-          const el =
-            document.getElementById(`sheet-measure-row-${validMeasureIdx}`) ||
-            document.getElementById(`sheet-measure-flat-row-${validMeasureIdx}`);
+          const el = document.getElementById(`sheet-note-${note.id}`);
           if (el) {
-            el.classList.add('ring-4', 'ring-amber-500', 'bg-amber-100/30', 'dark:bg-amber-950/50');
-            safeTimeout(() => {
-              el.classList.remove('ring-4', 'ring-amber-500', 'bg-amber-100/30', 'dark:bg-amber-950/50');
-            }, 2200);
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
           }
         }
 
         const secName = song.measures[validMeasureIdx]?.section || `Measure ${validMeasureIdx + 1}`;
-        showNotice(`Jumped to section "${secName}" for editing`);
+        showNotice(`Jumped to section "${secName}"`);
 
         if (onTargetMeasureHandled) {
           onTargetMeasureHandled();
@@ -452,7 +311,7 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
         clearTimeout(timer);
       };
     }
-  }, [targetMeasureIndex, editMode, noteSubMode, verses, song, audioEngine, showNotice, onTargetMeasureHandled, safeTimeout, karaokeReturnTarget, setEditMode, setNoteSubMode]);
+  }, [targetMeasureIndex, song, audioEngine, showNotice, onTargetMeasureHandled, safeTimeout]);
 
   const selectedMeasureIndex = selectedCoord ? selectedCoord[0] : null;
   const selectedNoteIndex = selectedCoord ? selectedCoord[1] : null;
@@ -741,22 +600,9 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
     if (curM && selectedNoteIndex < curM.notes.length - 1) {
       handleSelectNote(selectedMeasureIndex, selectedNoteIndex + 1);
     } else if (selectedMeasureIndex < song.measures.length - 1) {
-      const nextM = selectedMeasureIndex + 1;
-      handleSelectNote(nextM, 0);
-      if (editMode === 'verse') {
-        const vIdx = verses.findIndex(v =>
-          v.notes.some(n => n.measureIndex === nextM && n.noteIndex === 0)
-        );
-        if (vIdx !== -1) {
-          scrollToCardElement(`verse-card-${vIdx}`, { align: 'top' });
-        }
-      } else if (editMode === 'sheet') {
-        scrollToCardElement(`sheet-measure-row-${nextM}`, { align: 'top' });
-      } else {
-        scrollToCardElement(`measure-card-${nextM}`, { align: 'top' });
-      }
+      handleSelectNote(selectedMeasureIndex + 1, 0);
     }
-  }, [selectedMeasureIndex, selectedNoteIndex, song.measures, handleSelectNote, editMode, verses]);
+  }, [selectedMeasureIndex, selectedNoteIndex, song.measures, handleSelectNote]);
 
   const handleNavigatePrevNote = useCallback(() => {
     if (selectedMeasureIndex === null || selectedNoteIndex === null) {
@@ -773,21 +619,9 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
       if (prevM && prevM.notes.length > 0) {
         const prevNoteIdx = prevM.notes.length - 1;
         handleSelectNote(prevMIdx, prevNoteIdx);
-        if (editMode === 'verse') {
-          const vIdx = verses.findIndex(v =>
-            v.notes.some(n => n.measureIndex === prevMIdx && n.noteIndex === prevNoteIdx)
-          );
-          if (vIdx !== -1) {
-            scrollToCardElement(`verse-card-${vIdx}`, { align: 'top' });
-          }
-        } else if (editMode === 'sheet') {
-          scrollToCardElement(`sheet-measure-row-${prevMIdx}`, { align: 'top' });
-        } else {
-          scrollToCardElement(`measure-card-${prevMIdx}`, { align: 'top' });
-        }
       }
     }
-  }, [selectedMeasureIndex, selectedNoteIndex, song.measures, handleSelectNote, editMode, verses]);
+  }, [selectedMeasureIndex, selectedNoteIndex, song.measures, handleSelectNote]);
 
   // Change pitch (with optional auto-advance)
   const handleSetPitch = useCallback(
@@ -2121,24 +1955,18 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
               ))
         ) || verse.notes[0];
 
-      if (editMode === 'sheet') {
-        setSheetReturnTarget({ measureIndex: firstNote.measureIndex, originalMeasureIndex: firstNote.measureIndex });
-      }
-      setEditMode('note');
-      setNoteSubMode('verse');
       handleSelectNote(firstNote.measureIndex, firstNote.noteIndex);
       safeTimeout(() => {
-        scrollToCardElement(`verse-card-${verse.verseIndex}`, { align: 'top' });
-        const el = document.getElementById(`verse-card-${verse.verseIndex}`);
-        if (el) {
-          el.classList.add('ring-4', 'ring-amber-500', 'bg-amber-100/30', 'dark:bg-amber-950/50');
-          safeTimeout(() => {
-            el.classList.remove('ring-4', 'ring-amber-500', 'bg-amber-100/30', 'dark:bg-amber-950/50');
-          }, 2200);
+        const noteEl = document.getElementById(`sheet-note-${firstNote.note.id}`);
+        if (noteEl) {
+          noteEl.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+        } else {
+          const mEl = document.getElementById(`sheet-measure-${firstNote.measureIndex}`);
+          if (mEl) mEl.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
         }
       }, 100);
     },
-    [handleSelectNote, editMode, setEditMode, setNoteSubMode, safeTimeout]
+    [handleSelectNote, safeTimeout]
   );
 
   // Toggle verse line break (sets isLineBreak on the last measure of the verse)
@@ -2293,7 +2121,7 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
     return success;
   }, [onRedo, showNotice]);
 
-  // Jump to specific measure from SectionRail
+  // Jump to specific measure from SectionRail or Organizer
   const handleJumpToMeasure = useCallback((mIdx: number) => {
     const m = song.measures[mIdx];
     let targetNoteIdx = 0;
@@ -2308,27 +2136,14 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
     const note = song.measures[mIdx]?.notes[targetNoteIdx] || song.measures[mIdx]?.notes[0];
     if (note) {
       audioEngine.previewNote(song.key, note);
-    }
-    if (editMode !== 'sheet') {
-      if (noteSubMode === 'verse') {
-        let vIdx = verses.findIndex(v =>
-          v.notes.some(n => n.measureIndex === mIdx && n.noteIndex === targetNoteIdx)
-        );
-        if (vIdx === -1) {
-          vIdx = verses.findIndex(v => v.notes.some(n => n.measureIndex === mIdx));
-        }
-        if (vIdx !== -1) {
-          scrollToCardElement(`verse-card-${vIdx}`, { align: 'top' });
-        }
-      } else {
-        scrollToCardElement(`measure-card-${mIdx}`, { align: 'top' });
+      const el = document.getElementById(`sheet-note-${note.id}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
-    } else {
-      scrollToCardElement(`sheet-measure-row-${mIdx}`, { align: 'top' });
     }
-  }, [song, audioEngine, editMode, noteSubMode, verses]);
+  }, [song, audioEngine]);
 
-  // Select measure within Sheet Mode without switching edit mode
+  // Select measure within Sheet Mode
   const handleSelectMeasureInSheet = useCallback(
     (mIdx: number) => {
       if (selectedCoord && selectedCoord[0] === mIdx) {
@@ -2348,72 +2163,6 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
       setSelectedCoord([mIdx, targetNoteIdx]);
     },
     [song.measures, selectedCoord]
-  );
-
-  // Jump from Sheet Mode directly into Note Mode to edit notes
-  const handleJumpToMeasureFromSheet = useCallback(
-    (mIdx: number) => {
-      setSheetReturnTarget({ measureIndex: mIdx, originalMeasureIndex: mIdx });
-      setEditMode('note');
-      setNoteSubMode('measure');
-      const m = song.measures[mIdx];
-      let targetNoteIdx = 0;
-      if (m && m.notes.length > 0) {
-        const firstPitchedIdx = m.notes.findIndex(
-          n =>
-            !isNonNotationItem(n) &&
-            ((typeof n.pitch === 'number' && n.pitch > 0) ||
-              Boolean(n.lyric.hanji && !isPunctuationOrSpacer(n.lyric.hanji)))
-        );
-        targetNoteIdx = firstPitchedIdx !== -1 ? firstPitchedIdx : 0;
-      }
-      setSelectedCoord([mIdx, targetNoteIdx]);
-      const note = song.measures[mIdx]?.notes[targetNoteIdx] || song.measures[mIdx]?.notes[0];
-      if (note) {
-        audioEngine.previewNote(song.key, note);
-      }
-      scrollToCardElement(`measure-card-${mIdx}`, { align: 'top' });
-      const highlightPoll = setInterval(() => {
-        const el = document.getElementById(`measure-card-${mIdx}`);
-        if (el) {
-          clearInterval(highlightPoll);
-          el.classList.add('ring-4', 'ring-amber-500', 'bg-amber-100/30', 'dark:bg-amber-950/50');
-          safeTimeout(() => {
-            el.classList.remove('ring-4', 'ring-amber-500', 'bg-amber-100/30', 'dark:bg-amber-950/50');
-          }, 2200);
-        }
-      }, 40);
-      safeTimeout(() => clearInterval(highlightPoll), 1200);
-    },
-    [song, audioEngine, setEditMode, setNoteSubMode, safeTimeout]
-  );
-
-  // Return from Measure Mode back to Sheet Mode
-  const handleReturnToSheet = useCallback(
-    (mIdx?: number) => {
-      const targetIdx =
-        mIdx !== undefined && mIdx !== null
-          ? mIdx
-          : (sheetReturnTarget?.originalMeasureIndex ?? selectedMeasureIndex ?? 0);
-      const validIdx = Math.min(song.measures.length - 1, Math.max(0, targetIdx));
-      setEditMode('sheet');
-      setSheetReturnTarget(null);
-      safeTimeout(() => {
-        const rowId = document.getElementById(`sheet-measure-row-${validIdx}`)
-          ? `sheet-measure-row-${validIdx}`
-          : `sheet-measure-flat-row-${validIdx}`;
-        const el = document.getElementById(rowId);
-        if (el) {
-          scrollToCardElement(rowId, { align: 'top' });
-          el.classList.add('ring-4', 'ring-amber-500', 'bg-amber-100/30', 'dark:bg-amber-950/50');
-          safeTimeout(() => {
-            el.classList.remove('ring-4', 'ring-amber-500', 'bg-amber-100/30', 'dark:bg-amber-950/50');
-          }, 2200);
-        }
-      }, 80);
-      showNotice(`Returned to Sheet Mode at Measure #${validIdx + 1}`);
-    },
-    [selectedMeasureIndex, sheetReturnTarget, song.measures.length, setEditMode, safeTimeout, showNotice]
   );
 
   const canMoveNoteBackward =
@@ -2458,31 +2207,27 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
         return;
       }
 
-      // In Sheet Mode: Play key (Space, P/p) toggles playing the sheet from current note
-      if (editMode === 'sheet') {
-        const isPlayKey =
-          e.key === ' ' ||
-          e.code === 'Space' ||
-          ((e.key === 'p' || e.key === 'P') && !e.ctrlKey && !e.metaKey && !e.altKey);
+      // Play key (P/p or space if not focused) toggles playing sheet from current note
+      const isPlayKey =
+        ((e.key === 'p' || e.key === 'P') && !e.ctrlKey && !e.metaKey && !e.altKey);
 
-        if (isPlayKey) {
-          e.preventDefault();
-          e.stopPropagation();
-          handleTogglePlaySheetFromNote();
-          return;
-        }
+      if (isPlayKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        handleTogglePlaySheetFromNote();
+        return;
+      }
 
-        if (e.key === 'ArrowRight') {
-          e.preventDefault();
-          handleNavigateNextNote();
-          return;
-        }
+      if (e.key === 'ArrowRight' && !e.altKey) {
+        e.preventDefault();
+        handleNavigateNextNote();
+        return;
+      }
 
-        if (e.key === 'ArrowLeft') {
-          e.preventDefault();
-          handleNavigatePrevNote();
-          return;
-        }
+      if (e.key === 'ArrowLeft' && !e.altKey) {
+        e.preventDefault();
+        handleNavigatePrevNote();
+        return;
       }
 
       if (selectedMeasureIndex === null || selectedNoteIndex === null) return;
@@ -2596,7 +2341,6 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
     handleInsertPunctuationToNote,
     handleMoveNoteBackward,
     handleMoveNoteForward,
-    editMode,
     handleTogglePlaySheetFromNote,
   ]);
 
@@ -2659,132 +2403,38 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
           id="score-studio-unified-deck"
           className="flex flex-col gap-2.5 p-3.5 bg-white dark:bg-[#141720] rounded-2xl border border-zinc-200/90 dark:border-zinc-800 shadow-xs"
         >
-          {/* TIER 1: Primary Controls & Mode Switchers */}
+          {/* Primary Controls & Score Status */}
           <div className="flex items-center justify-between flex-wrap gap-2.5">
-            {/* Left: View Perspectives (Verse View / Measure View / Sheet Music) */}
+            {/* Left: Realistic Sheet Title & Status */}
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-xs font-black text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5 shrink-0 mr-0.5">
                 <Sparkles className="w-4 h-4 text-amber-500" />
-                <span>View Mode:</span>
+                <span>Score Studio:</span>
               </span>
 
-              <div
-                id="score-deck-view-switch-group"
-                className="flex items-center bg-zinc-100 dark:bg-zinc-900/90 p-1 rounded-xl border border-zinc-200 dark:border-zinc-700/80 shadow-2xs"
-              >
-                {/* Verse Edit */}
-                <button
-                  id="score-deck-mode-verse-btn"
-                  type="button"
-                  onClick={() => {
-                    if (editMode === 'sheet' || noteSubMode !== 'verse') {
-                      setEditMode('verse');
-                      setTimeout(() => {
-                        const mIdx = selectedMeasureIndex ?? 0;
-                        const matchingVerseIdx = verses.findIndex(v =>
-                          v.notes.some(n => n.measureIndex === mIdx)
-                        );
-                        const targetVIdx = matchingVerseIdx >= 0 ? matchingVerseIdx : 0;
-                        scrollToCardElement(`verse-card-${targetVIdx}`, { align: 'top', headerOffset: 0 });
-                      }, 50);
-                    }
-                  }}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation min-h-[34px] ${
-                    editMode !== 'sheet' && noteSubMode === 'verse'
-                      ? 'bg-amber-500 text-zinc-950 shadow-xs font-black'
-                      : 'text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white'
-                  }`}
-                  title="Verse View: Grouped by poetic lines and breathing phrasing"
-                >
-                  <AlignLeft className="w-3.5 h-3.5" />
-                  <span>Verse View</span>
-                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-zinc-200/80 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 font-mono font-bold">
-                    {verses.length}
-                  </span>
-                </button>
-
-                {/* Measure Edit */}
-                <button
-                  id="score-deck-mode-measure-btn"
-                  type="button"
-                  onClick={() => {
-                    if (editMode === 'sheet' || noteSubMode !== 'measure') {
-                      setEditMode('measure');
-                      setTimeout(() => {
-                        const targetMIdx = selectedMeasureIndex ?? 0;
-                        scrollToCardElement(`measure-card-${targetMIdx}`, { align: 'top', headerOffset: 0 });
-                      }, 50);
-                    }
-                  }}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation min-h-[34px] ${
-                    editMode !== 'sheet' && noteSubMode === 'measure'
-                      ? 'bg-amber-500 text-zinc-950 shadow-xs font-black'
-                      : 'text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white'
-                  }`}
-                  title="Measure View: Structured by barlines and measure time signatures"
-                >
-                  <Layers className="w-3.5 h-3.5" />
-                  <span>Measure View</span>
-                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-zinc-200/80 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 font-mono font-bold">
-                    {song.measures.length}
-                  </span>
-                </button>
-
-                {/* Sheet Music (WYSIWYG & Full Score) */}
-                <button
-                  id="score-deck-mode-sheet-btn"
-                  type="button"
-                  onClick={() => setEditMode('sheet')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation min-h-[34px] ${
-                    editMode === 'sheet'
-                      ? 'bg-amber-500 text-zinc-950 shadow-xs font-black'
-                      : 'text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white'
-                  }`}
-                  title="Sheet Music: Authentic paper sheet engraving & systems layout"
-                >
-                  <FileSpreadsheet className="w-3.5 h-3.5" />
-                  <span>Sheet Music</span>
-                  {incompleteMeasuresCount > 0 && (
-                    <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-rose-600 text-white font-mono font-black" title={`${incompleteMeasuresCount} measures with incomplete beats`}>
-                      {incompleteMeasuresCount}
-                    </span>
-                  )}
-                </button>
+              <div className="flex items-center gap-2 bg-zinc-100 dark:bg-zinc-900/90 px-3 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-700/80 shadow-2xs text-xs font-bold">
+                <FileSpreadsheet className="w-3.5 h-3.5 text-amber-500" />
+                <span>Realistic Sheet (WYSIWYG)</span>
+                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-zinc-200/80 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 font-mono font-bold">
+                  {song.measures.length} bars
+                </span>
+                {incompleteMeasuresCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleBatchFixAllIncompleteMeasures}
+                    className="text-[10px] px-2 py-0.5 rounded-full bg-rose-600 hover:bg-rose-500 text-white font-mono font-black flex items-center gap-1 cursor-pointer transition-colors"
+                    title="Click to auto-fill rest deficits across all incomplete measures"
+                  >
+                    <span>{incompleteMeasuresCount} incomplete</span>
+                    <Wand2 className="w-2.5 h-2.5" />
+                  </button>
+                )}
               </div>
-
-              {/* Quick Jump Return Back to Karaoke or Sheet Mode if triggered */}
-              {karaokeReturnTarget && onReturnToKaraoke && (
-                <button
-                  id="editor-bar-back-to-karaoke-btn"
-                  type="button"
-                  onClick={() => onReturnToKaraoke(karaokeReturnTarget.originalMeasureIndex)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold rounded-xl text-xs shadow-xs transition-all active:scale-95 cursor-pointer touch-manipulation min-h-[36px]"
-                  title={`Return to Karaoke (Measure ${karaokeReturnTarget.originalMeasureIndex + 1})`}
-                >
-                  <CornerUpLeft className="w-3.5 h-3.5" />
-                  <Mic2 className="w-3.5 h-3.5" />
-                  <span>Return to Karaoke (M.{karaokeReturnTarget.originalMeasureIndex + 1})</span>
-                </button>
-              )}
-
-              {sheetReturnTarget && (
-                <button
-                  id="editor-bar-back-to-sheet-btn"
-                  type="button"
-                  onClick={() => handleReturnToSheet(sheetReturnTarget.originalMeasureIndex)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-white text-white dark:text-zinc-900 font-bold rounded-xl text-xs shadow-xs transition-all active:scale-95 cursor-pointer touch-manipulation min-h-[36px]"
-                  title={`Return to Sheet Music (Measure ${sheetReturnTarget.originalMeasureIndex + 1})`}
-                >
-                  <CornerUpLeft className="w-3.5 h-3.5" />
-                  <FileSpreadsheet className="w-3.5 h-3.5" />
-                  <span>Return to Sheet (M.{sheetReturnTarget.originalMeasureIndex + 1})</span>
-                </button>
-              )}
             </div>
 
             {/* Right: Audio Playback, Studio Launch & Score Utility Actions */}
             <div className="flex items-center gap-2 flex-wrap">
-              {/* Karaoke / Stop Audio Playback */}
+              {/* Play / Stop Audio */}
               {isSongPlaying ? (
                 <button
                   id="composer-score-stop-btn"
@@ -2796,46 +2446,41 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
                   <Square className="w-3.5 h-3.5 fill-current text-white" />
                   <span>Stop</span>
                 </button>
-              ) : onPlayKaraoke ? (
-                <div
-                  id="composer-score-karaoke-play-group"
-                  className="flex items-center bg-amber-500/15 dark:bg-amber-500/20 p-0.5 rounded-xl border border-amber-400/80 dark:border-amber-600/80 shadow-2xs"
+              ) : (
+                <button
+                  id="composer-score-play-btn"
+                  type="button"
+                  onClick={() => handleTogglePlaySheetFromNote()}
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-zinc-950 rounded-xl text-xs font-black shadow-xs transition-all active:scale-95 cursor-pointer touch-manipulation min-h-[36px]"
+                  title="Play Score from Current Note"
                 >
-                  <button
-                    id="composer-score-karaoke-play-btn"
-                    type="button"
-                    onClick={() => onPlayKaraoke()}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-zinc-950 shadow-xs transition-all active:scale-95 cursor-pointer touch-manipulation min-h-[34px]"
-                    title="Start Karaoke Playback"
-                  >
-                    <Mic2 className="w-3.5 h-3.5 text-zinc-950" />
-                    <Play className="w-3 h-3 fill-current text-zinc-950" />
-                    <span>Karaoke</span>
-                  </button>
-                  {selectedMeasureIndex !== null && selectedMeasureIndex > 0 && (
-                    <button
-                      id="composer-score-karaoke-play-from-measure-btn"
-                      type="button"
-                      onClick={() => onPlayKaraoke(selectedMeasureIndex)}
-                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold text-amber-900 dark:text-amber-200 hover:bg-amber-500/20 transition-all active:scale-95 cursor-pointer touch-manipulation min-h-[34px]"
-                      title={`Play Karaoke from Measure ${selectedMeasureIndex + 1}`}
-                    >
-                      <span>From M.{selectedMeasureIndex + 1}</span>
-                    </button>
-                  )}
-                </div>
-              ) : null}
+                  <Play className="w-3.5 h-3.5 fill-current text-zinc-950" />
+                  <span>Play</span>
+                </button>
+              )}
 
-              {/* Single Centralized Keyboard-to-Score Studio Launch Button */}
+              {/* Transcribe Studio */}
               <button
                 id="composer-score-keyboard-btn"
                 type="button"
-                onClick={() => setIsKeyboardModalOpen(true)}
+                onClick={handleOpenKeyboardModal}
                 className="flex items-center gap-1.5 px-3.5 py-1.5 bg-gradient-to-r from-amber-500/20 to-amber-400/20 hover:from-amber-500/30 hover:to-amber-400/30 text-amber-900 dark:text-amber-200 border border-amber-400/70 dark:border-amber-600/70 rounded-xl font-bold shadow-xs transition-all active:scale-95 cursor-pointer touch-manipulation min-h-[36px]"
                 title="Keyboard Transcribe Studio (Touch Piano, QWERTY typing, Web MIDI)"
               >
                 <Keyboard className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                 <span>Transcribe</span>
+              </button>
+
+              {/* Organizer Modal */}
+              <button
+                id="composer-score-organizer-btn"
+                type="button"
+                onClick={() => setIsOrganizerOpen(true)}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 border border-zinc-200/90 dark:border-zinc-700 rounded-xl font-bold shadow-2xs transition-all active:scale-95 cursor-pointer touch-manipulation min-h-[36px]"
+                title="Open Measure & Verse Organizer"
+              >
+                <Layers className="w-4 h-4 text-amber-500" />
+                <span>Organizer</span>
               </button>
 
               {/* Measure Insert / Delete */}
@@ -2888,29 +2533,6 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
                 <span className="text-white font-bold">Auto Chords</span>
               </button>
 
-              {/* Rhythm Tools Toggle Button (Expands Duration adjustments on demand) */}
-              {editMode !== 'sheet' && (
-                <button
-                  id="composer-score-rhythm-tools-btn"
-                  type="button"
-                  onClick={() => setShowRhythmTools(prev => !prev)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold transition-all active:scale-95 cursor-pointer touch-manipulation min-h-[36px] ${
-                    showRhythmTools || selectedMeasureIndices.size > 0
-                      ? 'bg-amber-500/20 text-amber-900 dark:text-amber-200 border border-amber-400/80 font-black shadow-xs ring-1 ring-amber-400/50'
-                      : 'bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 border border-zinc-200/90 dark:border-zinc-700 font-bold shadow-2xs'
-                  }`}
-                  title="Batch duration adjustment and rhythm tools"
-                >
-                  <Clock className="w-3.5 h-3.5 text-amber-500" />
-                  <span>Rhythm Tools</span>
-                  {selectedMeasureIndices.size > 0 && (
-                    <span className="text-[10px] px-1.5 py-0.2 bg-amber-500 text-zinc-950 rounded-full font-mono font-black">
-                      {selectedMeasureIndices.size}
-                    </span>
-                  )}
-                </button>
-              )}
-
               {/* In-Song Search Toggle */}
               <button
                 id="composer-score-search-btn"
@@ -2929,270 +2551,35 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
               </button>
             </div>
           </div>
-
-          {/* TIER 2: Measure Duration & Batch Rhythm Operations (Expands on Demand or when Measures Selected) */}
-          {editMode !== 'sheet' && (showRhythmTools || selectedMeasureIndices.size > 0) && (
-            <div
-              id="composer-quick-duration-bar"
-              className="flex flex-wrap items-center justify-between gap-2.5 pt-2 border-t border-zinc-200/70 dark:border-zinc-800"
-            >
-              {/* Left: Target Scope & Selection */}
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs font-black text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5 shrink-0">
-                  <Clock className="w-3.5 h-3.5 text-amber-500" />
-                  <span>Duration / Beats:</span>
-                </span>
-
-                {/* Target Scope Pill */}
-                <div className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-500/10 dark:bg-amber-950/40 border border-amber-300/80 dark:border-amber-700/80 text-amber-900 dark:text-amber-200 rounded-xl text-xs font-bold">
-                  <span>Target:</span>
-                  {selectedMeasureIndices.size > 0 ? (
-                    <span className="font-mono font-black">
-                      {selectedMeasureIndices.size} selected (M.{Array.from(selectedMeasureIndices).map(i => i + 1).join(', ')})
-                    </span>
-                  ) : (
-                    <span className="font-mono font-black">
-                      Current M.{(selectedMeasureIndex !== null ? selectedMeasureIndex : 0) + 1}
-                    </span>
-                  )}
-                </div>
-
-                {/* Selection Quick Buttons */}
-                <div className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={handleSelectAllMeasures}
-                    className="px-2 py-1 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg text-xs font-bold transition-all cursor-pointer min-h-[30px]"
-                    title="Select all measures for batch duration adjustments"
-                  >
-                    Select All
-                  </button>
-                  {selectedMeasureIndices.size > 0 && (
-                    <button
-                      type="button"
-                      onClick={handleClearMeasureSelection}
-                      className="px-2 py-1 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg text-xs font-bold transition-all cursor-pointer min-h-[30px]"
-                      title="Clear measure multi-selection"
-                    >
-                      Clear ({selectedMeasureIndices.size})
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Right: Duration Actions (Scaling & Presets) */}
-              <div className="flex items-center gap-2 flex-wrap">
-                {/* Proportional Scaling: Halve & Double */}
-                <div className="flex items-center bg-zinc-100 dark:bg-zinc-800/90 p-0.5 rounded-xl border border-zinc-200/90 dark:border-zinc-700 shadow-2xs">
-                  <button
-                    id="quick-halve-duration-btn"
-                    type="button"
-                    onClick={() => handleScaleMeasureDuration(0.5)}
-                    className="flex items-center gap-1 px-2.5 py-1 text-zinc-800 dark:text-zinc-200 hover:bg-white dark:hover:bg-zinc-700 rounded-lg text-xs font-bold transition-all active:scale-95 cursor-pointer min-h-[30px]"
-                    title="Scale note durations by half (÷2) (e.g. 1 → 0.5, 0.5 → 0.25)"
-                  >
-                    <span className="font-mono font-black text-amber-600 dark:text-amber-400">÷2</span>
-                    <span>Halve</span>
-                  </button>
-
-                  <button
-                    id="quick-double-duration-btn"
-                    type="button"
-                    onClick={() => handleScaleMeasureDuration(2.0)}
-                    className="flex items-center gap-1 px-2.5 py-1 text-zinc-800 dark:text-zinc-200 hover:bg-white dark:hover:bg-zinc-700 rounded-lg text-xs font-bold transition-all active:scale-95 cursor-pointer min-h-[30px]"
-                    title="Scale note durations by double (×2) (e.g. 0.5 → 1, 1 → 2)"
-                  >
-                    <span className="font-mono font-black text-amber-600 dark:text-amber-400">×2</span>
-                    <span>Double</span>
-                  </button>
-                </div>
-
-                {/* Direct Uniform Duration Presets */}
-                <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800/90 p-0.5 rounded-xl border border-zinc-200/90 dark:border-zinc-700 shadow-2xs">
-                  <span className="text-[11px] font-bold text-zinc-600 dark:text-zinc-400 px-1.5">Set:</span>
-                  <button
-                    type="button"
-                    onClick={() => handleSetUniformMeasureDuration(0.5)}
-                    className="px-2 py-1 text-zinc-800 dark:text-zinc-200 hover:bg-white dark:hover:bg-zinc-700 rounded-lg text-xs font-bold transition-all cursor-pointer min-h-[30px]"
-                    title="Set all notes in target measures to eighth notes (0.5 beats)"
-                  >
-                    ♪ 0.5
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleSetUniformMeasureDuration(1.0)}
-                    className="px-2 py-1 text-zinc-800 dark:text-zinc-200 hover:bg-white dark:hover:bg-zinc-700 rounded-lg text-xs font-bold transition-all cursor-pointer min-h-[30px]"
-                    title="Set all notes in target measures to quarter notes (1.0 beat)"
-                  >
-                    ♩ 1.0
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleSetUniformMeasureDuration(2.0)}
-                    className="px-2 py-1 text-zinc-800 dark:text-zinc-200 hover:bg-white dark:hover:bg-zinc-700 rounded-lg text-xs font-bold transition-all cursor-pointer min-h-[30px]"
-                    title="Set all notes in target measures to half notes (2.0 beats)"
-                  >
-                    𝅗𝅥 2.0
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
 
-        {/* Score Grid: Note Mode (Consolidated Deck with Verse & Measure switch) vs Sheet Mode */}
-        {editMode !== 'sheet' ? (
-          <NoteModeView
-            song={song}
-            verses={verses}
-            selectedMeasureIndex={selectedMeasureIndex}
-            selectedNoteIndex={selectedNoteIndex}
-            currentNote={currentNote}
-            keySignature={song.key}
-            audioEngine={audioEngine}
-            noteSubMode={noteSubMode}
-            onSetNoteSubMode={setNoteSubMode}
-            playingVerseIdx={playingVerseIdx}
-            playingMeasureIdx={playingMeasureIdx}
-            activePlaybackNoteId={activePlaybackNoteId}
-            displayMode={displayMode}
-            verseBatchTexts={verseBatchTexts}
-            onSetVerseBatchTexts={setVerseBatchTexts}
-            measureBatchTexts={measureBatchTexts}
-            onSetMeasureBatchTexts={setMeasureBatchTexts}
-            onSelectNote={handleSelectNote}
-            onTogglePlayVerse={handleTogglePlayVerse}
-            onTogglePlayMeasure={handleTogglePlayMeasure}
-            onAddNoteToVerseEnd={handleAddNoteToVerseEnd}
-            onDistributeVerseLyrics={handleDistributeVerseLyrics}
-            onInsertPunctuationToNote={handleInsertPunctuationToNote}
-            onUpdateLyric={handleUpdateLyricAt}
-            onUpdateAnnotation={handleUpdateAnnotationAt}
-            onGoToNextNote={handleGoToNextNote}
-            onGoToPrevNote={handleGoToPrevNote}
-            onUpdateSelectedNote={updateSelectedNote}
-            onSetPitch={handleSetPitch}
-            onSetOctave={handleSetOctave}
-            onSetAccidental={handleSetAccidental}
-            onSetDuration={handleSetDuration}
-            onToggleDotted={handleToggleDotted}
-            onToggleTie={handleToggleTie}
-            onToggleSlur={handleToggleSlur}
-            onSetArticulation={handleSetArticulation}
-            onToggleTriplet={handleToggleTriplet}
-            onToggleDoubleDotted={handleToggleDoubleDotted}
-            onInsertPunctuation={handleInsertPunctuationToNote}
-            onInsertAnnotation={handleInsertAnnotationToNote}
-            onSetAnnotation={handleSetAnnotation}
-            onInsertNoteAt={handleInsertNoteAt}
-            onInsertNoteBeforeAt={handleInsertNoteBeforeAt}
-            onInsertBreakAt={handleInsertBreakAt}
-            onDeleteNoteAt={handleDeleteNoteAt}
-            onMoveNoteBackward={handleMoveNoteBackward}
-            onMoveNoteForward={handleMoveNoteForward}
-            canMoveNoteBackward={canMoveNoteBackward}
-            canMoveNoteForward={canMoveNoteForward}
-            onNavigateNextNote={handleNavigateNextNote}
-            onNavigatePrevNote={handleNavigatePrevNote}
-            autoStepAdvance={autoStepAdvance}
-            onToggleAutoStepAdvance={() => setAutoStepAdvance(prev => !prev)}
-            onUndo={handleUndo}
-            onRedo={handleRedo}
-            canUndo={canUndo}
-            canRedo={canRedo}
-            pastCount={pastCount}
-            futureCount={futureCount}
-            showNotice={showNotice}
-            onSplitMeasureAtNote={handleSplitMeasureAtNote}
-            onMergeWithNextMeasure={handleMergeWithNextMeasure}
-            onShiftNoteToNextMeasure={handleShiftNoteToNextMeasure}
-            onPullNoteFromNextMeasure={handlePullNoteFromNextMeasure}
-            onPushNoteToNextMeasure={handlePushNoteToNextMeasure}
-            onAutoFillRest={handleAutoFillMeasureRest}
-            onTrimExcessNotes={handleTrimExcessNotes}
-            onDuplicateVerse={handleDuplicateVerse}
-            onMoveVerseOrder={handleMoveVerseOrder}
-            onDeleteVerse={handleDeleteVerse}
-            onAddNoteToMeasure={handleAddNoteToMeasure}
-            onDuplicateMeasure={handleDuplicateMeasure}
-            onDeleteMeasure={handleDeleteMeasure}
-            onUpdateMeasureSection={handleUpdateMeasureSection}
-            onUpdateMeasureChord={handleUpdateMeasureChord}
-            onAutoHarmonizeVerse={handleAutoHarmonizeVerse}
-            onDistributeMeasureLyrics={handleDistributeMeasureLyrics}
-            onMoveMeasureOrder={handleMoveMeasureOrder}
-            onToggleLineBreak={handleToggleMeasureLineBreak}
-            onUpdateBarlineType={handleUpdateBarlineType}
-            selectedMeasureIndices={selectedMeasureIndices}
-            onToggleSelectMeasure={handleToggleSelectMeasure}
-            onSelectMeasure={handleJumpToMeasure}
-            onQuickToggleMeasureDuration={handleQuickToggleMeasureDuration}
-            onScaleMeasureDuration={handleScaleMeasureDuration}
-            onSetUniformMeasureDuration={handleSetUniformMeasureDuration}
-            karaokeReturnTarget={karaokeReturnTarget}
-            onReturnToKaraoke={onReturnToKaraoke}
-            sheetReturnTarget={sheetReturnTarget}
-            onReturnToSheet={handleReturnToSheet}
-            onDismissKaraokeReturn={onDismissKaraokeReturn}
-            onDismissSheetReturn={() => setSheetReturnTarget(null)}
-            onOpenKeyboardToScore={() => setIsKeyboardModalOpen(true)}
-          />
-        ) : (
-          <SheetModeView
-            song={song}
-            verses={verses}
-            onSelectMeasure={handleSelectMeasureInSheet}
-            onEditNotes={handleJumpToMeasureFromSheet}
-            onMoveMeasure={handleMoveMeasureOrder}
-            onDuplicateMeasure={handleDuplicateMeasure}
-            onToggleLineBreak={handleToggleMeasureLineBreak}
-            onUpdateBarlineType={handleUpdateBarlineType}
-            onAutoFillRest={handleAutoFillMeasureRest}
-            onBatchAutoFillAllRests={handleBatchFixAllIncompleteMeasures}
-            onDeleteMeasure={handleDeleteMeasure}
-            onAddMeasure={handleAddMeasure}
-            onSelectVerse={handleJumpToVerse}
-            playingVerseIdx={playingVerseIdx}
-            onTogglePlayVerse={handleTogglePlayVerse}
-            playingSystemIdx={playingSystemIdx}
-            onTogglePlaySystem={handleTogglePlaySystem}
-            playingMeasureIdx={playingMeasureIdx}
-            onTogglePlayMeasure={handleTogglePlayMeasure}
-            isPlayingSheet={isPlayingSheet || (isSongPlaying && playingMeasureIdx === null && playingVerseIdx === null && playingSystemIdx === null)}
-            onTogglePlaySheetFromNote={handleTogglePlaySheetFromNote}
-            onNavigateNextNote={handleNavigateNextNote}
-            onNavigatePrevNote={handleNavigatePrevNote}
-            activePlaybackNoteId={activePlaybackNoteId}
-            selectedMeasureIndex={selectedMeasureIndex}
-            selectedNoteIndex={selectedNoteIndex}
-            onSelectNote={handleSelectNote}
-            displayMode={displayMode}
-            onMoveVerse={handleMoveVerseOrder}
-            onToggleVerseLineBreak={handleToggleVerseLineBreak}
-            onUpdateVerseSection={handleUpdateVerseSection}
-            onAutoFillVerseRests={handleAutoFillVerseRests}
-            onDistributeVerseLyrics={handleDistributeVerseLyrics}
-            onDuplicateVerse={handleDuplicateVerse}
-            onDeleteVerse={handleDeleteVerse}
-            onAddVerse={handleAddVerse}
-            onUpdateSong={onUpdateSong}
-            onUpdateNote={handleUpdateNoteDirect}
-            previewNoteAudio={(k, n) => audioEngine.previewNote(k, n)}
-          />
-        )}
-
-        {/* Bottom Append Measure Button */}
-        <div className="flex justify-center pt-2">
-          <button
-            id="composer-add-measure-bottom-btn"
-            type="button"
-            onClick={handleAddMeasure}
-            className="flex items-center gap-2 px-6 py-3.5 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 font-extrabold text-sm rounded-2xl shadow-md transition-all active:scale-95 cursor-pointer touch-manipulation min-h-[44px]"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Append Measure</span>
-          </button>
-        </div>
+        {/* WYSIWYG REALISTIC NUMBERED NOTATION SCORE CANVAS */}
+        <RealSheetCanvas
+          song={song}
+          onUpdateSong={onUpdateSong}
+          selectedMeasureIndex={selectedMeasureIndex}
+          selectedNoteIndex={selectedNoteIndex}
+          onSelectNote={handleSelectNote}
+          onSelectMeasure={handleSelectMeasureInSheet}
+          activePlaybackNoteId={activePlaybackNoteId}
+          isPlaying={isSongPlaying}
+          onTogglePlay={() => handleTogglePlaySheetFromNote(selectedMeasureIndex ?? 0, selectedNoteIndex ?? 0)}
+          onUpdateNote={handleUpdateNoteDirect}
+          onInsertNoteAt={handleInsertNoteAt}
+          onDeleteNoteAt={handleDeleteNoteAt}
+          onAddMeasure={handleAddMeasure}
+          onDeleteMeasure={handleDeleteMeasure}
+          onToggleLineBreak={handleToggleMeasureLineBreak}
+          onUpdateBarlineType={handleUpdateBarlineType}
+          onAutoFillRest={handleAutoFillMeasureRest}
+          audioEngine={audioEngine}
+          previewNoteAudio={(k, n) => audioEngine.previewNote(k, n)}
+          onOpenKeyboardModal={handleOpenKeyboardModal}
+          onOpenOrganizer={() => setIsOrganizerOpen(true)}
+          onAutoHarmonize={handleAutoHarmonizeSong}
+          onUpdateMeasureChord={handleUpdateMeasureChord}
+          displayMode={displayMode}
+        />
       </div>
 
       {/* Consolidated Organizer & Layout Inspector Modal (Verses & Measures) */}
@@ -3209,7 +2596,7 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
         onBatchAutoFillAllRests={handleBatchFixAllIncompleteMeasures}
         onDeleteMeasure={handleDeleteMeasure}
         onAddMeasure={handleAddMeasure}
-        initialTab={editMode === 'verse' ? 'verse' : 'measure'}
+        initialTab="measure"
         verses={verses}
         playingVerseIdx={playingVerseIdx}
         onTogglePlayVerse={handleTogglePlayVerse}
@@ -3228,7 +2615,7 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
       {isKeyboardModalOpen && (
         <KeyboardToScoreModal
           isOpen={isKeyboardModalOpen}
-          onClose={() => setIsKeyboardModalOpen(false)}
+          onClose={handleCloseKeyboardModal}
           song={song}
           selectedMeasureIndex={selectedMeasureIndex}
           audioEngine={audioEngine}

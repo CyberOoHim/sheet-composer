@@ -11,6 +11,8 @@ import {
   NoteDuration,
   BarlineType,
   LyricDisplayMode,
+  GraceNote,
+  ArticulationType,
 } from '@/types/song';
 import {
   engraveMeasure,
@@ -19,6 +21,9 @@ import {
   EngravedNote,
 } from '@/lib/jianpuEngraver';
 import { FloatingScoreHud } from './FloatingScoreHud';
+import { PianoKeyboard } from '@/components/PianoKeyboard';
+import { AudioEngine, audioEngine as defaultAudioEngine } from '@/lib/audioEngine';
+import { autoArrangeSongChords, getDiatonicCandidateChords } from '@/lib/chordArranger';
 import {
   Printer,
   ZoomIn,
@@ -34,6 +39,7 @@ import {
   Music,
   Sun,
   Moon,
+  Keyboard,
 } from 'lucide-react';
 import {
   getStoredRealSheetTheme,
@@ -68,8 +74,15 @@ export interface RealSheetCanvasProps {
   onUpdateBarlineType?: (measureIndex: number, barlineType: BarlineType) => void;
   onAutoFillRest?: (measureIndex: number) => void;
 
-  // Audio Engine preview
+  // Audio Engine & preview
+  audioEngine?: AudioEngine;
   previewNoteAudio?: (key: KeySignature, note: NumberedNotationNote) => void;
+
+  // Modals & Advanced Tools
+  onOpenKeyboardModal?: () => void;
+  onOpenOrganizer?: () => void;
+  onAutoHarmonize?: () => void;
+  onUpdateMeasureChord?: (measureIndex: number, chord: string) => void;
 
   // Display mode
   displayMode?: LyricDisplayMode;
@@ -103,7 +116,12 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
   onToggleLineBreak,
   onUpdateBarlineType,
   onAutoFillRest,
+  audioEngine,
   previewNoteAudio,
+  onOpenKeyboardModal,
+  onOpenOrganizer,
+  onAutoHarmonize,
+  onUpdateMeasureChord,
   displayMode = 'hanlo_major_roman',
   sheetTheme: propSheetTheme,
   onToggleSheetTheme: propOnToggleSheetTheme,
@@ -140,6 +158,9 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
   const [showTimePicker, setShowTimePicker] = useState<boolean>(false);
   const [showBpmPicker, setShowBpmPicker] = useState<boolean>(false);
   const [draftBpm, setDraftBpm] = useState<number>(song.bpm || 88);
+
+  // Virtual Piano Bed state
+  const [showPianoBed, setShowPianoBed] = useState<boolean>(false);
 
   // References
   const canvasWrapperRef = useRef<HTMLDivElement>(null);
@@ -206,6 +227,28 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
     },
     [currentMeasure, currentNote, onUpdateNote, currentMIdx, currentNIdx, song, onUpdateSong, previewNoteAudio]
   );
+
+  // Diatonic chord suggestions based on key signature
+  const chordSuggestions = useMemo(() => {
+    try {
+      return getDiatonicCandidateChords(song.key).map(c => c.chord);
+    } catch {
+      return ['C', 'Dm', 'Em', 'F', 'G', 'Am', 'G7'];
+    }
+  }, [song.key]);
+
+  // Smoothly scroll active playback note into view during playback
+  useEffect(() => {
+    if (!isPlaying || !activePlaybackNoteId) return;
+    const el = document.getElementById(`sheet-note-${activePlaybackNoteId}`);
+    if (el) {
+      el.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'nearest',
+      });
+    }
+  }, [isPlaying, activePlaybackNoteId]);
 
   // Step to Next Note
   const stepToNextNote = useCallback(() => {
@@ -324,6 +367,118 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
       }));
     },
     [updateCurrentNote]
+  );
+
+  // Toggle Triplet
+  const handleToggleTriplet = useCallback(() => {
+    updateCurrentNote(note => ({
+      ...note,
+      isTriplet: !note.isTriplet,
+    }));
+  }, [updateCurrentNote]);
+
+  // Articulations
+  const handleSetArticulation = useCallback(
+    (art: ArticulationType) => {
+      updateCurrentNote(note => ({
+        ...note,
+        articulation: note.articulation === art ? undefined : art,
+      }));
+    },
+    [updateCurrentNote]
+  );
+
+  // Quick Punctuation
+  const handleInsertPunctuation = useCallback(
+    (punct: string) => {
+      updateCurrentNote(note => ({
+        ...note,
+        lyric: {
+          ...note.lyric,
+          hanlo: (note.lyric.hanlo || '') + punct,
+          hanji: (note.lyric.hanji || '') + punct,
+          custom: (note.lyric.custom || '') + punct,
+        },
+      }));
+    },
+    [updateCurrentNote]
+  );
+
+  // Annotation
+  const handleInsertAnnotation = useCallback(
+    (annot: string) => {
+      updateCurrentNote(note => ({
+        ...note,
+        annotation: note.annotation === annot ? undefined : annot,
+      }));
+    },
+    [updateCurrentNote]
+  );
+
+  // Grace Notes
+  const handleAddGraceNote = useCallback(
+    (type: 'pre' | 'post', pitch: 1 | 2 | 3 | 4 | 5 | 6 | 7, octave: number) => {
+      updateCurrentNote(note => {
+        const newGrace: GraceNote = { pitch, octave };
+        if (type === 'pre') {
+          const existing = note.preGraceNotes || [];
+          if (existing.length >= 3) return note;
+          return { ...note, preGraceNotes: [...existing, newGrace] };
+        } else {
+          const existing = note.postGraceNotes || [];
+          if (existing.length >= 3) return note;
+          return { ...note, postGraceNotes: [...existing, newGrace] };
+        }
+      });
+    },
+    [updateCurrentNote]
+  );
+
+  const handleClearGraceNotes = useCallback(() => {
+    updateCurrentNote(note => ({
+      ...note,
+      preGraceNotes: undefined,
+      postGraceNotes: undefined,
+    }));
+  }, [updateCurrentNote]);
+
+  // Chords and Harmony
+  const handleUpdateMeasureChord = useCallback(
+    (chord: string) => {
+      if (onUpdateMeasureChord) {
+        onUpdateMeasureChord(currentMIdx, chord);
+      } else {
+        const newMeasures = song.measures.map((m, idx) => {
+          if (idx !== currentMIdx) return m;
+          return { ...m, chord };
+        });
+        onUpdateSong({ ...song, measures: newMeasures });
+      }
+    },
+    [onUpdateMeasureChord, currentMIdx, song, onUpdateSong]
+  );
+
+  const handleAutoHarmonize = useCallback(() => {
+    if (onAutoHarmonize) {
+      onAutoHarmonize();
+    } else {
+      const arranged = autoArrangeSongChords(song);
+      onUpdateSong(arranged);
+    }
+  }, [onAutoHarmonize, song, onUpdateSong]);
+
+  // Virtual Piano key pitch selection
+  const handleSelectPitchFromPiano = useCallback(
+    (pitch: PitchNumber, octave: number, accidental: '' | '#' | 'b') => {
+      updateCurrentNote(note => ({
+        ...note,
+        pitch,
+        octave,
+        accidental,
+      }));
+      stepToNextNote();
+    },
+    [updateCurrentNote, stepToNextNote]
   );
 
   // Measure operations
@@ -1102,7 +1257,8 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
                           return (
                             <div
                               key={`note-${engNote.note.id}`}
-                              id={`sheet-note-${engravedM.measureNumber}-${nIdx}`}
+                              id={`sheet-note-${engNote.note.id}`}
+                              data-coord={`sheet-note-${engravedM.measureNumber}-${nIdx}`}
                               ref={isSelectedNote ? activeNoteElementRef : undefined}
                               onClick={e => {
                                 e.stopPropagation();
@@ -1140,6 +1296,23 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
                                 </div>
                               )}
 
+                              {/* Musical / Vocal Annotation above note */}
+                              {engNote.note.annotation && (
+                                <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-[9px] font-serif italic text-amber-600 dark:text-amber-400 select-none whitespace-nowrap pointer-events-none">
+                                  {engNote.note.annotation}
+                                </span>
+                              )}
+
+                              {/* Articulation symbol above note */}
+                              {engNote.note.articulation && engNote.note.articulation !== 'none' && (
+                                <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 text-xs font-bold leading-none select-none pointer-events-none">
+                                  {engNote.note.articulation === 'staccato' ? '·' :
+                                   engNote.note.articulation === 'tenuto' ? '—' :
+                                   engNote.note.articulation === 'accent' ? '>' :
+                                   engNote.note.articulation === 'fermata' ? '𝄐' : ''}
+                                </span>
+                              )}
+
                               {/* High Octave Dots Above */}
                               <div className="flex flex-col items-center h-2.5 justify-end">
                                 {engNote.octaveDotsAbove > 0 && (
@@ -1157,6 +1330,24 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
                               <div className={`relative flex items-center font-mono font-bold text-xl sm:text-2xl leading-none select-none ${
                                 sheetTheme === 'dark' ? 'text-zinc-100' : 'text-zinc-950'
                               }`}>
+                                {/* Pre-Grace Notes */}
+                                {engNote.note.preGraceNotes && engNote.note.preGraceNotes.length > 0 && (
+                                  <span className="inline-flex items-end gap-0.5 mr-0.5 text-[10px] font-mono font-bold leading-none select-none opacity-85">
+                                    <span className="text-[9px] text-amber-600 dark:text-amber-400 -mr-0.5">⌒</span>
+                                    {engNote.note.preGraceNotes.map((g, idx) => (
+                                      <span key={idx} className="relative flex flex-col items-center">
+                                        {g.octave > 0 && <span className="text-[7px] leading-none mb-[-2px]">·</span>}
+                                        <span className="flex items-baseline">
+                                          {g.accidental && <span className="text-[8px]">{g.accidental === '#' ? '♯' : '♭'}</span>}
+                                          <span>{g.pitch}</span>
+                                        </span>
+                                        {g.octave < 0 && <span className="text-[7px] leading-none mt-[-2px]">·</span>}
+                                        <span className={`w-full h-[1px] mt-0.5 ${sheetTheme === 'dark' ? 'bg-zinc-200' : 'bg-zinc-800'}`} />
+                                      </span>
+                                    ))}
+                                  </span>
+                                )}
+
                                 {/* Accidental */}
                                 {engNote.accidentalSymbol && (
                                   <span className={`text-xs font-serif font-black -mr-0.5 ${
@@ -1168,6 +1359,31 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
 
                                 {/* Pitch Digit */}
                                 <span>{engNote.pitchDisplay}</span>
+
+                                {/* Post-Grace Notes */}
+                                {engNote.note.postGraceNotes && engNote.note.postGraceNotes.length > 0 && (
+                                  <span className="inline-flex items-end gap-0.5 ml-0.5 text-[10px] font-mono font-bold leading-none select-none opacity-85">
+                                    {engNote.note.postGraceNotes.map((g, idx) => (
+                                      <span key={idx} className="relative flex flex-col items-center">
+                                        {g.octave > 0 && <span className="text-[7px] leading-none mb-[-2px]">·</span>}
+                                        <span className="flex items-baseline">
+                                          {g.accidental && <span className="text-[8px]">{g.accidental === '#' ? '♯' : '♭'}</span>}
+                                          <span>{g.pitch}</span>
+                                        </span>
+                                        {g.octave < 0 && <span className="text-[7px] leading-none mt-[-2px]">·</span>}
+                                        <span className={`w-full h-[1px] mt-0.5 ${sheetTheme === 'dark' ? 'bg-zinc-200' : 'bg-zinc-800'}`} />
+                                      </span>
+                                    ))}
+                                    <span className="text-[9px] text-amber-600 dark:text-amber-400 -ml-0.5">⌒</span>
+                                  </span>
+                                )}
+
+                                {/* Triplet Indicator */}
+                                {engNote.note.isTriplet && (
+                                  <span className="text-[9px] font-mono font-bold text-amber-600 dark:text-amber-400 ml-0.5">
+                                    ³
+                                  </span>
+                                )}
 
                                 {/* Dotted Note Dot */}
                                 {engNote.isDotted && (
@@ -1436,6 +1652,29 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
         </footer>
       </div>
 
+      {/* Docked Virtual Piano Bed */}
+      {showPianoBed && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-40 w-full max-w-4xl px-4 animate-in fade-in slide-in-from-bottom-4 duration-200">
+          <div className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xl p-3 relative">
+            <button
+              type="button"
+              onClick={() => setShowPianoBed(false)}
+              className="absolute top-2 right-2 w-7 h-7 flex items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors z-10 cursor-pointer"
+              title="Close Piano Bed"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <PianoKeyboard
+              keySignature={song.key}
+              currentNote={currentNote || null}
+              onSelectPitch={handleSelectPitchFromPiano}
+              audioEngine={audioEngine || defaultAudioEngine}
+              onOpenKeyboardToScore={onOpenKeyboardModal}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Floating HUD / Score Ribbon */}
       <FloatingScoreHud
         isPlaying={isPlaying}
@@ -1450,12 +1689,32 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
         currentDuration={currentNote?.duration || 1}
         onToggleDotted={handleToggleDotted}
         isDotted={currentNote?.isDotted}
+        onToggleTriplet={handleToggleTriplet}
+        isTriplet={currentNote?.isTriplet}
         onToggleSlur={handleToggleSlur}
         isSlur={currentNote?.slurToNext}
         onToggleTie={handleToggleTie}
         isTie={currentNote?.tieToNext}
         onSetAccidental={handleSetAccidental}
         currentAccidental={currentNote?.accidental || ''}
+        currentArticulation={currentNote?.articulation}
+        onSetArticulation={handleSetArticulation}
+        onInsertPunctuation={handleInsertPunctuation}
+        onInsertAnnotation={handleInsertAnnotation}
+        onAddGraceNote={handleAddGraceNote}
+        onClearGraceNotes={handleClearGraceNotes}
+        hasGraceNotes={Boolean(
+          (currentNote?.preGraceNotes && currentNote.preGraceNotes.length > 0) ||
+          (currentNote?.postGraceNotes && currentNote.postGraceNotes.length > 0)
+        )}
+        currentMeasureChord={currentMeasure?.chord}
+        onUpdateMeasureChord={handleUpdateMeasureChord}
+        chordSuggestions={chordSuggestions}
+        onAutoHarmonize={handleAutoHarmonize}
+        onTogglePianoBed={() => setShowPianoBed(p => !p)}
+        showPianoBed={showPianoBed}
+        onOpenKeyboardModal={onOpenKeyboardModal}
+        onOpenOrganizer={onOpenOrganizer}
         onAddMeasure={handleAddMeasureClick}
         onDeleteSelectedMeasure={handleDeleteMeasureClick}
         onToggleLineBreak={handleToggleLineBreakClick}

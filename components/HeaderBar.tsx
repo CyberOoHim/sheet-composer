@@ -35,19 +35,20 @@ import { UiZoomControl } from '@/components/UiZoomControl';
 import { ChordPlaybackControl } from '@/components/ChordPlaybackControl';
 
 
-export type ActiveTabMode = 'karaoke' | 'editor' | 'split';
+export type ActiveTabMode = 'sheet';
 
 interface HeaderBarProps {
   song: Song;
   onSelectSong: (song: Song) => void;
   onStartFreshSong?: () => void;
-  activeTab: ActiveTabMode;
-  setActiveTab: (tab: ActiveTabMode) => void;
+  activeTab?: string;
+  setActiveTab?: (tab: any) => void;
   onOpenLyricSearch?: () => void;
   onOpenImportExport: () => void;
   onOpenMidiExport?: () => void;
   onOpenGeminiAuth?: () => void;
   onOpenScanner?: () => void;
+  onOpenKeyboardModal?: () => void;
   isPlaying: boolean;
   onTogglePlay: () => void;
   onUndo?: () => boolean;
@@ -83,6 +84,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   onOpenMidiExport,
   onOpenGeminiAuth,
   onOpenScanner,
+  onOpenKeyboardModal,
   isPlaying,
   onTogglePlay,
   onUndo,
@@ -189,61 +191,12 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                 type="button"
                 onClick={onStartFreshSong}
                 className="hidden sm:flex items-center justify-center p-1.5 bg-zinc-100 hover:bg-zinc-200 dark:bg-[#151822] dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-xl border border-zinc-200/90 dark:border-zinc-750 text-xs font-bold transition-all active:scale-95 cursor-pointer h-9 w-9 shrink-0"
-                title="建立全新空白樂譜 (New Blank Song)"
+                title="Create New Blank Song"
               >
                 <FilePlus2 className="w-4 h-4 text-amber-500 shrink-0" />
               </button>
             )}
           </div>
-        </div>
-
-        {/* Center: DAW Monitor Mode Rocker (Karaoke / Editor / Split) */}
-        <div id="view-mode-switcher" className="flex items-center bg-zinc-100 dark:bg-[#0a0c10] p-1 rounded-xl border border-zinc-200/90 dark:border-zinc-800/80 shadow-inner shrink-0">
-          <button
-            id="tab-btn-karaoke"
-            type="button"
-            onClick={() => setActiveTab('karaoke')}
-            className={`flex items-center gap-1.5 px-2 sm:px-2.5 md:px-3 py-1.5 rounded-lg text-xs transition-all cursor-pointer touch-manipulation h-8 whitespace-nowrap shrink-0 active:scale-95 ${
-              activeTab === 'karaoke'
-                ? 'bg-amber-500 text-zinc-950 shadow-xs font-black'
-                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white font-semibold'
-            }`}
-            title="Karaoke Stage"
-          >
-            <Mic2 className="w-3.5 h-3.5 shrink-0" />
-            <span className="hidden sm:inline whitespace-nowrap">Karaoke</span>
-          </button>
-
-          <button
-            id="tab-btn-editor"
-            type="button"
-            onClick={() => setActiveTab('editor')}
-            className={`flex items-center gap-1.5 px-2 sm:px-2.5 md:px-3 py-1.5 rounded-lg text-xs transition-all cursor-pointer touch-manipulation h-8 whitespace-nowrap shrink-0 active:scale-95 ${
-              activeTab === 'editor'
-                ? 'bg-amber-500 text-zinc-950 shadow-xs font-black'
-                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white font-semibold'
-            }`}
-            title="Score Editor"
-          >
-            <Music className="w-3.5 h-3.5 shrink-0" />
-            <span className="hidden lg:inline whitespace-nowrap">Score Editor</span>
-            <span className="hidden sm:inline lg:hidden whitespace-nowrap">Editor</span>
-          </button>
-
-          <button
-            id="tab-btn-split"
-            type="button"
-            onClick={() => setActiveTab('split')}
-            className={`flex items-center gap-1.5 px-2 sm:px-2.5 md:px-3 py-1.5 rounded-lg text-xs transition-all cursor-pointer touch-manipulation h-8 whitespace-nowrap shrink-0 active:scale-95 ${
-              activeTab === 'split'
-                ? 'bg-amber-500 text-zinc-950 shadow-xs font-black'
-                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white font-semibold'
-            }`}
-            title="Split Studio View"
-          >
-            <Columns className="w-3.5 h-3.5 shrink-0" />
-            <span className="hidden sm:inline whitespace-nowrap">Split</span>
-          </button>
         </div>
 
         {/* Right: Master Transport & Consolidated Studio Tools */}
@@ -258,7 +211,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                 ? 'bg-amber-500 text-zinc-950 ring-2 ring-amber-400 shadow-md shadow-amber-500/30 font-black'
                 : 'bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white'
             }`}
-            title={isPlaying ? 'Pause Playback (Space)' : 'Play Full Song (Space)'}
+            title={isPlaying ? 'Pause Playback (Space)' : 'Play Full Score (Space)'}
           >
             {isPlaying ? (
               <>
@@ -285,11 +238,11 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                 value={instrument}
                 onChange={e => onSetInstrument(e.target.value as InstrumentType)}
                 className="bg-transparent font-bold text-xs text-zinc-800 dark:text-zinc-200 focus:outline-hidden cursor-pointer"
-                title="切換主旋律音色 (鋼琴、竹笛、口笛、吉他、合成器、鐘琴、大提琴)"
+                title="Select Melody Instrument (Piano, Flute, Whistle, Guitar, Synth, Bell, Cello)"
               >
                 {INSTRUMENT_OPTIONS.map(opt => (
                   <option key={opt.value} value={opt.value} className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100">
-                    {opt.labelZh} ({opt.labelEn})
+                    {opt.labelEn}
                   </option>
                 ))}
               </select>
@@ -314,8 +267,8 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
               }`}
               title={
                 isDirty
-                  ? '儲存修改至 IndexedDB [Ctrl+S] (有尚未儲存的修改)'
-                  : '目前修改已安全保存在 IndexedDB [Ctrl+S]'
+                  ? 'Save changes to IndexedDB [Ctrl+S] (unsaved edits pending)'
+                  : 'Changes saved safely in IndexedDB [Ctrl+S]'
               }
             >
               {saveSuccess ? (
@@ -324,7 +277,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                 <Save className={`w-3.5 h-3.5 shrink-0 ${isDirty ? 'text-zinc-950' : 'text-amber-500'}`} />
               )}
               <span className="hidden sm:inline whitespace-nowrap">
-                {isSaving ? '存...' : saveSuccess ? '已存' : isDirty ? '儲存*' : '儲存'}
+                {isSaving ? 'Saving...' : saveSuccess ? 'Saved' : isDirty ? 'Save*' : 'Save'}
               </span>
               {isDirty && !isSaving && !saveSuccess && (
                 <span className="w-2 h-2 rounded-full bg-amber-950 dark:bg-amber-900 animate-ping inline-block shrink-0" />
@@ -371,10 +324,10 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
               type="button"
               onClick={onOpenLyricSearch}
               className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all active:scale-95 cursor-pointer h-9 bg-zinc-100 hover:bg-zinc-200 dark:bg-[#151822] dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200/90 dark:border-zinc-750 shrink-0"
-              title="搜尋歌詞與樂譜 [Ctrl+K / ⌘K]"
+              title="Search Lyrics & Notes [Ctrl+K / ⌘K]"
             >
               <Search className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-              <span className="hidden xl:inline whitespace-nowrap">搜尋</span>
+              <span className="hidden xl:inline whitespace-nowrap">Search</span>
               <kbd className="hidden lg:inline text-[10px] px-1 py-0.2 rounded bg-zinc-200 dark:bg-zinc-700/80 font-mono font-bold text-zinc-600 dark:text-zinc-400">⌘K</kbd>
             </button>
           )}
@@ -384,7 +337,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
             <div
               id="header-instrument-quick-group"
               className="hidden md:flex items-center gap-1.5 bg-zinc-100 dark:bg-[#151822] px-2 py-1 rounded-xl border border-zinc-200/90 dark:border-zinc-750 h-9 shrink-0"
-              title="切換主旋律樂器音色 (鋼琴、竹笛、口笛、吉他、合成器、鐘琴、大提琴)"
+              title="Select Melody Instrument (Piano, Flute, Whistle, Guitar, Synth, Bell, Cello)"
             >
               <Music className="w-3.5 h-3.5 text-amber-500 shrink-0" />
               <select
@@ -395,7 +348,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
               >
                 {INSTRUMENT_OPTIONS.map(opt => (
                   <option key={opt.value} value={opt.value} className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100">
-                    {opt.labelZh}
+                    {opt.labelEn}
                   </option>
                 ))}
               </select>
@@ -412,7 +365,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                 ? 'bg-amber-500 text-zinc-950 border-amber-400 shadow-xs font-black'
                 : 'bg-zinc-100 hover:bg-zinc-200 dark:bg-[#151822] dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200/90 dark:border-zinc-750'
             }`}
-            title="Studio Tools & Settings (伴奏和弦、Eco、縮放、MIDI、AI等)"
+            title="Studio Tools & Settings"
             aria-expanded={isStudioMenuOpen}
           >
             <SlidersHorizontal className="w-3.5 h-3.5 shrink-0" />
@@ -473,7 +426,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                   <div className="flex items-center gap-1.5">
                     <Music className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                     <span className="text-xs font-bold text-zinc-800 dark:text-zinc-100">
-                      主旋律樂器音色 (Instrument)
+                      Melody Instrument
                     </span>
                   </div>
                   <span className="text-[10px] text-amber-600 dark:text-amber-400 font-mono font-bold">
@@ -494,7 +447,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                             : 'bg-white/80 dark:bg-zinc-800/80 hover:bg-zinc-200/60 dark:hover:bg-zinc-750 text-zinc-700 dark:text-zinc-200'
                         }`}
                       >
-                        <span className="truncate">{opt.labelZh}</span>
+                        <span className="truncate">{opt.labelEn}</span>
                         {isSelected && <Check className="w-3 h-3 text-zinc-950 stroke-[3] shrink-0" />}
                       </button>
                     );
@@ -507,7 +460,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
             <div className="p-2.5 rounded-xl bg-zinc-100/80 dark:bg-zinc-850 border border-zinc-200 dark:border-zinc-750">
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-xs font-bold text-zinc-800 dark:text-zinc-100">
-                  和弦伴奏 (Chords)
+                  Chord Accompaniment & Volume
                 </span>
               </div>
               <ChordPlaybackControl variant="toolbar" previewKeyChord={song.key} idPrefix="header-chord" />
@@ -528,9 +481,9 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                 <div className="flex items-center gap-2">
                   <Leaf className={`w-4 h-4 shrink-0 ${isEcoMode ? 'text-emerald-500 fill-emerald-500' : 'text-zinc-400 dark:text-zinc-400'}`} />
                   <div className="flex flex-col text-left">
-                    <span className="font-bold">{isEcoMode ? '節能模式已開啟 (Eco ON)' : '節能省電模式 (Eco Mode)'}</span>
+                    <span className="font-bold">{isEcoMode ? 'Eco Mode Active' : 'Eco Mode (Power Saver)'}</span>
                     <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
-                      {isEcoMode ? '螢幕可休眠 · 輕量音訊' : '較輕音訊 · 降低GPU負載'}
+                      {isEcoMode ? 'Screen sleep allowed · Lightweight audio' : 'Light audio · Lower GPU load'}
                     </span>
                   </div>
                 </div>
@@ -560,7 +513,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
 
             <div className="flex items-center justify-between p-2.5 rounded-xl bg-zinc-100/80 dark:bg-zinc-850 border border-zinc-200 dark:border-zinc-750">
               <span className="text-xs font-bold text-zinc-800 dark:text-zinc-100">
-                介面字級縮放
+                UI Text Zoom
               </span>
               <UiZoomControl idPrefix="header-menu-ui-zoom" />
             </div>
@@ -569,7 +522,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
             {onSetAutosaveInterval && (
               <div className="flex items-center justify-between p-2.5 rounded-xl bg-zinc-100/80 dark:bg-zinc-850 border border-zinc-200 dark:border-zinc-750">
                 <span className="text-xs font-bold text-zinc-800 dark:text-zinc-100">
-                  自動儲存頻率
+                  Autosave Frequency
                 </span>
                 <select
                   id="header-menu-autosave-select"
@@ -577,11 +530,11 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                   onChange={e => onSetAutosaveInterval(Number(e.target.value))}
                   className="text-xs font-bold bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 text-zinc-800 dark:text-zinc-100 px-2.5 py-1 rounded-lg cursor-pointer focus:outline-hidden"
                 >
-                  <option value={0}>手動儲存 (預設)</option>
-                  <option value={60000}>每 1 分鐘</option>
-                  <option value={180000}>每 3 分鐘</option>
-                  <option value={300000}>每 5 分鐘</option>
-                  <option value={600000}>每 10 分鐘</option>
+                  <option value={0}>Manual Only (Default)</option>
+                  <option value={60000}>Every 1 min</option>
+                  <option value={180000}>Every 3 mins</option>
+                  <option value={300000}>Every 5 mins</option>
+                  <option value={600000}>Every 10 mins</option>
                 </select>
               </div>
             )}
@@ -590,10 +543,25 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
           {/* Section 3: Creation, Import & AI Tools */}
           <div className="flex flex-col gap-2 pt-1 border-t border-zinc-200 dark:border-zinc-800">
             <span className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-              Project & AI Tools
+              Score Tools & Transcription
             </span>
 
             <div className="grid grid-cols-2 gap-2">
+              {/* Keyboard Transcription Modal */}
+              {onOpenKeyboardModal && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsStudioMenuOpen(false);
+                    onOpenKeyboardModal();
+                  }}
+                  className="flex items-center gap-2 p-2.5 rounded-xl bg-zinc-100/80 hover:bg-zinc-200/80 dark:bg-zinc-850 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-750 text-xs font-bold transition-all cursor-pointer col-span-2"
+                >
+                  <Keyboard className="w-4 h-4 text-amber-500 shrink-0" />
+                  <span>Record Keyboard / MIDI</span>
+                </button>
+              )}
+
               {/* Song Library */}
               <button
                 type="button"
@@ -604,7 +572,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                 className="flex items-center gap-2 p-2.5 rounded-xl bg-zinc-100/80 hover:bg-zinc-200/80 dark:bg-zinc-850 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-750 text-xs font-bold transition-all cursor-pointer"
               >
                 <Library className="w-4 h-4 text-amber-500 shrink-0" />
-                <span>曲庫與匯入</span>
+                <span>Score Repertoire</span>
               </button>
 
               {/* MIDI Export */}
@@ -618,7 +586,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                   className="flex items-center gap-2 p-2.5 rounded-xl bg-zinc-100/80 hover:bg-zinc-200/80 dark:bg-zinc-850 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-750 text-xs font-bold transition-all cursor-pointer"
                 >
                   <Download className="w-4 h-4 text-amber-500 shrink-0" />
-                  <span>匯出 MIDI</span>
+                  <span>Export MIDI</span>
                 </button>
               )}
 
@@ -640,7 +608,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                   }`}
                 >
                   <ScanLine className={`w-4 h-4 shrink-0 ${hasApiKey ? 'text-amber-500' : 'text-zinc-400'}`} />
-                  <span>AI 辨識樂譜</span>
+                  <span>AI Score Scanner</span>
                 </button>
               )}
 
@@ -665,7 +633,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                   ) : (
                     <Sparkles className="w-4 h-4 text-amber-500 shrink-0" />
                   )}
-                  <span>{isAuthenticated ? 'AI 已解鎖' : 'AI 設定'}</span>
+                  <span>{isAuthenticated ? 'AI Connected' : 'AI Setup'}</span>
                 </button>
               )}
             </div>
@@ -680,7 +648,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
               className="flex items-center justify-center gap-2 p-2 rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 font-bold text-xs transition-colors cursor-pointer"
             >
               <Keyboard className="w-4 h-4 text-zinc-500 dark:text-zinc-400 shrink-0" />
-              <span>鍵盤快捷鍵一覽 (Shortcuts Guide)</span>
+              <span>Keyboard Shortcuts Guide</span>
             </button>
           </div>
         </div>

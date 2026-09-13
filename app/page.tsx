@@ -5,8 +5,7 @@ import { LyricDisplayMode, Song, InstrumentType } from '@/types/song';
 import { PRESET_SONGS, createFreshSong } from '@/lib/presets';
 import { audioEngine } from '@/lib/audioEngine';
 import { wakeLockManager } from '@/lib/wakeLock';
-import { HeaderBar, ActiveTabMode } from '@/components/HeaderBar';
-import { KaraokeView, KaraokeSection } from '@/components/KaraokeView';
+import { HeaderBar } from '@/components/HeaderBar';
 import { ComposerEditor } from '@/components/ComposerEditor';
 import { ImportExportModal } from '@/components/ImportExportModal';
 import { QuickLyricAlignerModal } from '@/components/QuickLyricAlignerModal';
@@ -17,8 +16,6 @@ import { NewSongModal } from '@/components/NewSongModal';
 import { useSongHistory } from '@/hooks/useSongHistory';
 import { usePowerSaveMode } from '@/hooks/usePowerSaveMode';
 import {
-  getStoredActiveTabOrNull,
-  setStoredActiveTab,
   getStoredDisplayMode,
   setStoredDisplayMode,
   getStoredCurrentSong,
@@ -28,12 +25,10 @@ import {
   setStoredAutosaveInterval,
   getStoredEnableChords,
   setStoredEnableChords,
-  setStoredNoteSubMode,
   getStoredInstrument,
   setStoredInstrument,
   STORAGE_KEYS,
 } from '@/lib/storage';
-import { prefersKaraokeDefaultLayout } from '@/lib/device';
 import {
   saveSongToDB,
   getSongFromDB,
@@ -44,14 +39,6 @@ import {
   getActiveSongFromDB,
   migrateLocalStorageToDB,
 } from '@/lib/indexedDb';
-import {
-  Mic2,
-  Music,
-  Sparkles,
-  Layers,
-  ArrowRight,
-  Play,
-} from 'lucide-react';
 
 export default function Home() {
   const {
@@ -125,8 +112,6 @@ export default function Home() {
     });
   }, [isEcoMode, enableChords, instrument]);
 
-  // SSR/desktop default is split; first-run iPad/standalone/coarse pointers switch to karaoke in bootstrap.
-  const [activeTab, setActiveTabState] = useState<ActiveTabMode>('split');
   const [displayMode, setDisplayModeState] = useState<LyricDisplayMode>('all');
   const [isImportExportOpen, setIsImportExportOpen] = useState(false);
   const [importExportTab, setImportExportTab] = useState<'presets' | 'custom' | 'export' | 'import' | 'ai_scan'>('presets');
@@ -136,13 +121,9 @@ export default function Home() {
   const [isGeminiAuthOpen, setIsGeminiAuthOpen] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [isNewSongConfirmOpen, setIsNewSongConfirmOpen] = useState(false);
+  const [isKeyboardModalOpen, setIsKeyboardModalOpen] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [targetMeasureIndex, setTargetMeasureIndex] = useState<number | null>(null);
-  const [targetKaraokeMeasureIndex, setTargetKaraokeMeasureIndex] = useState<number | null>(null);
-  const [karaokeReturnTarget, setKaraokeReturnTarget] = useState<{
-    measureIndex: number;
-    originalMeasureIndex: number;
-  } | null>(null);
 
   // Persistence State
   const [savedRevision, setSavedRevision] = useState(0);
@@ -170,12 +151,6 @@ export default function Home() {
 
         if (!isMounted) return;
 
-        const storedTab = getStoredActiveTabOrNull();
-        if (storedTab) {
-          setActiveTabState(storedTab);
-        } else if (prefersKaraokeDefaultLayout()) {
-          setActiveTabState('karaoke');
-        }
         const storedMode = getStoredDisplayMode();
         if (storedMode && storedMode !== 'all') setDisplayModeState(storedMode);
         const storedAutosave = getStoredAutosaveInterval(0);
@@ -214,15 +189,6 @@ export default function Home() {
     if (!hasInitializedRef.current) return;
     setStoredCurrentSong(song);
   }, [song]);
-
-
-  const setActiveTab = useCallback((tab: ActiveTabMode) => {
-    if (tab === 'editor' && audioEngine) {
-      audioEngine.stop();
-    }
-    setActiveTabState(tab);
-    setStoredActiveTab(tab);
-  }, []);
 
   const setDisplayMode = useCallback((mode: LyricDisplayMode) => {
     setDisplayModeState(mode);
@@ -315,13 +281,9 @@ export default function Home() {
 
     loadNewSong(freshSong);
     setSavedRevision(0);
-    setKaraokeReturnTarget(null);
-    if (activeTab === 'karaoke') {
-      setActiveTab('editor');
-    }
     setTargetMeasureIndex(0);
     setIsNewSongConfirmOpen(false);
-  }, [song, isDirty, activeTab, setActiveTab, loadNewSong]);
+  }, [song, isDirty, loadNewSong]);
 
   // Flush song state to storage immediately when switching tabs or apps (especially critical on iPad)
   useEffect(() => {
@@ -387,46 +349,6 @@ export default function Home() {
     [loadNewSong, setSong]
   );
 
-  const handleEditMeasure = useCallback((measureIndex: number) => {
-    if (audioEngine) {
-      audioEngine.stop();
-    }
-    setKaraokeReturnTarget({
-      measureIndex,
-      originalMeasureIndex: measureIndex,
-    });
-    if (activeTab === 'karaoke') {
-      setActiveTab('editor');
-    }
-    setTargetMeasureIndex(measureIndex);
-  }, [activeTab, setActiveTab]);
-
-  const handleEditSection = useCallback((section: KaraokeSection) => {
-    if (audioEngine) {
-      audioEngine.stop();
-    }
-    setKaraokeReturnTarget({
-      measureIndex: section.startMeasureIndex,
-      originalMeasureIndex: section.startMeasureIndex,
-    });
-    if (activeTab === 'karaoke') {
-      setActiveTab('editor');
-    }
-    setTargetMeasureIndex(section.startMeasureIndex);
-  }, [activeTab, setActiveTab]);
-
-  const handleReturnToKaraoke = useCallback((destMeasureIndex?: number) => {
-    if (audioEngine) {
-      audioEngine.stop();
-    }
-    const dest =
-      destMeasureIndex !== undefined && destMeasureIndex !== null
-        ? destMeasureIndex
-        : (karaokeReturnTarget?.originalMeasureIndex ?? 0);
-    setActiveTab('karaoke');
-    setTargetKaraokeMeasureIndex(dest);
-  }, [karaokeReturnTarget, setActiveTab]);
-
   const handleTogglePlay = useCallback(() => {
     if (!audioEngine) return;
     if (isPlaying) {
@@ -441,20 +363,6 @@ export default function Home() {
       audioEngine.play(song, 0);
     }
   }, [isPlaying, song, isEcoMode]);
-
-  const handlePlayKaraoke = useCallback((startMeasure?: number) => {
-    setActiveTab('karaoke');
-    const startSec =
-      startMeasure !== undefined && startMeasure > 0
-        ? audioEngine.getMeasureStartTime(song, startMeasure)
-        : 0;
-    audioEngine.stop();
-    void wakeLockManager.requestForPlayback(isEcoMode);
-    audioEngine.play(song, startSec);
-    if (typeof window !== 'undefined') {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  }, [setActiveTab, song, isEcoMode]);
 
   const handleSelectSong = useCallback(
     async (targetSong: Song) => {
@@ -495,9 +403,7 @@ export default function Home() {
   const handleJumpFromSearch = useCallback(
     async (
       targetSong: Song,
-      measureIndex: number,
-      destination: 'karaoke' | 'editor' | 'current' = 'current',
-      subMode?: 'verse' | 'measure'
+      measureIndex: number
     ) => {
       if (audioEngine) {
         audioEngine.stop();
@@ -508,24 +414,9 @@ export default function Home() {
         await handleSelectSong(targetSong);
       }
 
-      if (subMode && typeof window !== 'undefined') {
-        setStoredNoteSubMode(subMode);
-      }
-
-      const targetTab =
-        destination === 'current'
-          ? (activeTab === 'split' ? 'editor' : activeTab)
-          : destination;
-
-      if (targetTab === 'karaoke') {
-        setActiveTab('karaoke');
-        setTargetKaraokeMeasureIndex(measureIndex);
-      } else {
-        setActiveTab('editor');
-        setTargetMeasureIndex(measureIndex);
-      }
+      setTargetMeasureIndex(measureIndex);
     },
-    [song.id, activeTab, handleSelectSong, setActiveTab]
+    [song.id, handleSelectSong]
   );
 
   // Subscribe to audio engine playback state
@@ -539,7 +430,7 @@ export default function Home() {
     };
   }, []);
 
-  // Global Keyboard shortcuts: Space for playback, Ctrl+Z / Cmd+Z for undo, Ctrl+Y / Cmd+Shift+Z for redo, Ctrl+S / Cmd+S for Save
+  // Global Keyboard shortcuts: Space for playback, Ctrl+Z / Cmd+Z for undo, Ctrl+Y / Cmd+Shift+Z for redo, Ctrl+S / Cmd+S for Save, Ctrl+K for search
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const activeEl = document.activeElement;
@@ -558,16 +449,6 @@ export default function Home() {
 
       if (isTyping) return;
       if (e.defaultPrevented) return;
-
-      // Check for Lyric Search (Ctrl+F or Cmd+F) when not typing in an input
-      if ((e.ctrlKey || e.metaKey) && (e.key === 'f' || e.key === 'F')) {
-        if (activeTab === 'karaoke') {
-          e.preventDefault();
-          setIsLyricSearchOpen(true);
-          return;
-        }
-        // In editor/split mode, ComposerEditor's in-editor search handles Ctrl+F
-      }
 
       // Check for Save (Ctrl+S or Cmd+S)
       if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
@@ -600,7 +481,7 @@ export default function Home() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [undo, redo, handleTogglePlay, handleSaveSong, activeTab]);
+  }, [undo, redo, handleTogglePlay, handleSaveSong]);
 
   const handleOpenLibrary = useCallback(() => {
     setImportExportTab('presets');
@@ -620,13 +501,12 @@ export default function Home() {
         song={song}
         onSelectSong={handleSelectSong}
         onStartFreshSong={handleStartFreshSong}
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
         onOpenLyricSearch={() => setIsLyricSearchOpen(true)}
         onOpenImportExport={handleOpenLibrary}
         onOpenMidiExport={handleOpenMidiExport}
         onOpenGeminiAuth={() => setIsGeminiAuthOpen(true)}
         onOpenScanner={() => setIsScannerOpen(true)}
+        onOpenKeyboardModal={() => setIsKeyboardModalOpen(true)}
         isPlaying={isPlaying}
         onTogglePlay={handleTogglePlay}
         onUndo={undo}
@@ -651,147 +531,29 @@ export default function Home() {
         onSetInstrument={handleSetInstrument}
       />
 
-      {/* Main Studio Canvas */}
+      {/* Main Studio Canvas - Consolidated WYSIWYG Sheet */}
       <main className="flex-1 max-w-[1600px] w-full mx-auto px-3 sm:px-5 lg:px-8 py-4 sm:py-6 flex flex-col gap-6 safe-px">
-        {/* Dynamic View Mode Container */}
-        {activeTab === 'karaoke' && (
-          <div className="flex flex-col gap-6 animate-in fade-in duration-200">
-            <KaraokeView
-              song={song}
-              audioEngine={audioEngine}
-              displayMode={displayMode}
-              setDisplayMode={setDisplayMode}
-              onSelectMeasure={() => {}}
-              onEditMeasure={handleEditMeasure}
-              onEditSection={handleEditSection}
-              isEcoMode={isEcoMode}
-              onEnableEco={() => setEcoMode(true)}
-              targetKaraokeMeasureIndex={targetKaraokeMeasureIndex}
-              onTargetKaraokeMeasureHandled={() => setTargetKaraokeMeasureIndex(null)}
-              instrument={instrument}
-              onSetInstrument={handleSetInstrument}
-            />
-
-            {/* Quick Switch to Editor CTA Rack */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 sm:p-5 bg-white dark:bg-[#141720] border border-zinc-200/90 dark:border-zinc-800/80 rounded-2xl shadow-xs gap-4">
-              <div className="flex items-center gap-3.5">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold shrink-0 border border-amber-500/20">
-                  <Music className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
-                    Want to edit this song&apos;s melody, notes, or lyrics?
-                  </h4>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 leading-relaxed">
-                    Switch to Score Editor mode to adjust numbered notes 1-7, key signatures, chords, and Hanji/POJ/TL lyrics. Full Undo and Redo supported.
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => {
-                  const curMIdx = audioEngine?.getState?.()?.currentMeasureIndex ?? 0;
-                  setKaraokeReturnTarget({ measureIndex: curMIdx, originalMeasureIndex: curMIdx });
-                  setActiveTab('editor');
-                  setTargetMeasureIndex(curMIdx);
-                }}
-                className="flex items-center justify-center gap-2 px-5 py-2.5 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-white text-white dark:text-zinc-900 font-bold text-xs rounded-xl shadow-xs transition-all active:scale-95 cursor-pointer touch-manipulation min-h-[44px] shrink-0 w-full sm:w-auto"
-              >
-                <span>Open Editor</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'editor' && (
-          <div className="flex flex-col gap-6 animate-in fade-in duration-200">
-            <ComposerEditor
-              song={song}
-              onUpdateSong={setSong}
-              audioEngine={audioEngine}
-              displayMode={displayMode}
-              setDisplayMode={setDisplayMode}
-              onOpenAligner={() => setIsAlignerOpen(true)}
-              onOpenScanner={() => setIsScannerOpen(true)}
-              onStartFreshSong={handleStartFreshSong}
-              onPlayKaraoke={handlePlayKaraoke}
-              targetMeasureIndex={targetMeasureIndex}
-              onTargetMeasureHandled={() => setTargetMeasureIndex(null)}
-              karaokeReturnTarget={karaokeReturnTarget}
-              onReturnToKaraoke={handleReturnToKaraoke}
-              onDismissKaraokeReturn={() => setKaraokeReturnTarget(null)}
-              onUndo={undo}
-              onRedo={redo}
-              canUndo={canUndo}
-              canRedo={canRedo}
-              pastCount={pastCount}
-              futureCount={futureCount}
-            />
-          </div>
-        )}
-
-        {activeTab === 'split' && (
-          <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 animate-in fade-in duration-200">
-            {/* Left Channel Rack: Live Vocal Stage */}
-            <div className="xl:col-span-6 flex flex-col gap-3">
-              <div className="flex items-center justify-between px-1 py-0.5">
-                <h3 className="font-bold text-xs uppercase tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-amber-500 inline-block animate-pulse" />
-                  <Mic2 className="w-3.5 h-3.5 text-amber-500" />
-                  <span>Live Karaoke Player</span>
-                </h3>
-              </div>
-              <KaraokeView
-                song={song}
-                audioEngine={audioEngine}
-                displayMode={displayMode}
-                setDisplayMode={setDisplayMode}
-                onEditMeasure={handleEditMeasure}
-                onEditSection={handleEditSection}
-                isEcoMode={isEcoMode}
-                onEnableEco={() => setEcoMode(true)}
-                targetKaraokeMeasureIndex={targetKaraokeMeasureIndex}
-                onTargetKaraokeMeasureHandled={() => setTargetKaraokeMeasureIndex(null)}
-                instrument={instrument}
-                onSetInstrument={handleSetInstrument}
-              />
-            </div>
-
-            {/* Right Channel Rack: Score Composer Deck */}
-            <div className="xl:col-span-6 flex flex-col gap-3">
-              <div className="flex items-center justify-between px-1 py-0.5">
-                <h3 className="font-bold text-xs uppercase tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
-                  <Music className="w-3.5 h-3.5 text-emerald-500" />
-                  <span>Score Composer</span>
-                </h3>
-              </div>
-              <ComposerEditor
-                song={song}
-                onUpdateSong={setSong}
-                audioEngine={audioEngine}
-                displayMode={displayMode}
-                setDisplayMode={setDisplayMode}
-                onOpenAligner={() => setIsAlignerOpen(true)}
-                onOpenScanner={() => setIsScannerOpen(true)}
-                onStartFreshSong={handleStartFreshSong}
-                onPlayKaraoke={handlePlayKaraoke}
-                targetMeasureIndex={targetMeasureIndex}
-                onTargetMeasureHandled={() => setTargetMeasureIndex(null)}
-                karaokeReturnTarget={karaokeReturnTarget}
-                onReturnToKaraoke={handleReturnToKaraoke}
-                onDismissKaraokeReturn={() => setKaraokeReturnTarget(null)}
-                onUndo={undo}
-                onRedo={redo}
-                canUndo={canUndo}
-                canRedo={canRedo}
-                pastCount={pastCount}
-                futureCount={futureCount}
-                suspendNoteHighlights={isPlaying}
-              />
-            </div>
-          </div>
-        )}
+        <ComposerEditor
+          song={song}
+          onUpdateSong={setSong}
+          audioEngine={audioEngine}
+          displayMode={displayMode}
+          setDisplayMode={setDisplayMode}
+          onOpenAligner={() => setIsAlignerOpen(true)}
+          onOpenScanner={() => setIsScannerOpen(true)}
+          onStartFreshSong={handleStartFreshSong}
+          onOpenKeyboardModal={() => setIsKeyboardModalOpen(true)}
+          isKeyboardModalOpen={isKeyboardModalOpen}
+          onCloseKeyboardModal={() => setIsKeyboardModalOpen(false)}
+          targetMeasureIndex={targetMeasureIndex}
+          onTargetMeasureHandled={() => setTargetMeasureIndex(null)}
+          onUndo={undo}
+          onRedo={redo}
+          canUndo={canUndo}
+          canRedo={canRedo}
+          pastCount={pastCount}
+          futureCount={futureCount}
+        />
       </main>
 
       {/* Modals */}
@@ -815,7 +577,7 @@ export default function Home() {
         onClose={() => setIsLyricSearchOpen(false)}
         currentSong={song}
         customSongs={customSongs}
-        initialScope={activeTab === 'karaoke' ? 'current' : 'all'}
+        initialScope="all"
         onJumpToMeasure={handleJumpFromSearch}
       />
 
@@ -840,7 +602,6 @@ export default function Home() {
         onApply={handleApplyScannedSong}
         onOpenGeminiAuth={() => setIsGeminiAuthOpen(true)}
       />
-
 
       <NewSongModal
         isOpen={isNewSongConfirmOpen}

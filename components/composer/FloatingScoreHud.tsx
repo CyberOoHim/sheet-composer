@@ -18,7 +18,16 @@ import {
   Sun,
   Moon,
 } from 'lucide-react';
-import { NoteDuration, PitchNumber } from '@/types/song';
+import { NoteDuration, PitchNumber, ArticulationType } from '@/types/song';
+import {
+  Keyboard,
+  SlidersHorizontal,
+  Layers,
+  MessageSquareQuote,
+  Check,
+  X,
+  Disc,
+} from 'lucide-react';
 
 export interface FloatingScoreHudProps {
   // Playback
@@ -38,6 +47,8 @@ export interface FloatingScoreHudProps {
   currentDuration?: NoteDuration;
   onToggleDotted: () => void;
   isDotted?: boolean;
+  onToggleTriplet?: () => void;
+  isTriplet?: boolean;
 
   // Modifiers
   onToggleSlur: () => void;
@@ -46,6 +57,27 @@ export interface FloatingScoreHudProps {
   isTie?: boolean;
   onSetAccidental: (acc: '' | '#' | 'b') => void;
   currentAccidental?: '' | '#' | 'b';
+
+  // Ornaments & Articulations
+  currentArticulation?: ArticulationType;
+  onSetArticulation?: (art: ArticulationType) => void;
+  onInsertPunctuation?: (punct: string) => void;
+  onInsertAnnotation?: (annot: string) => void;
+  onAddGraceNote?: (type: 'pre' | 'post', pitch: 1 | 2 | 3 | 4 | 5 | 6 | 7, octave: number) => void;
+  onClearGraceNotes?: () => void;
+  hasGraceNotes?: boolean;
+
+  // Chords & Harmony
+  currentMeasureChord?: string;
+  onUpdateMeasureChord?: (chord: string) => void;
+  chordSuggestions?: string[];
+  onAutoHarmonize?: () => void;
+
+  // Piano Bed & Keyboard Transcription & Organizer
+  onTogglePianoBed?: () => void;
+  showPianoBed?: boolean;
+  onOpenKeyboardModal?: () => void;
+  onOpenOrganizer?: () => void;
 
   // Measure operations
   onAddMeasure: () => void;
@@ -76,6 +108,9 @@ export interface FloatingScoreHudProps {
   availableVerseRows?: number[];
 }
 
+const COMMON_PUNCTUATIONS = ['，', '。', '！', '？', '、', '；', '：', '—', '…'];
+const COMMON_ANNOTATIONS = ['rit.', 'accel.', 'a tempo', 'fine', 'V', 'fermata'];
+
 export const FloatingScoreHud: React.FC<FloatingScoreHudProps> = ({
   isPlaying,
   onTogglePlay,
@@ -89,12 +124,29 @@ export const FloatingScoreHud: React.FC<FloatingScoreHudProps> = ({
   currentDuration,
   onToggleDotted,
   isDotted,
+  onToggleTriplet,
+  isTriplet,
   onToggleSlur,
   isSlur,
   onToggleTie,
   isTie,
   onSetAccidental,
   currentAccidental,
+  currentArticulation = 'none',
+  onSetArticulation,
+  onInsertPunctuation,
+  onInsertAnnotation,
+  onAddGraceNote,
+  onClearGraceNotes,
+  hasGraceNotes,
+  currentMeasureChord = '',
+  onUpdateMeasureChord,
+  chordSuggestions = ['C', 'Dm', 'Em', 'F', 'G', 'Am', 'G7'],
+  onAutoHarmonize,
+  onTogglePianoBed,
+  showPianoBed,
+  onOpenKeyboardModal,
+  onOpenOrganizer,
   onAddMeasure,
   onDeleteSelectedMeasure,
   onToggleLineBreak,
@@ -118,11 +170,208 @@ export const FloatingScoreHud: React.FC<FloatingScoreHudProps> = ({
   onChangeVerseRow,
   availableVerseRows = [1, 2, 3],
 }) => {
+  const [activePopover, setActivePopover] = React.useState<'none' | 'ornaments' | 'chords'>('none');
   return (
     <div
       id="floating-score-hud-container"
-      className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 max-w-[96vw] w-auto print:hidden"
+      className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 max-w-[96vw] w-auto print:hidden flex flex-col items-center gap-2"
     >
+      {/* Floating Popover Container for Ornaments & Chords */}
+      {activePopover === 'ornaments' && (
+        <div className="p-3 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md rounded-2xl border border-zinc-200/90 dark:border-zinc-800 shadow-2xl flex flex-col gap-2 max-w-[92vw] w-80 text-xs animate-in fade-in zoom-in-95 duration-150">
+          <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-1.5 font-bold">
+            <span className="flex items-center gap-1.5 text-zinc-800 dark:text-zinc-200">
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+              <span>Ornaments &amp; Articulations</span>
+            </span>
+            <button
+              type="button"
+              onClick={() => setActivePopover('none')}
+              className="p-0.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          {/* Articulations */}
+          <div className="flex flex-col gap-1">
+            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Articulation</span>
+            <div className="flex flex-wrap gap-1">
+              {(['none', 'staccato', 'tenuto', 'accent', 'fermata'] as ArticulationType[]).map(art => (
+                <button
+                  key={art}
+                  type="button"
+                  onClick={() => onSetArticulation?.(art)}
+                  className={`px-2 py-1 rounded-lg text-xs font-bold capitalize cursor-pointer transition-all ${
+                    currentArticulation === art
+                      ? 'bg-amber-500 text-zinc-950'
+                      : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                  }`}
+                >
+                  {art === 'none' ? 'Natural' : art}
+                </button>
+              ))}
+              {onToggleTriplet && (
+                <button
+                  type="button"
+                  onClick={onToggleTriplet}
+                  className={`px-2 py-1 rounded-lg text-xs font-bold cursor-pointer transition-all ${
+                    isTriplet
+                      ? 'bg-amber-500 text-zinc-950'
+                      : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                  }`}
+                >
+                  Triplet (3)
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Grace Notes */}
+          {onAddGraceNote && (
+            <div className="flex flex-col gap-1 pt-1 border-t border-zinc-100 dark:border-zinc-800">
+              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Grace Notes (倚音)</span>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => onAddGraceNote('pre', 5, 0)}
+                  className="px-2 py-1 bg-zinc-100 dark:bg-zinc-800 hover:bg-amber-500 hover:text-zinc-950 text-zinc-800 dark:text-zinc-200 rounded-lg font-bold cursor-pointer transition-all"
+                >
+                  + Pre Grace
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onAddGraceNote('post', 6, 0)}
+                  className="px-2 py-1 bg-zinc-100 dark:bg-zinc-800 hover:bg-amber-500 hover:text-zinc-950 text-zinc-800 dark:text-zinc-200 rounded-lg font-bold cursor-pointer transition-all"
+                >
+                  + Post Grace
+                </button>
+                {hasGraceNotes && onClearGraceNotes && (
+                  <button
+                    type="button"
+                    onClick={onClearGraceNotes}
+                    className="px-2 py-1 text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-950/40 rounded-lg font-bold cursor-pointer transition-all"
+                  >
+                    Clear Grace
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Punctuation */}
+          {onInsertPunctuation && (
+            <div className="flex flex-col gap-1 pt-1 border-t border-zinc-100 dark:border-zinc-800">
+              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Punctuation</span>
+              <div className="flex flex-wrap gap-1">
+                {COMMON_PUNCTUATIONS.map(p => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => onInsertPunctuation(p)}
+                    className="w-7 h-7 rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-amber-500 hover:text-zinc-950 text-zinc-800 dark:text-zinc-200 font-bold flex items-center justify-center cursor-pointer transition-all"
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Annotations */}
+          {onInsertAnnotation && (
+            <div className="flex flex-col gap-1 pt-1 border-t border-zinc-100 dark:border-zinc-800">
+              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Annotation</span>
+              <div className="flex flex-wrap gap-1">
+                {COMMON_ANNOTATIONS.map(a => (
+                  <button
+                    key={a}
+                    type="button"
+                    onClick={() => onInsertAnnotation(a)}
+                    className="px-2 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-amber-500 hover:text-zinc-950 text-zinc-800 dark:text-zinc-200 font-serif italic text-xs cursor-pointer transition-all"
+                  >
+                    {a}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Chords Popover */}
+      {activePopover === 'chords' && (
+        <div className="p-3 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md rounded-2xl border border-zinc-200/90 dark:border-zinc-800 shadow-2xl flex flex-col gap-2.5 max-w-[92vw] w-72 text-xs animate-in fade-in zoom-in-95 duration-150">
+          <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-1.5 font-bold">
+            <span className="flex items-center gap-1.5 text-zinc-800 dark:text-zinc-200">
+              <Music className="w-3.5 h-3.5 text-amber-500" />
+              <span>Measure Chords</span>
+            </span>
+            <button
+              type="button"
+              onClick={() => setActivePopover('none')}
+              className="p-0.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          {/* Current Chord Input */}
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-zinc-600 dark:text-zinc-400 text-xs">Chord:</span>
+            <input
+              type="text"
+              value={currentMeasureChord}
+              onChange={e => {
+                onUpdateMeasureChord?.(e.target.value);
+              }}
+              placeholder="e.g. C, G7, Am, F"
+              className="flex-1 px-2.5 py-1.5 bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-xl text-xs font-mono font-bold text-zinc-900 dark:text-zinc-100 outline-none focus:ring-2 focus:ring-amber-500"
+            />
+          </div>
+
+          {/* Diatonic Suggestions */}
+          {chordSuggestions.length > 0 && (
+            <div className="flex flex-col gap-1">
+              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Suggested Chords</span>
+              <div className="flex flex-wrap gap-1">
+                {chordSuggestions.map(ch => (
+                  <button
+                    key={ch}
+                    type="button"
+                    onClick={() => {
+                      onUpdateMeasureChord?.(ch);
+                    }}
+                    className={`px-2.5 py-1 rounded-lg font-mono font-bold text-xs cursor-pointer transition-all ${
+                      currentMeasureChord === ch
+                        ? 'bg-amber-500 text-zinc-950'
+                        : 'bg-zinc-100 dark:bg-zinc-800 hover:bg-amber-500/20 text-zinc-800 dark:text-zinc-200'
+                    }`}
+                  >
+                    {ch}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Auto Harmonize Button */}
+          {onAutoHarmonize && (
+            <button
+              type="button"
+              onClick={() => {
+                onAutoHarmonize();
+                setActivePopover('none');
+              }}
+              className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs shadow-xs transition-all cursor-pointer mt-1"
+            >
+              <Wand2 className="w-3.5 h-3.5" />
+              <span>Auto-Harmonize Song</span>
+            </button>
+          )}
+        </div>
+      )}
+
       <div className="flex flex-col items-center gap-1.5 p-1.5 sm:p-2 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md rounded-2xl border border-zinc-200/90 dark:border-zinc-800 shadow-2xl transition-all duration-200">
         {/* Main Ribbon Buttons */}
         <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap justify-center">
@@ -419,6 +668,87 @@ export const FloatingScoreHud: React.FC<FloatingScoreHudProps> = ({
               </button>
             </div>
           )}
+
+          {/* Popovers, Piano Bed, Recorder & Tools */}
+          <div className="flex items-center gap-0.5 bg-zinc-100 dark:bg-zinc-800 p-0.5 rounded-xl border border-zinc-200 dark:border-zinc-700">
+            {/* Virtual Piano Bed Toggle */}
+            {onTogglePianoBed && (
+              <button
+                id="floating-hud-piano-bed-btn"
+                type="button"
+                onClick={onTogglePianoBed}
+                className={`flex items-center gap-1 px-2.5 h-7 sm:h-8 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  showPianoBed
+                    ? 'bg-amber-500 text-zinc-950 font-black shadow-2xs'
+                    : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                }`}
+                title="Toggle Virtual Piano Bed (Interactive on-screen keys with audio tone preview)"
+              >
+                <Keyboard className="w-3.5 h-3.5 text-amber-500" />
+                <span className="hidden sm:inline">Piano</span>
+              </button>
+            )}
+
+            {/* Ornaments & Articulations Popover Toggle */}
+            <button
+              id="floating-hud-ornaments-btn"
+              type="button"
+              onClick={() => setActivePopover(prev => (prev === 'ornaments' ? 'none' : 'ornaments'))}
+              className={`flex items-center gap-1 px-2.5 h-7 sm:h-8 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                activePopover === 'ornaments'
+                  ? 'bg-amber-500 text-zinc-950 font-black shadow-2xs'
+                  : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+              }`}
+              title="Ornaments, Articulations, Grace Notes & Performance Marks"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+              <span className="hidden md:inline">Ornaments</span>
+            </button>
+
+            {/* Chords Popover Toggle */}
+            <button
+              id="floating-hud-chords-btn"
+              type="button"
+              onClick={() => setActivePopover(prev => (prev === 'chords' ? 'none' : 'chords'))}
+              className={`flex items-center gap-1 px-2.5 h-7 sm:h-8 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                activePopover === 'chords'
+                  ? 'bg-amber-500 text-zinc-950 font-black shadow-2xs'
+                  : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+              }`}
+              title="Measure Chords & Auto-Harmonization"
+            >
+              <Music className="w-3.5 h-3.5 text-amber-500" />
+              <span className="hidden md:inline">Chords</span>
+            </button>
+
+            {/* Keyboard / MIDI Transcription Modal Trigger */}
+            {onOpenKeyboardModal && (
+              <button
+                id="floating-hud-record-modal-btn"
+                type="button"
+                onClick={onOpenKeyboardModal}
+                className="flex items-center gap-1 px-2 h-7 sm:h-8 rounded-lg text-xs font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all cursor-pointer"
+                title="Record with Keyboard / MIDI Transcription"
+              >
+                <Disc className="w-3.5 h-3.5 text-rose-500" />
+                <span className="hidden xl:inline">Record</span>
+              </button>
+            )}
+
+            {/* Measure Organizer Modal Trigger */}
+            {onOpenOrganizer && (
+              <button
+                id="floating-hud-organizer-btn"
+                type="button"
+                onClick={onOpenOrganizer}
+                className="flex items-center gap-1 px-2 h-7 sm:h-8 rounded-lg text-xs font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all cursor-pointer"
+                title="Open Measure Organizer (Reorder, Batch autofill, Voltas)"
+              >
+                <Layers className="w-3.5 h-3.5 text-amber-500" />
+                <span className="hidden xl:inline">Organizer</span>
+              </button>
+            )}
+          </div>
 
           <div className="h-6 w-px bg-zinc-200 dark:bg-zinc-700 hidden sm:block mx-0.5" />
 
