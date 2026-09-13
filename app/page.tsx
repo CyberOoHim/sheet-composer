@@ -195,9 +195,52 @@ export default function Home() {
     setStoredDisplayMode(mode);
   }, []);
 
-  const handleStartFreshSong = useCallback(() => {
-    setIsNewSongConfirmOpen(true);
+  const closeAllPrimaryModals = useCallback(() => {
+    setIsImportExportOpen(false);
+    setIsLyricSearchOpen(false);
+    setIsAlignerOpen(false);
+    setIsScannerOpen(false);
+    setIsNewSongConfirmOpen(false);
+    setIsKeyboardModalOpen(false);
   }, []);
+
+  const handleStartFreshSong = useCallback(() => {
+    closeAllPrimaryModals();
+    setIsNewSongConfirmOpen(true);
+  }, [closeAllPrimaryModals]);
+
+  const handleOpenLibrary = useCallback(() => {
+    closeAllPrimaryModals();
+    setImportExportTab('presets');
+    setIsImportExportOpen(true);
+  }, [closeAllPrimaryModals]);
+
+  const handleOpenMidiExport = useCallback(() => {
+    closeAllPrimaryModals();
+    setImportExportTab('export');
+    setImportExportFormat('midi');
+    setIsImportExportOpen(true);
+  }, [closeAllPrimaryModals]);
+
+  const handleOpenLyricSearch = useCallback(() => {
+    closeAllPrimaryModals();
+    setIsLyricSearchOpen(true);
+  }, [closeAllPrimaryModals]);
+
+  const handleOpenScanner = useCallback(() => {
+    closeAllPrimaryModals();
+    setIsScannerOpen(true);
+  }, [closeAllPrimaryModals]);
+
+  const handleOpenAligner = useCallback(() => {
+    closeAllPrimaryModals();
+    setIsAlignerOpen(true);
+  }, [closeAllPrimaryModals]);
+
+  const handleOpenKeyboardModal = useCallback(() => {
+    closeAllPrimaryModals();
+    setIsKeyboardModalOpen(true);
+  }, [closeAllPrimaryModals]);
 
   const handleSaveSong = useCallback(async () => {
     if (!song || isSaving) return;
@@ -443,7 +486,13 @@ export default function Home() {
       // Check for Lyric Search palette (Ctrl+K or Cmd+K)
       if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
         e.preventDefault();
-        setIsLyricSearchOpen(prev => !prev);
+        setIsLyricSearchOpen(prev => {
+          if (!prev) {
+            closeAllPrimaryModals();
+            return true;
+          }
+          return false;
+        });
         return;
       }
 
@@ -481,18 +530,16 @@ export default function Home() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [undo, redo, handleTogglePlay, handleSaveSong]);
+  }, [undo, redo, handleTogglePlay, handleSaveSong, closeAllPrimaryModals]);
 
-  const handleOpenLibrary = useCallback(() => {
-    setImportExportTab('presets');
-    setIsImportExportOpen(true);
-  }, []);
-
-  const handleOpenMidiExport = useCallback(() => {
-    setImportExportTab('export');
-    setImportExportFormat('midi');
-    setIsImportExportOpen(true);
-  }, []);
+  const isAnyModalOpen =
+    isImportExportOpen ||
+    isLyricSearchOpen ||
+    isAlignerOpen ||
+    isGeminiAuthOpen ||
+    isScannerOpen ||
+    isNewSongConfirmOpen ||
+    isKeyboardModalOpen;
 
   return (
     <div className="min-h-screen bg-zinc-100 dark:bg-[#0c0e14] text-zinc-900 dark:text-zinc-100 flex flex-col antialiased selection:bg-amber-500/30">
@@ -501,12 +548,12 @@ export default function Home() {
         song={song}
         onSelectSong={handleSelectSong}
         onStartFreshSong={handleStartFreshSong}
-        onOpenLyricSearch={() => setIsLyricSearchOpen(true)}
+        onOpenLyricSearch={handleOpenLyricSearch}
         onOpenImportExport={handleOpenLibrary}
         onOpenMidiExport={handleOpenMidiExport}
         onOpenGeminiAuth={() => setIsGeminiAuthOpen(true)}
-        onOpenScanner={() => setIsScannerOpen(true)}
-        onOpenKeyboardModal={() => setIsKeyboardModalOpen(true)}
+        onOpenScanner={handleOpenScanner}
+        onOpenKeyboardModal={handleOpenKeyboardModal}
         isPlaying={isPlaying}
         onTogglePlay={handleTogglePlay}
         onUndo={undo}
@@ -529,20 +576,21 @@ export default function Home() {
         modifiedPresetIds={modifiedPresetIds}
         instrument={instrument}
         onSetInstrument={handleSetInstrument}
+        isAnyModalOpen={isAnyModalOpen}
       />
 
       {/* Main Studio Canvas - Consolidated WYSIWYG Sheet */}
-      <main className="flex-1 max-w-[1600px] w-full mx-auto px-3 sm:px-5 lg:px-8 py-4 sm:py-6 flex flex-col gap-6 safe-px">
+      <main className="flex-1 max-w-[1600px] w-full mx-auto px-2 sm:px-4 lg:px-6 py-2 sm:py-3 flex flex-col gap-2.5 safe-px">
         <ComposerEditor
           song={song}
           onUpdateSong={setSong}
           audioEngine={audioEngine}
           displayMode={displayMode}
           setDisplayMode={setDisplayMode}
-          onOpenAligner={() => setIsAlignerOpen(true)}
-          onOpenScanner={() => setIsScannerOpen(true)}
+          onOpenAligner={handleOpenAligner}
+          onOpenScanner={handleOpenScanner}
           onStartFreshSong={handleStartFreshSong}
-          onOpenKeyboardModal={() => setIsKeyboardModalOpen(true)}
+          onOpenKeyboardModal={handleOpenKeyboardModal}
           isKeyboardModalOpen={isKeyboardModalOpen}
           onCloseKeyboardModal={() => setIsKeyboardModalOpen(false)}
           targetMeasureIndex={targetMeasureIndex}
@@ -563,7 +611,7 @@ export default function Home() {
         onClose={() => setIsImportExportOpen(false)}
         currentSong={song}
         onLoadSong={handleSelectSong}
-        onOpenScanner={() => setIsScannerOpen(true)}
+        onOpenScanner={handleOpenScanner}
         onStartFreshSong={handleStartFreshSong}
         modifiedPresetIds={modifiedPresetIds}
         onResetPreset={handleResetPreset}
@@ -586,7 +634,7 @@ export default function Home() {
         onClose={() => setIsAlignerOpen(false)}
         song={song}
         onApplyLyrics={setSong}
-        onOpenScanner={() => setIsScannerOpen(true)}
+        onOpenScanner={handleOpenScanner}
         onOpenGeminiAuth={() => setIsGeminiAuthOpen(true)}
       />
 

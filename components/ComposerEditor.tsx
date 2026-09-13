@@ -3,8 +3,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   BarlineType,
-  EditorEditMode,
-  NoteEditSubMode,
   NumberedNotationNote,
   LyricDisplayMode,
   Measure,
@@ -17,11 +15,7 @@ import {
 } from '@/types/song';
 import { AudioEngine } from '@/lib/audioEngine';
 import {
-  splitTaigiLyricSyllables,
   groupSongIntoVerses,
-  splitVerseTextTokens,
-  isPunctuationOrSpacer,
-  isNonNotationItem,
   normalizeSongDurations,
   getMeasureRhythmReport,
   getRestDurationsForDeficit,
@@ -32,6 +26,9 @@ import {
   doubleNoteDuration,
   setUniformNoteDuration,
   determineTargetQuarterEighthDuration,
+  splitVerseTextTokens,
+  isPunctuationOrSpacer,
+  isNonNotationItem,
 } from '@/lib/taigiUtils';
 import { autoArrangeSongChords, autoArrangeVerseChords } from '@/lib/chordArranger';
 import { scrollToCardElement } from '@/lib/utils';
@@ -46,24 +43,14 @@ import { MeasureOrganizerModal } from './composer/MeasureOrganizerModal';
 import { KeyboardToScoreModal, InsertionMode } from './composer/KeyboardToScoreModal';
 import { InSongSearchBar } from './composer/InSongSearchBar';
 import { InSongMatchLocation } from '@/lib/lyricSearch';
-import { ChordPlaybackControl } from '@/components/ChordPlaybackControl';
-import { UiZoomControl } from '@/components/UiZoomControl';
 import {
   Plus,
-  Music2,
   Undo2,
   Redo2,
   AlignLeft,
   Layers,
   Sparkles,
-  SlidersHorizontal,
-  FileSpreadsheet,
   Wand2,
-  Mic2,
-  Play,
-  Square,
-  Clock,
-  CornerUpLeft,
   Keyboard,
   Trash2,
   Search,
@@ -78,25 +65,18 @@ interface ComposerEditorProps {
   onOpenAligner: () => void;
   onOpenScanner?: () => void;
   onStartFreshSong?: () => void;
-  onPlayKaraoke?: (startMeasureIndex?: number) => void;
   onOpenKeyboardModal?: () => void;
   isKeyboardModalOpen?: boolean;
   onCloseKeyboardModal?: () => void;
   targetMeasureIndex?: number | null;
   onTargetMeasureHandled?: () => void;
-  karaokeReturnTarget?: {
-    measureIndex: number;
-    originalMeasureIndex: number;
-  } | null;
-  onReturnToKaraoke?: (measureIndex?: number) => void;
-  onDismissKaraokeReturn?: () => void;
   onUndo?: () => boolean;
   onRedo?: () => boolean;
   canUndo?: boolean;
   canRedo?: boolean;
   pastCount?: number;
   futureCount?: number;
-  /** Split-view karaoke: skip per-note editor highlights at tracker FPS. */
+  /** Skip per-note editor highlights at tracker FPS. */
   suspendNoteHighlights?: boolean;
 }
 
@@ -118,15 +98,11 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
   onOpenAligner,
   onOpenScanner,
   onStartFreshSong,
-  onPlayKaraoke,
   onOpenKeyboardModal: propOnOpenKeyboardModal,
   isKeyboardModalOpen: propIsKeyboardModalOpen,
   onCloseKeyboardModal: propOnCloseKeyboardModal,
   targetMeasureIndex,
   onTargetMeasureHandled,
-  karaokeReturnTarget,
-  onReturnToKaraoke,
-  onDismissKaraokeReturn,
   onUndo,
   onRedo,
   canUndo = false,
@@ -2345,19 +2321,19 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
   ]);
 
   return (
-    <div id="composer-editor-root" className="flex flex-col gap-5 w-full pb-36 sm:pb-52">
+    <div id="composer-editor-root" className="flex flex-col gap-2.5 w-full pb-28 sm:pb-36">
       {/* Inline Notification Banner */}
       {notification && (
         <div
           id="composer-notice-banner"
-          className="p-3 bg-amber-500 text-zinc-950 font-bold text-xs rounded-2xl shadow-md flex items-center justify-between animate-in fade-in duration-150"
+          className="p-2.5 bg-amber-500 text-zinc-950 font-bold text-xs rounded-xl shadow-xs flex items-center justify-between animate-in fade-in duration-150"
         >
           <span>{notification}</span>
           <button
             id="composer-notice-dismiss-btn"
             type="button"
             onClick={() => setNotification(null)}
-            className="px-2.5 py-1 bg-zinc-950/20 hover:bg-zinc-950/30 rounded-lg text-xs cursor-pointer font-bold"
+            className="px-2 py-0.5 bg-zinc-950/20 hover:bg-zinc-950/30 rounded-md text-xs cursor-pointer font-bold"
           >
             Close
           </button>
@@ -2397,159 +2373,117 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
       />
 
       {/* WYSIWYG NUMBERED NOTATION SCORE SHEET CONTAINER */}
-      <div id="wysiwyg-numbered-notation-score-container" className="flex flex-col gap-4">
-        {/* UNIFIED SCORE STUDIO DECK (Consolidated Tier 1 & Tier 2 Toolbar) */}
+      <div id="wysiwyg-numbered-notation-score-container" className="flex flex-col gap-2">
+        {/* Sleek Score Action Ribbon */}
         <div
           id="score-studio-unified-deck"
-          className="flex flex-col gap-2.5 p-3.5 bg-white dark:bg-[#141720] rounded-2xl border border-zinc-200/90 dark:border-zinc-800 shadow-xs"
+          className="flex items-center justify-between gap-2 p-1.5 sm:p-2 bg-white/95 dark:bg-[#141720]/95 backdrop-blur-md rounded-xl border border-zinc-200/90 dark:border-zinc-800 shadow-2xs text-xs"
         >
-          {/* Primary Controls & Score Status */}
-          <div className="flex items-center justify-between flex-wrap gap-2.5">
-            {/* Left: Realistic Sheet Title & Status */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-black text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5 shrink-0 mr-0.5">
-                <Sparkles className="w-4 h-4 text-amber-500" />
-                <span>Score Studio:</span>
-              </span>
-
-              <div className="flex items-center gap-2 bg-zinc-100 dark:bg-zinc-900/90 px-3 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-700/80 shadow-2xs text-xs font-bold">
-                <FileSpreadsheet className="w-3.5 h-3.5 text-amber-500" />
-                <span>Realistic Sheet (WYSIWYG)</span>
-                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-zinc-200/80 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 font-mono font-bold">
-                  {song.measures.length} bars
-                </span>
-                {incompleteMeasuresCount > 0 && (
-                  <button
-                    type="button"
-                    onClick={handleBatchFixAllIncompleteMeasures}
-                    className="text-[10px] px-2 py-0.5 rounded-full bg-rose-600 hover:bg-rose-500 text-white font-mono font-black flex items-center gap-1 cursor-pointer transition-colors"
-                    title="Click to auto-fill rest deficits across all incomplete measures"
-                  >
-                    <span>{incompleteMeasuresCount} incomplete</span>
-                    <Wand2 className="w-2.5 h-2.5" />
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Right: Audio Playback, Studio Launch & Score Utility Actions */}
-            <div className="flex items-center gap-2 flex-wrap">
-              {/* Play / Stop Audio */}
-              {isSongPlaying ? (
-                <button
-                  id="composer-score-stop-btn"
-                  type="button"
-                  onClick={handleStopAudio}
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-black bg-rose-600 hover:bg-rose-500 text-white shadow-xs transition-all active:scale-95 cursor-pointer touch-manipulation min-h-[36px] animate-pulse"
-                  title="Stop playback"
-                >
-                  <Square className="w-3.5 h-3.5 fill-current text-white" />
-                  <span>Stop</span>
-                </button>
-              ) : (
-                <button
-                  id="composer-score-play-btn"
-                  type="button"
-                  onClick={() => handleTogglePlaySheetFromNote()}
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-zinc-950 rounded-xl text-xs font-black shadow-xs transition-all active:scale-95 cursor-pointer touch-manipulation min-h-[36px]"
-                  title="Play Score from Current Note"
-                >
-                  <Play className="w-3.5 h-3.5 fill-current text-zinc-950" />
-                  <span>Play</span>
-                </button>
-              )}
-
-              {/* Transcribe Studio */}
+          {/* Left: Quick Status & Measures Counter */}
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="font-mono font-bold text-zinc-700 dark:text-zinc-300 px-2 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-750 text-[11px] shrink-0">
+              {song.measures.length} Bars
+            </span>
+            {incompleteMeasuresCount > 0 && (
               <button
-                id="composer-score-keyboard-btn"
                 type="button"
-                onClick={handleOpenKeyboardModal}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 bg-gradient-to-r from-amber-500/20 to-amber-400/20 hover:from-amber-500/30 hover:to-amber-400/30 text-amber-900 dark:text-amber-200 border border-amber-400/70 dark:border-amber-600/70 rounded-xl font-bold shadow-xs transition-all active:scale-95 cursor-pointer touch-manipulation min-h-[36px]"
-                title="Keyboard Transcribe Studio (Touch Piano, QWERTY typing, Web MIDI)"
+                onClick={handleBatchFixAllIncompleteMeasures}
+                className="text-[10px] px-2 py-0.5 rounded-full bg-rose-600 hover:bg-rose-500 text-white font-mono font-black flex items-center gap-1 cursor-pointer transition-colors shrink-0"
+                title="Click to auto-fill rest deficits across all incomplete measures"
               >
-                <Keyboard className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                <span>Transcribe</span>
+                <span>{incompleteMeasuresCount} incomplete</span>
+                <Wand2 className="w-2.5 h-2.5" />
+              </button>
+            )}
+          </div>
+
+          {/* Right: Consolidated Studio Tools (Compact, Fast Access) */}
+          <div className="flex items-center gap-1.5 flex-wrap justify-end">
+            {/* Transcribe Studio */}
+            <button
+              id="composer-score-keyboard-btn"
+              type="button"
+              onClick={handleOpenKeyboardModal}
+              className="flex items-center gap-1 px-2.5 py-1 bg-amber-500/15 hover:bg-amber-500/25 text-amber-900 dark:text-amber-200 border border-amber-400/50 dark:border-amber-600/50 rounded-lg font-bold transition-all active:scale-95 cursor-pointer touch-manipulation h-8"
+              title="Keyboard Transcribe Studio (Touch Piano, QWERTY typing, Web MIDI)"
+            >
+              <Keyboard className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+              <span className="hidden sm:inline">Transcribe</span>
+            </button>
+
+            {/* Organizer Modal */}
+            <button
+              id="composer-score-organizer-btn"
+              type="button"
+              onClick={() => setIsOrganizerOpen(true)}
+              className="flex items-center gap-1 px-2.5 py-1 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 border border-zinc-200/90 dark:border-zinc-700 rounded-lg font-bold transition-all active:scale-95 cursor-pointer touch-manipulation h-8"
+              title="Open Measure & Verse Organizer"
+            >
+              <Layers className="w-3.5 h-3.5 text-amber-500" />
+              <span className="hidden sm:inline">Organizer</span>
+            </button>
+
+            {/* Measure Insert / Delete */}
+            <div className="flex items-center bg-zinc-100 dark:bg-zinc-900/90 p-0.5 rounded-lg border border-zinc-200 dark:border-zinc-700/80 h-8">
+              <button
+                id="composer-score-add-measure-btn"
+                type="button"
+                onClick={handleAddMeasure}
+                className="flex items-center gap-1 px-2 py-0.5 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 rounded-md font-bold transition-all active:scale-95 cursor-pointer touch-manipulation h-6.5 text-[11px]"
+                title="Add Measure at End"
+              >
+                <Plus className="w-3 h-3" />
+                <span>Add Bar</span>
               </button>
 
-              {/* Organizer Modal */}
               <button
-                id="composer-score-organizer-btn"
+                id="composer-score-delete-measure-btn"
                 type="button"
-                onClick={() => setIsOrganizerOpen(true)}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 border border-zinc-200/90 dark:border-zinc-700 rounded-xl font-bold shadow-2xs transition-all active:scale-95 cursor-pointer touch-manipulation min-h-[36px]"
-                title="Open Measure & Verse Organizer"
+                onClick={() => {
+                  const targetIdx = selectedMeasureIndex !== null ? selectedMeasureIndex : song.measures.length - 1;
+                  handleDeleteMeasure(targetIdx);
+                }}
+                disabled={song.measures.length <= 1}
+                className="flex items-center gap-0.5 px-1.5 py-0.5 text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-950/50 rounded-md font-bold transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer touch-manipulation h-6.5 text-[11px]"
+                title={
+                  song.measures.length <= 1
+                    ? 'Song must retain at least one measure'
+                    : `Delete Measure ${(selectedMeasureIndex !== null ? selectedMeasureIndex : song.measures.length - 1) + 1}`
+                }
               >
-                <Layers className="w-4 h-4 text-amber-500" />
-                <span>Organizer</span>
-              </button>
-
-              {/* Measure Insert / Delete */}
-              <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-900/90 p-0.5 rounded-xl border border-zinc-200 dark:border-zinc-700/80 shadow-2xs">
-                <button
-                  id="composer-score-add-measure-btn"
-                  type="button"
-                  onClick={handleAddMeasure}
-                  className="flex items-center gap-1 px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 rounded-lg font-bold shadow-xs transition-all active:scale-95 cursor-pointer touch-manipulation min-h-[34px]"
-                  title="Add Measure at End"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Add Bar</span>
-                </button>
-
-                <button
-                  id="composer-score-delete-measure-btn"
-                  type="button"
-                  onClick={() => {
-                    const targetIdx = selectedMeasureIndex !== null ? selectedMeasureIndex : song.measures.length - 1;
-                    handleDeleteMeasure(targetIdx);
-                  }}
-                  disabled={song.measures.length <= 1}
-                  className="flex items-center gap-1 px-2.5 py-1.5 text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-950/50 rounded-lg font-bold transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer touch-manipulation min-h-[34px]"
-                  title={
-                    song.measures.length <= 1
-                      ? 'Song must retain at least one measure'
-                      : `Delete Measure ${(selectedMeasureIndex !== null ? selectedMeasureIndex : song.measures.length - 1) + 1}`
-                  }
-                >
-                  <Trash2 className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
-                  <span>Delete</span>
-                  {song.measures.length > 1 && (
-                    <span className="text-[10px] font-mono opacity-80">
-                      (M.{(selectedMeasureIndex !== null ? selectedMeasureIndex : song.measures.length - 1) + 1})
-                    </span>
-                  )}
-                </button>
-              </div>
-
-              {/* Auto-Harmonize Entire Song Button */}
-              <button
-                id="composer-score-auto-chords-btn"
-                type="button"
-                onClick={handleAutoHarmonizeSong}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 hover:from-indigo-500 hover:via-indigo-400 hover:to-purple-500 text-white border border-indigo-400/80 rounded-xl font-bold shadow-xs transition-all active:scale-95 cursor-pointer touch-manipulation min-h-[36px]"
-                title="Auto-analyze melody and harmonize chords for all measures (reversable)"
-              >
-                <Wand2 className="w-3.5 h-3.5 text-amber-300 stroke-[2.5]" />
-                <span className="text-white font-bold">Auto Chords</span>
-              </button>
-
-              {/* In-Song Search Toggle */}
-              <button
-                id="composer-score-search-btn"
-                type="button"
-                onClick={() => setIsInSongSearchOpen(prev => !prev)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold transition-all active:scale-95 cursor-pointer touch-manipulation min-h-[36px] ${
-                  isInSongSearchOpen
-                    ? 'bg-amber-500 text-zinc-950 font-black shadow-xs ring-2 ring-amber-400'
-                    : 'bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 border border-zinc-200/90 dark:border-zinc-700 font-bold shadow-2xs'
-                }`}
-                title="Search measures and verses [Ctrl+F / ⌘F]"
-              >
-                <Search className="w-3.5 h-3.5 text-amber-500" />
-                <span>Search</span>
-                <kbd className="hidden md:inline text-[10px] px-1 py-0.2 rounded bg-zinc-200 dark:bg-zinc-700 font-mono">⌘F</kbd>
+                <Trash2 className="w-3 h-3 text-rose-600 dark:text-rose-400" />
+                <span className="hidden md:inline">Delete</span>
               </button>
             </div>
+
+            {/* Auto-Harmonize Entire Song Button */}
+            <button
+              id="composer-score-auto-chords-btn"
+              type="button"
+              onClick={handleAutoHarmonizeSong}
+              className="flex items-center gap-1 px-2.5 py-1 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white border border-indigo-400/80 rounded-lg font-bold shadow-2xs transition-all active:scale-95 cursor-pointer touch-manipulation h-8 text-[11px]"
+              title="Auto-analyze melody and harmonize chords for all measures (reversible)"
+            >
+              <Wand2 className="w-3 h-3 text-amber-300 stroke-[2.5]" />
+              <span className="hidden sm:inline">Auto Chords</span>
+            </button>
+
+            {/* In-Song Find Toggle */}
+            <button
+              id="composer-score-search-btn"
+              type="button"
+              onClick={() => setIsInSongSearchOpen(prev => !prev)}
+              className={`flex items-center gap-1 px-2 py-1 rounded-lg font-bold transition-all active:scale-95 cursor-pointer touch-manipulation h-8 text-[11px] ${
+                isInSongSearchOpen
+                  ? 'bg-amber-500 text-zinc-950 font-black shadow-xs ring-1 ring-amber-400'
+                  : 'bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 border border-zinc-200/90 dark:border-zinc-700'
+              }`}
+              title="Find in score [Ctrl+F / ⌘F]"
+            >
+              <Search className="w-3 h-3 text-amber-500" />
+              <span>Find</span>
+              <kbd className="hidden lg:inline text-[9px] px-1 py-0.2 rounded bg-zinc-200 dark:bg-zinc-700 font-mono">⌘F</kbd>
+            </button>
           </div>
         </div>
 

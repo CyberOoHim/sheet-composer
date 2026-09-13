@@ -171,13 +171,37 @@ export const FloatingScoreHud: React.FC<FloatingScoreHudProps> = ({
   availableVerseRows = [1, 2, 3],
 }) => {
   const [activePopover, setActivePopover] = React.useState<'none' | 'ornaments' | 'chords'>('none');
+  const effectivePopover = showPianoBed ? 'none' : activePopover;
+
+  // Close active popover on Escape key
+  React.useEffect(() => {
+    if (effectivePopover === 'none') return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setActivePopover('none');
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [effectivePopover]);
+
   return (
-    <div
-      id="floating-score-hud-container"
-      className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 max-w-[96vw] w-auto print:hidden flex flex-col items-center gap-2"
-    >
-      {/* Floating Popover Container for Ornaments & Chords */}
-      {activePopover === 'ornaments' && (
+    <>
+      {/* Click-away backdrop for active HUD popover */}
+      {effectivePopover !== 'none' && (
+        <div
+          id="floating-score-hud-popover-backdrop"
+          className="fixed inset-0 z-30 bg-transparent"
+          onClick={() => setActivePopover('none')}
+        />
+      )}
+
+      <div
+        id="floating-score-hud-container"
+        className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 max-w-[96vw] w-auto print:hidden flex flex-col items-center gap-2"
+      >
+        {/* Floating Popover Container for Ornaments & Chords */}
+        {effectivePopover === 'ornaments' && (
         <div className="p-3 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md rounded-2xl border border-zinc-200/90 dark:border-zinc-800 shadow-2xl flex flex-col gap-2 max-w-[92vw] w-80 text-xs animate-in fade-in zoom-in-95 duration-150">
           <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-1.5 font-bold">
             <span className="flex items-center gap-1.5 text-zinc-800 dark:text-zinc-200">
@@ -300,7 +324,7 @@ export const FloatingScoreHud: React.FC<FloatingScoreHudProps> = ({
       )}
 
       {/* Chords Popover */}
-      {activePopover === 'chords' && (
+      {effectivePopover === 'chords' && (
         <div className="p-3 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md rounded-2xl border border-zinc-200/90 dark:border-zinc-800 shadow-2xl flex flex-col gap-2.5 max-w-[92vw] w-72 text-xs animate-in fade-in zoom-in-95 duration-150">
           <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-1.5 font-bold">
             <span className="flex items-center gap-1.5 text-zinc-800 dark:text-zinc-200">
@@ -695,7 +719,7 @@ export const FloatingScoreHud: React.FC<FloatingScoreHudProps> = ({
               type="button"
               onClick={() => setActivePopover(prev => (prev === 'ornaments' ? 'none' : 'ornaments'))}
               className={`flex items-center gap-1 px-2.5 h-7 sm:h-8 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                activePopover === 'ornaments'
+                effectivePopover === 'ornaments'
                   ? 'bg-amber-500 text-zinc-950 font-black shadow-2xs'
                   : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'
               }`}
@@ -711,7 +735,7 @@ export const FloatingScoreHud: React.FC<FloatingScoreHudProps> = ({
               type="button"
               onClick={() => setActivePopover(prev => (prev === 'chords' ? 'none' : 'chords'))}
               className={`flex items-center gap-1 px-2.5 h-7 sm:h-8 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                activePopover === 'chords'
+                effectivePopover === 'chords'
                   ? 'bg-amber-500 text-zinc-950 font-black shadow-2xs'
                   : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'
               }`}
@@ -914,5 +938,6 @@ export const FloatingScoreHud: React.FC<FloatingScoreHudProps> = ({
         </div>
       </div>
     </div>
-  );
+  </>
+);
 };

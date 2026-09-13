@@ -153,11 +153,21 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
   const [editingHeaderField, setEditingHeaderField] = useState<string | null>(null);
   const [headerDraftText, setHeaderDraftText] = useState<string>('');
 
-  // Dropdown states for Key / Meter
-  const [showKeyPicker, setShowKeyPicker] = useState<boolean>(false);
-  const [showTimePicker, setShowTimePicker] = useState<boolean>(false);
-  const [showBpmPicker, setShowBpmPicker] = useState<boolean>(false);
+  // Dropdown states for Key / Meter (mutually exclusive to avoid overlap)
+  const [activeSheetPicker, setActiveSheetPicker] = useState<'key' | 'time' | 'bpm' | null>(null);
   const [draftBpm, setDraftBpm] = useState<number>(song.bpm || 88);
+
+  // Close sheet paper pickers on Escape key
+  useEffect(() => {
+    if (!activeSheetPicker) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setActiveSheetPicker(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeSheetPicker]);
 
   // Virtual Piano Bed state
   const [showPianoBed, setShowPianoBed] = useState<boolean>(false);
@@ -866,7 +876,7 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
           transform: `scale(${zoomScale})`,
           transformOrigin: 'top center',
         }}
-        className={`relative w-full max-w-5xl rounded-xs p-8 sm:p-14 md:p-20 transition-all duration-150 print:shadow-none print:border-none print:p-0 print:max-w-none print:w-full print:rounded-none select-none ${
+        className={`relative w-full max-w-5xl rounded-xs p-5 sm:p-8 md:p-12 transition-all duration-150 print:shadow-none print:border-none print:p-0 print:max-w-none print:w-full print:rounded-none select-none ${
           sheetTheme === 'dark'
             ? 'bg-[#14161f] text-zinc-100 border border-zinc-800 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7),0_0_0_1px_rgba(255,255,255,0.06)]'
             : 'bg-[#FCFAF6] text-zinc-900 border border-[#E7E2D8] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.18),0_0_0_1px_rgba(0,0,0,0.06)]'
@@ -895,11 +905,11 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
         </div>
 
         {/* Paper Header: Catalog ID, Title, Credits, Key & Meter */}
-        <header id="real-sheet-header" className={`relative pb-6 mb-8 border-b ${
+        <header id="real-sheet-header" className={`relative pb-4 mb-5 border-b ${
           sheetTheme === 'dark' ? 'border-zinc-800' : 'border-zinc-200/80'
         }`}>
           {/* Top Row: Catalog ID (Left) & Controls (Right) */}
-          <div className={`flex items-center justify-between text-xs font-mono mb-3 ${
+          <div className={`flex items-center justify-between text-xs font-mono mb-2 ${
             sheetTheme === 'dark' ? 'text-zinc-400' : 'text-zinc-500'
           }`}>
             <div
@@ -919,11 +929,11 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
           </div>
 
           {/* Centered Song Title & Subtitle */}
-          <div className="text-center my-3">
+          <div className="text-center my-2 sm:my-3">
             <h1
               id="sheet-song-title-display"
               onClick={() => startHeaderEdit('title', song.title)}
-              className={`font-serif tracking-[0.25em] text-3xl sm:text-4xl md:text-5xl font-black cursor-pointer hover:opacity-80 transition-opacity ${
+              className={`font-serif tracking-[0.25em] text-2xl sm:text-3xl md:text-4xl font-black cursor-pointer hover:opacity-80 transition-opacity ${
                 sheetTheme === 'dark' ? 'text-zinc-50' : 'text-zinc-950'
               }`}
               title="Click to edit song title"
@@ -935,7 +945,7 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
               <p
                 id="sheet-song-subtitle-display"
                 onClick={() => startHeaderEdit('subtitle', song.subtitle || '')}
-                className={`font-serif text-sm sm:text-base mt-2 cursor-pointer hover:opacity-80 ${
+                className={`font-serif text-xs sm:text-sm mt-1.5 cursor-pointer hover:opacity-80 ${
                   sheetTheme === 'dark' ? 'text-zinc-400' : 'text-zinc-600'
                 }`}
                 title="Click to edit subtitle"
@@ -946,19 +956,28 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
           </div>
 
           {/* Key / Time Signature / Tempo (Left) & Credits (Right) */}
-          <div className={`flex flex-wrap items-end justify-between mt-6 pt-3 gap-4 border-t ${
+          <div className={`flex flex-wrap items-end justify-between mt-4 pt-2.5 gap-3 border-t ${
             sheetTheme === 'dark' ? 'border-zinc-800' : 'border-zinc-100'
           }`}>
             {/* Left Musical Meter Block */}
-            <div className={`flex items-center gap-6 font-serif font-bold text-base sm:text-lg ${
+            <div className={`flex items-center gap-5 font-serif font-bold text-base sm:text-lg ${
               sheetTheme === 'dark' ? 'text-zinc-100' : 'text-zinc-900'
             }`}>
+              {/* Click-away backdrop for active sheet picker */}
+              {activeSheetPicker && (
+                <div
+                  id="sheet-picker-backdrop"
+                  className="fixed inset-0 z-40 bg-transparent"
+                  onClick={() => setActiveSheetPicker(null)}
+                />
+              )}
+
               {/* Key Signature: 1 = E */}
               <div className="relative">
                 <button
                   id="sheet-key-signature-btn"
                   type="button"
-                  onClick={() => setShowKeyPicker(!showKeyPicker)}
+                  onClick={() => setActiveSheetPicker(activeSheetPicker === 'key' ? null : 'key')}
                   className={`flex items-center gap-1 cursor-pointer px-1 py-0.5 rounded transition-colors ${
                     sheetTheme === 'dark' ? 'hover:text-amber-400 hover:bg-zinc-800' : 'hover:text-amber-700 hover:bg-amber-50'
                   }`}
@@ -971,7 +990,7 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
                   </span>
                 </button>
 
-                {showKeyPicker && (
+                {activeSheetPicker === 'key' && (
                   <div className={`absolute top-full left-0 mt-1 border shadow-xl rounded-xl p-2 grid grid-cols-4 gap-1 z-50 text-xs font-mono ${
                     sheetTheme === 'dark' ? 'bg-zinc-900 border-zinc-700 text-zinc-200' : 'bg-white border-zinc-200 text-zinc-800'
                   }`}>
@@ -981,7 +1000,7 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
                         type="button"
                         onClick={() => {
                           onUpdateSong({ ...song, key: k });
-                          setShowKeyPicker(false);
+                          setActiveSheetPicker(null);
                         }}
                         className={`px-2 py-1 rounded cursor-pointer ${
                           song.key === k
@@ -1001,7 +1020,7 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
                 <button
                   id="sheet-time-signature-btn"
                   type="button"
-                  onClick={() => setShowTimePicker(!showTimePicker)}
+                  onClick={() => setActiveSheetPicker(activeSheetPicker === 'time' ? null : 'time')}
                   className={`flex flex-col items-center justify-center leading-none cursor-pointer px-1 py-0.5 rounded transition-colors ${
                     sheetTheme === 'dark' ? 'hover:text-amber-400 hover:bg-zinc-800' : 'hover:text-amber-700 hover:bg-amber-50'
                   }`}
@@ -1016,7 +1035,7 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
                   </span>
                 </button>
 
-                {showTimePicker && (
+                {activeSheetPicker === 'time' && (
                   <div className={`absolute top-full left-0 mt-1 border shadow-xl rounded-xl p-1.5 flex flex-col gap-1 z-50 text-xs font-mono ${
                     sheetTheme === 'dark' ? 'bg-zinc-900 border-zinc-700 text-zinc-200' : 'bg-white border-zinc-200 text-zinc-800'
                   }`}>
@@ -1026,7 +1045,7 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
                         type="button"
                         onClick={() => {
                           onUpdateSong({ ...song, timeSignature: ts });
-                          setShowTimePicker(false);
+                          setActiveSheetPicker(null);
                         }}
                         className={`px-3 py-1.5 rounded text-left cursor-pointer ${
                           song.timeSignature === ts
@@ -1046,7 +1065,12 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
                 <button
                   id="sheet-tempo-btn"
                   type="button"
-                  onClick={() => setShowBpmPicker(!showBpmPicker)}
+                  onClick={() => {
+                    if (activeSheetPicker !== 'bpm') {
+                      setDraftBpm(song.bpm || 88);
+                    }
+                    setActiveSheetPicker(activeSheetPicker === 'bpm' ? null : 'bpm');
+                  }}
                   className={`flex items-center gap-1 cursor-pointer px-1 py-0.5 rounded transition-colors font-sans text-sm sm:text-base ${
                     sheetTheme === 'dark' ? 'hover:text-amber-400 hover:bg-zinc-800' : 'hover:text-amber-700 hover:bg-amber-50'
                   }`}
@@ -1057,7 +1081,7 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
                   <span className="font-mono font-bold">{song.bpm || 88}</span>
                 </button>
 
-                {showBpmPicker && (
+                {activeSheetPicker === 'bpm' && (
                   <div className={`absolute top-full left-0 mt-1 border shadow-xl rounded-xl p-3 flex flex-col gap-2 z-50 text-xs ${
                     sheetTheme === 'dark' ? 'bg-zinc-900 border-zinc-700 text-zinc-200' : 'bg-white border-zinc-200 text-zinc-800'
                   }`}>
@@ -1077,7 +1101,7 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
                         type="button"
                         onClick={() => {
                           onUpdateSong({ ...song, bpm: draftBpm });
-                          setShowBpmPicker(false);
+                          setActiveSheetPicker(null);
                         }}
                         className="px-2 py-1 bg-amber-500 text-zinc-950 rounded font-bold cursor-pointer hover:bg-amber-400"
                       >

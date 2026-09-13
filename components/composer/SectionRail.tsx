@@ -97,14 +97,14 @@ export const SectionRail: React.FC<SectionRailProps> = React.memo(({
   return (
     <div
       id="composer-section-rail"
-      className="flex items-center gap-2 p-2.5 bg-white/95 dark:bg-[#141720]/95 backdrop-blur-md rounded-2xl border border-zinc-200/90 dark:border-zinc-800/80 shadow-2xs overflow-x-auto select-none no-scrollbar touch-pan-x"
+      className="flex items-center gap-1.5 px-3 py-1.5 bg-white/95 dark:bg-[#141720]/95 backdrop-blur-md rounded-xl border border-zinc-200/90 dark:border-zinc-800/80 shadow-2xs overflow-x-auto select-none no-scrollbar touch-pan-x"
     >
-      <div className="flex items-center gap-1.5 text-xs font-bold text-zinc-500 dark:text-zinc-400 shrink-0 pl-1">
-        <Bookmark className="w-4 h-4 text-amber-500" />
+      <div className="flex items-center gap-1 text-xs font-bold text-zinc-500 dark:text-zinc-400 shrink-0">
+        <Bookmark className="w-3.5 h-3.5 text-amber-500" />
         <span className="hidden sm:inline">Sections:</span>
       </div>
 
-      <div className="flex items-center gap-2 flex-nowrap shrink-0">
+      <div className="flex items-center gap-1.5 flex-nowrap shrink-0">
         {sections.map((sec) => {
           const isSelected =
             selectedMeasureIndex !== null &&
@@ -122,7 +122,7 @@ export const SectionRail: React.FC<SectionRailProps> = React.memo(({
               key={sec.id}
               type="button"
               onClick={() => onSelectMeasure(sec.startMeasureIndex)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 active:scale-95 cursor-pointer touch-manipulation min-h-[44px] ${
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition-all shrink-0 active:scale-95 cursor-pointer touch-manipulation h-7.5 sm:h-8 ${
                 isPlaying
                   ? 'bg-amber-500 text-zinc-950 ring-2 ring-amber-400 font-black animate-pulse shadow-xs'
                   : isSelected

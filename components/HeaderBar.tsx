@@ -5,9 +5,7 @@ import { Song, InstrumentType } from '@/types/song';
 import { PRESET_SONGS } from '@/lib/presets';
 import { INSTRUMENT_OPTIONS } from '@/lib/taigiUtils';
 import {
-  Mic2,
   Music,
-  Columns,
   Library,
   Play,
   Pause,
@@ -35,14 +33,10 @@ import { UiZoomControl } from '@/components/UiZoomControl';
 import { ChordPlaybackControl } from '@/components/ChordPlaybackControl';
 
 
-export type ActiveTabMode = 'sheet';
-
 interface HeaderBarProps {
   song: Song;
   onSelectSong: (song: Song) => void;
   onStartFreshSong?: () => void;
-  activeTab?: string;
-  setActiveTab?: (tab: any) => void;
   onOpenLyricSearch?: () => void;
   onOpenImportExport: () => void;
   onOpenMidiExport?: () => void;
@@ -71,14 +65,13 @@ interface HeaderBarProps {
   modifiedPresetIds?: Set<string>;
   instrument?: InstrumentType;
   onSetInstrument?: (instrument: InstrumentType) => void;
+  isAnyModalOpen?: boolean;
 }
 
 export const HeaderBar: React.FC<HeaderBarProps> = ({
   song,
   onSelectSong,
   onStartFreshSong,
-  activeTab,
-  setActiveTab,
   onOpenLyricSearch,
   onOpenImportExport,
   onOpenMidiExport,
@@ -107,14 +100,16 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   modifiedPresetIds = new Set(),
   instrument = 'piano',
   onSetInstrument,
+  isAnyModalOpen = false,
 }) => {
   const { isAuthenticated, hasApiKey } = useGeminiAuth();
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
   const [isStudioMenuOpen, setIsStudioMenuOpen] = useState<boolean>(false);
+  const isStudioOpen = isStudioMenuOpen && !isAnyModalOpen;
 
   // Close Studio popup when Escape is pressed
   useEffect(() => {
-    if (!isStudioMenuOpen) return;
+    if (!isStudioOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setIsStudioMenuOpen(false);
@@ -122,7 +117,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isStudioMenuOpen]);
+  }, [isStudioOpen]);
 
   return (
     <header className="sticky top-0 z-40 w-full bg-white/95 dark:bg-[#10121a]/95 backdrop-blur-md border-b border-zinc-200/90 dark:border-zinc-800/80 shadow-xs transition-colors select-none pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)]">
@@ -230,7 +225,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
           {onSetInstrument && (
             <div
               id="header-instrument-selector"
-              className="flex items-center gap-1 bg-zinc-100 dark:bg-[#151822] px-2 py-1 rounded-xl border border-zinc-200/90 dark:border-zinc-750 text-xs h-9 shrink-0 shadow-2xs"
+              className="hidden md:flex items-center gap-1 bg-zinc-100 dark:bg-[#151822] px-2 py-1 rounded-xl border border-zinc-200/90 dark:border-zinc-750 text-xs h-9 shrink-0 shadow-2xs"
             >
               <Music className="w-3.5 h-3.5 text-amber-500 shrink-0" />
               <select
@@ -332,54 +327,31 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
             </button>
           )}
 
-          {/* Master Transport Instrument Selector */}
-          {onSetInstrument && (
-            <div
-              id="header-instrument-quick-group"
-              className="hidden md:flex items-center gap-1.5 bg-zinc-100 dark:bg-[#151822] px-2 py-1 rounded-xl border border-zinc-200/90 dark:border-zinc-750 h-9 shrink-0"
-              title="Select Melody Instrument (Piano, Flute, Whistle, Guitar, Synth, Bell, Cello)"
-            >
-              <Music className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-              <select
-                id="header-top-instrument-select"
-                value={instrument}
-                onChange={e => onSetInstrument(e.target.value as InstrumentType)}
-                className="bg-transparent text-xs font-bold text-zinc-800 dark:text-zinc-200 focus:outline-none cursor-pointer pr-1"
-              >
-                {INSTRUMENT_OPTIONS.map(opt => (
-                  <option key={opt.value} value={opt.value} className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100">
-                    {opt.labelEn}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
           {/* Consolidated Studio Menu Dropdown Trigger (⋯ / Sliders) */}
           <button
             id="header-studio-menu-btn"
             type="button"
             onClick={() => setIsStudioMenuOpen(prev => !prev)}
             className={`flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-xl border text-xs font-bold transition-all active:scale-95 cursor-pointer h-9 shrink-0 ${
-              isStudioMenuOpen
+              isStudioOpen
                 ? 'bg-amber-500 text-zinc-950 border-amber-400 shadow-xs font-black'
                 : 'bg-zinc-100 hover:bg-zinc-200 dark:bg-[#151822] dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200/90 dark:border-zinc-750'
             }`}
             title="Studio Tools & Settings"
-            aria-expanded={isStudioMenuOpen}
+            aria-expanded={isStudioOpen}
           >
             <SlidersHorizontal className="w-3.5 h-3.5 shrink-0" />
             <span className="hidden sm:inline whitespace-nowrap">Studio</span>
             {isEcoMode && (
               <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" title="Eco Mode Active" />
             )}
-            <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 shrink-0 ${isStudioMenuOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 shrink-0 ${isStudioOpen ? 'rotate-180' : ''}`} />
           </button>
         </div>
       </div>
 
       {/* Click-away backdrop */}
-      {isStudioMenuOpen && (
+      {isStudioOpen && (
         <div
           id="header-studio-menu-backdrop"
           className="fixed inset-0 z-40 bg-black/25 dark:bg-black/45 backdrop-blur-[1px] animate-in fade-in duration-150"
@@ -388,7 +360,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
       )}
 
       {/* Consolidated Studio Menu Popover Card - Viewport Clamped & Never Clipped */}
-      {isStudioMenuOpen && (
+      {isStudioOpen && (
         <div
           id="header-studio-menu-popover"
           role="dialog"

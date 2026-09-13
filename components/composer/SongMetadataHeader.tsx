@@ -197,24 +197,27 @@ export const SongMetadataHeader: React.FC<SongMetadataHeaderProps> = React.memo(
       {/* COMPACT DAW PROJECT STRIP (High-Density, Maximize Viewport for Notation) */}
       <div
         id="song-metadata-card"
-        className="px-3.5 py-2 sm:py-2.5 bg-white/95 dark:bg-[#141720]/95 backdrop-blur-md border border-zinc-200/90 dark:border-zinc-800/80 rounded-2xl shadow-xs flex items-center justify-between gap-2.5 flex-wrap select-none relative"
+        className="px-3 py-1.5 sm:py-2 bg-white/95 dark:bg-[#141720]/95 backdrop-blur-md border border-zinc-200/90 dark:border-zinc-800/80 rounded-xl shadow-2xs flex items-center justify-between gap-2 flex-wrap select-none relative"
       >
         {/* Left: Song Title & Quick Musical LCD Badges */}
-        <div className="flex items-center gap-2 sm:gap-3 flex-wrap min-w-0">
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="w-8 h-8 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold shrink-0 border border-amber-500/20">
-              <Music className="w-4 h-4" />
+        <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap min-w-0">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold shrink-0 border border-amber-500/20">
+              <Music className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
 
             <button
               id="compact-song-title-btn"
               type="button"
-              onClick={() => setIsSettingsModalOpen(true)}
-              className="flex items-center gap-1.5 text-left font-extrabold text-sm text-zinc-900 dark:text-zinc-100 hover:text-amber-600 dark:hover:text-amber-400 transition-colors cursor-pointer group max-w-[180px] sm:max-w-[260px] truncate"
+              onClick={() => {
+                setActivePopover(null);
+                setIsSettingsModalOpen(true);
+              }}
+              className="flex items-center gap-1.5 text-left font-extrabold text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 hover:text-amber-600 dark:hover:text-amber-400 transition-colors cursor-pointer group max-w-[180px] sm:max-w-[260px] truncate"
               title="Click to edit song details and layout settings"
             >
               <span className="truncate">{song.title || 'Untitled Song'}</span>
-              <FileEdit className="w-3.5 h-3.5 text-zinc-400 group-hover:text-amber-500 shrink-0 opacity-70" />
+              <FileEdit className="w-3 h-3 text-zinc-400 group-hover:text-amber-500 shrink-0 opacity-70" />
             </button>
           </div>
 
@@ -659,8 +662,11 @@ export const SongMetadataHeader: React.FC<SongMetadataHeaderProps> = React.memo(
           <button
             id="composer-open-aligner-btn"
             type="button"
-            onClick={onOpenAligner}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-900/90 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-bold text-xs rounded-xl border border-zinc-200/90 dark:border-zinc-750 shadow-2xs transition-all active:scale-95 cursor-pointer touch-manipulation min-h-[34px]"
+            onClick={() => {
+              setActivePopover(null);
+              onOpenAligner();
+            }}
+            className="flex items-center gap-1.5 px-2.5 py-1 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-900/90 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-bold text-xs rounded-lg border border-zinc-200/90 dark:border-zinc-750 shadow-2xs transition-all active:scale-95 cursor-pointer touch-manipulation h-8"
             title="Lyric Aligner (Supports Roman and Han-lô)"
           >
             <AlignLeft className="w-3.5 h-3.5 text-amber-500" />
@@ -671,12 +677,15 @@ export const SongMetadataHeader: React.FC<SongMetadataHeaderProps> = React.memo(
           <button
             id="composer-expand-settings-btn"
             type="button"
-            onClick={() => setIsSettingsModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 font-bold text-xs rounded-xl border transition-all cursor-pointer min-h-[34px] touch-manipulation bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-900/90 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200/90 dark:border-zinc-750 shadow-2xs"
+            onClick={() => {
+              setActivePopover(null);
+              setIsSettingsModalOpen(true);
+            }}
+            className="flex items-center gap-1.5 px-2.5 py-1 font-bold text-xs rounded-lg border transition-all cursor-pointer h-8 touch-manipulation bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-900/90 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200/90 dark:border-zinc-750 shadow-2xs"
             title="Song Settings (Title, Composer, Lyricist, Layout, Notes)"
           >
             <SlidersHorizontal className="w-3.5 h-3.5 text-amber-500" />
-            <span className="hidden sm:inline">Song Settings</span>
+            <span className="hidden sm:inline">Settings</span>
           </button>
         </div>
       </div>
