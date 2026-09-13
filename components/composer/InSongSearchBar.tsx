@@ -144,7 +144,7 @@ export const InSongSearchBar: React.FC<InSongSearchBarProps> = ({
     <div
       id="in-song-search-bar"
       role="search"
-      aria-label="曲內小節與樂句搜尋"
+      aria-label="In-song measure and verse search"
       className="bg-white/95 dark:bg-[#131622]/95 backdrop-blur-md border-2 border-amber-500/60 rounded-2xl shadow-xl p-3 sm:p-3.5 flex flex-col gap-2.5 animate-in slide-in-from-top-2 duration-150 transition-all z-20"
     >
       {/* Search Input Row & Filter Controls */}
@@ -159,7 +159,7 @@ export const InSongSearchBar: React.FC<InSongSearchBarProps> = ({
             value={query}
             onChange={e => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="搜尋此曲小節或樂句 (漢字、POJ免調符、演奏標註)..."
+            placeholder="Search measures or verses (Han-lo, POJ, annotations)..."
             className="w-full bg-zinc-50 dark:bg-[#0e1018] border border-zinc-300 dark:border-zinc-700/80 text-zinc-900 dark:text-zinc-100 pl-9 pr-8 py-1.5 rounded-xl text-xs sm:text-sm font-medium focus:outline-hidden focus:ring-2 focus:ring-amber-500/80 focus:border-amber-500 shadow-inner placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
             autoComplete="off"
             spellCheck={false}
@@ -172,7 +172,7 @@ export const InSongSearchBar: React.FC<InSongSearchBarProps> = ({
                 inputRef.current?.focus();
               }}
               className="absolute right-2.5 p-1 rounded-md text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 cursor-pointer"
-              title="清除搜尋"
+              title="Clear search"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -180,7 +180,7 @@ export const InSongSearchBar: React.FC<InSongSearchBarProps> = ({
         </div>
 
         {/* Perspective Filter Tabs: All vs Measures vs Verses */}
-        <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-850 p-0.5 rounded-xl border border-zinc-200 dark:border-zinc-750 shrink-0 text-xs">
+        <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-850 p-0.5 rounded-xl border border-zinc-200 dark:border-zinc-755 shrink-0 text-xs">
           <button
             type="button"
             onClick={() => setFilter('all')}
@@ -189,10 +189,10 @@ export const InSongSearchBar: React.FC<InSongSearchBarProps> = ({
                 ? 'bg-amber-500 text-zinc-950 shadow-xs'
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
             }`}
-            title="顯示所有符合項目"
+            title="Show all matches"
           >
             <Layers className="w-3 h-3" />
-            <span>全部</span>
+            <span>All</span>
             {query.trim() && (
               <span className="text-[10px] px-1 py-0.2 rounded-full bg-black/15 font-mono">
                 {searchResult.totalMeasureMatches + searchResult.totalVerseMatches}
@@ -208,10 +208,10 @@ export const InSongSearchBar: React.FC<InSongSearchBarProps> = ({
                 ? 'bg-amber-500 text-zinc-950 shadow-xs'
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
             }`}
-            title="僅顯示符合的小節"
+            title="Show measure matches only"
           >
             <ListOrdered className="w-3 h-3" />
-            <span>小節</span>
+            <span>Measures</span>
             {query.trim() && (
               <span className="text-[10px] px-1 py-0.2 rounded-full bg-black/15 font-mono">
                 {searchResult.totalMeasureMatches}
@@ -227,10 +227,10 @@ export const InSongSearchBar: React.FC<InSongSearchBarProps> = ({
                 ? 'bg-amber-500 text-zinc-950 shadow-xs'
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
             }`}
-            title="僅顯示符合的樂句"
+            title="Show verse matches only"
           >
             <AlignLeft className="w-3 h-3" />
-            <span>樂句</span>
+            <span>Verses</span>
             {query.trim() && (
               <span className="text-[10px] px-1 py-0.2 rounded-full bg-black/15 font-mono">
                 {searchResult.totalVerseMatches}
@@ -250,7 +250,7 @@ export const InSongSearchBar: React.FC<InSongSearchBarProps> = ({
                 type="button"
                 onClick={handlePrevMatch}
                 className="p-1 rounded text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 cursor-pointer"
-                title="上一個 (Shift+Enter)"
+                title="Previous (Shift+Enter)"
               >
                 <ChevronUp className="w-3.5 h-3.5" />
               </button>
@@ -258,7 +258,7 @@ export const InSongSearchBar: React.FC<InSongSearchBarProps> = ({
                 type="button"
                 onClick={handleNextMatch}
                 className="p-1 rounded text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 cursor-pointer"
-                title="下一個 (Enter)"
+                title="Next (Enter)"
               >
                 <ChevronDown className="w-3.5 h-3.5" />
               </button>
@@ -272,7 +272,7 @@ export const InSongSearchBar: React.FC<InSongSearchBarProps> = ({
           type="button"
           onClick={onClose}
           className="p-1.5 rounded-xl text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer shrink-0 transition-colors"
-          title="關閉 (Esc)"
+          title="Close (Esc)"
         >
           <X className="w-4 h-4" />
         </button>
@@ -285,7 +285,7 @@ export const InSongSearchBar: React.FC<InSongSearchBarProps> = ({
           id="in-song-search-chips-strip"
           className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-0.5 no-scrollbar touch-pan-x"
         >
-          <span className="text-[11px] font-bold text-zinc-400 shrink-0 mr-1">定位清單:</span>
+          <span className="text-[11px] font-bold text-zinc-400 shrink-0 mr-1">Results:</span>
           {matches.map((m, idx) => {
             const isActive = idx === effectiveMatchIndex;
             const previewSegments = highlightMatch(m.matchedSnippet, query);
@@ -301,7 +301,7 @@ export const InSongSearchBar: React.FC<InSongSearchBarProps> = ({
                     ? 'bg-amber-500 text-zinc-950 border-amber-600 font-extrabold shadow-sm ring-2 ring-amber-400/50'
                     : 'bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:border-amber-400'
                 }`}
-                title={`點擊直達: ${m.type === 'verse' ? `樂句 ${m.verseNumber}` : `第 ${m.measureNumber} 小節`}`}
+                title={`Jump to: ${m.type === 'verse' ? `Verse ${m.verseNumber}` : `Measure #${m.measureNumber}`}`}
               >
                 {/* Badge: M# or Verse# */}
                 <span
@@ -313,7 +313,7 @@ export const InSongSearchBar: React.FC<InSongSearchBarProps> = ({
                       : 'bg-amber-500/15 text-amber-700 dark:text-amber-300'
                   }`}
                 >
-                  {m.type === 'verse' ? `句 ${m.verseNumber} (M${m.startMeasureNumber}-${m.endMeasureNumber})` : `M${m.measureNumber}`}
+                  {m.type === 'verse' ? `V${m.verseNumber} (M${m.startMeasureNumber}-${m.endMeasureNumber})` : `M${m.measureNumber}`}
                 </span>
 
                 {/* Snippet preview with match highlighting */}
@@ -340,7 +340,7 @@ export const InSongSearchBar: React.FC<InSongSearchBarProps> = ({
       {/* Query entered but 0 results */}
       {query.trim() && totalMatches === 0 && (
         <div className="text-xs text-zinc-500 dark:text-zinc-400 py-1 px-1 flex items-center justify-between">
-          <span>找不到相符的小節或樂句。可嘗試搜尋無調符拼音（如 <code className="font-mono bg-zinc-200 dark:bg-zinc-800 px-1 rounded">u-ia-hoe</code>）或簡化字詞。</span>
+          <span>No matching measures or verses found. Try searching without tone diacritics (e.g. <code className="font-mono bg-zinc-200 dark:bg-zinc-800 px-1 rounded">u-ia-hoe</code>) or simplified keywords.</span>
         </div>
       )}
     </div>

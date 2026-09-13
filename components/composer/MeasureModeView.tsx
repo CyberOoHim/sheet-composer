@@ -416,7 +416,7 @@ export const MeasureModeView: React.FC<MeasureModeViewProps> = React.memo(({
                   scrollToScoreTop();
                 }}
                 className="absolute top-3.5 right-3.5 sm:top-4 sm:right-4 z-10 flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-zinc-100/95 hover:bg-amber-500 hover:text-zinc-950 dark:bg-[#0a0c10]/95 dark:hover:bg-amber-400 dark:hover:text-zinc-950 text-zinc-700 dark:text-zinc-300 border border-zinc-200/90 dark:border-zinc-700 shadow-2xs hover:shadow-xs transition-all active:scale-95 cursor-pointer touch-manipulation min-h-[36px]"
-                title={`回到頁首 (Jump to top of score editor from Measure #${mIdx + 1})`}
+                title={`Jump to top of score editor from Measure #${mIdx + 1}`}
                 aria-label={`Jump to top of score editor from Measure #${mIdx + 1}`}
               >
                 <ArrowUpToLine className="w-3.5 h-3.5" />
@@ -593,7 +593,7 @@ export const MeasureModeView: React.FC<MeasureModeViewProps> = React.memo(({
                           key={`${ch}-${chIdx}`}
                           onClick={() => audioEngine.previewChord(ch)}
                           className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/40 font-mono font-bold text-xs shadow-2xs cursor-pointer hover:bg-amber-500/30 transition-colors"
-                          title={`點擊試聽 ${ch} 和弦`}
+                          title={`Audition ${ch} chord`}
                         >
                           <span>{ch}</span>
                           {allChords.length > 1 && (
@@ -945,11 +945,11 @@ export const MeasureModeView: React.FC<MeasureModeViewProps> = React.memo(({
                     onClick={() => {
                       const res = suggestChordsForMeasure(measure, keySignature, song.timeSignature, { allowDualChords: true });
                       onUpdateMeasureChord(mIdx, res.formatted);
-                      showNotice(`🪄 第 ${mIdx + 1} 小節已智慧配和弦：${res.formatted} (${res.rationale})`);
+                      showNotice(`🪄 Measure ${mIdx + 1} auto-harmonized: ${res.formatted} (${res.rationale})`);
                       if (res.chords[0]) audioEngine.previewChord(res.chords[0]);
                     }}
                     className="px-2 py-1 rounded-lg text-[10px] text-amber-900 dark:text-amber-200 bg-amber-100 hover:bg-amber-200 dark:bg-amber-950/60 dark:hover:bg-amber-900/60 border border-amber-300 dark:border-amber-700 cursor-pointer transition-colors shadow-2xs font-bold flex items-center gap-1"
-                    title="根據此小節旋律智慧配和弦"
+                    title="Auto-harmonize chords based on measure melody"
                   >
                     <Wand2 className="w-2.5 h-2.5 text-amber-600" />
                     <span>Auto</span>
@@ -970,7 +970,7 @@ export const MeasureModeView: React.FC<MeasureModeViewProps> = React.memo(({
               {/* Complete Lyric Display Bar for Measure */}
               <div className="mb-2.5 px-3 py-1.5 rounded-xl bg-zinc-50/90 dark:bg-zinc-800/40 border border-zinc-200/70 dark:border-zinc-800/70 flex items-center justify-between gap-2 text-xs">
                 <div className="flex items-center gap-2 flex-wrap min-w-0">
-                  <span className="text-[11px] font-bold text-zinc-400 shrink-0">歌詞:</span>
+                  <span className="text-[11px] font-bold text-zinc-400 shrink-0">Lyrics:</span>
                   {completeLyric || completePoj ? (
                     <div className="flex items-baseline gap-2 flex-wrap">
                       {completeLyric && (
@@ -985,7 +985,7 @@ export const MeasureModeView: React.FC<MeasureModeViewProps> = React.memo(({
                       )}
                     </div>
                   ) : (
-                    <span className="italic text-zinc-400 text-xs">(無歌詞)</span>
+                    <span className="italic text-zinc-400 text-xs">(No lyrics)</span>
                   )}
                 </div>
               </div>
@@ -1241,7 +1241,7 @@ export const MeasureModeView: React.FC<MeasureModeViewProps> = React.memo(({
                 className="flex items-center gap-2 pt-3 mt-2 border-t border-zinc-200/80 dark:border-zinc-800 text-xs"
               >
                 <span className="text-xs font-bold text-amber-700 dark:text-amber-300 shrink-0">
-                  小節歌詞填入 (羅馬字 / 漢羅):
+                  Measure Lyrics (Roman / Han-lo):
                 </span>
                 <input
                   type="text"
@@ -1255,7 +1255,7 @@ export const MeasureModeView: React.FC<MeasureModeViewProps> = React.memo(({
                       onDistributeMeasureLyrics(mIdx);
                     }
                   }}
-                  placeholder={`輸入 Measure #${mIdx + 1} 歌詞 (例：To̍k iā bô phōaⁿ 或 獨夜無伴)`}
+                  placeholder={`Enter lyrics for Measure #${mIdx + 1} (e.g. To̍k iā bô phōaⁿ)...`}
                   className="flex-1 px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-xs focus:ring-2 focus:ring-amber-500 focus:bg-white dark:focus:bg-zinc-800 font-serif"
                 />
                 <button
@@ -1264,7 +1264,7 @@ export const MeasureModeView: React.FC<MeasureModeViewProps> = React.memo(({
                   disabled={!(measureBatchTexts[mIdx] || '').trim()}
                   className="px-3.5 py-2 bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-zinc-950 font-bold rounded-xl text-xs transition-colors shrink-0 shadow-xs cursor-pointer touch-manipulation min-h-[38px]"
                 >
-                  分發至此小節
+                  Distribute
                 </button>
               </div>
             </div>

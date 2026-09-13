@@ -111,7 +111,7 @@ export const NoteCell: React.FC<NoteCellProps> = React.memo(({
 
         <div className="flex items-center gap-1 text-[10px] font-bold text-indigo-600 dark:text-indigo-400 mb-1">
           <FileText className="w-3 h-3 shrink-0" />
-          <span>標記 (0拍)</span>
+          <span>Mark (0 beat)</span>
         </div>
 
         <div className="w-full flex flex-col items-center justify-center my-auto">
@@ -138,7 +138,7 @@ export const NoteCell: React.FC<NoteCellProps> = React.memo(({
                 else onGoToPrevNote(mIdx, nIdx, 'hanlo');
               }
             }}
-            placeholder="標記..."
+            placeholder="Mark..."
             className="w-full text-center font-bold text-xs px-2 py-1 rounded-lg bg-white/90 dark:bg-[#0e1017] border border-indigo-200 dark:border-indigo-800/80 text-indigo-950 dark:text-indigo-200 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 min-h-[30px]"
             title="Performance Annotation (0 beats)"
           />
@@ -186,7 +186,7 @@ export const NoteCell: React.FC<NoteCellProps> = React.memo(({
         )}
 
         <span className="text-[8px] font-mono text-zinc-400 dark:text-zinc-500 select-none">
-          0拍
+          0b
         </span>
 
         <div className="w-full flex items-center justify-center my-auto">
@@ -291,12 +291,12 @@ export const NoteCell: React.FC<NoteCellProps> = React.memo(({
         {!isNonNotation && (
           <div className="flex items-center gap-1 text-xs font-bold -mb-1 select-none pointer-events-none">
             {(note.tieToNext || (note.isTied && !note.slurToNext)) && (
-              <span className="text-amber-500 dark:text-amber-400 text-sm font-black" title="Tie (連結音 - 音色融合)">
+              <span className="text-amber-500 dark:text-amber-400 text-sm font-black" title="Tie (Sustained)">
                 ⌒
               </span>
             )}
             {note.slurToNext && (
-              <span className="text-purple-600 dark:text-purple-400 text-sm font-black" title="Slur (圓滑音 - 一字多音)">
+              <span className="text-purple-600 dark:text-purple-400 text-sm font-black" title="Slur (Legato)">
                 ⌢
               </span>
             )}
@@ -336,7 +336,7 @@ export const NoteCell: React.FC<NoteCellProps> = React.memo(({
 
           {/* Pitch Number & Accidental & Grace Notes */}
           <div className="flex items-center">
-            {/* Pre-Grace Notes (前裝飾音 / 前倚音) */}
+            {/* Pre-Grace Notes */}
             {isPitched && note.preGraceNotes && note.preGraceNotes.length > 0 && (
               <div className="flex items-end gap-0.5 mr-1 mb-1 text-[11px] text-zinc-600 dark:text-zinc-400 font-mono font-bold leading-none select-none">
                 <span className="text-[10px] text-purple-600 dark:text-purple-400 font-black -mr-0.5">⌒</span>
@@ -401,7 +401,7 @@ export const NoteCell: React.FC<NoteCellProps> = React.memo(({
               )}
             </div>
 
-            {/* Post-Grace Notes (後裝飾音 / 尾裝飾音) */}
+            {/* Post-Grace Notes */}
             {isPitched && note.postGraceNotes && note.postGraceNotes.length > 0 && (
               <div className="flex items-end gap-0.5 ml-1 mb-1 text-[11px] text-zinc-600 dark:text-zinc-400 font-mono font-bold leading-none select-none">
                 {note.postGraceNotes.map((g, idx) => (
@@ -467,9 +467,9 @@ export const NoteCell: React.FC<NoteCellProps> = React.memo(({
         </div>
       </div>
 
-      {/* LOWER ZONE: DIRECT IN-SCORE EDITABLE LYRIC INPUTS (ALWAYS ONLY 羅馬字 AND 漢羅) */}
+      {/* LOWER ZONE: DIRECT IN-SCORE EDITABLE LYRIC INPUTS (ROMAN AND HANLO) */}
       <div className="w-full flex flex-col gap-1.5 pt-1.5 border-t border-zinc-200 dark:border-zinc-800/80 shrink-0">
-        {/* 羅馬字 Lyric Input */}
+        {/* Roman Lyric Input */}
         <div className="w-full flex flex-col shrink-0">
           <input
             id={`lyric-input-${mIdx}-${nIdx}-roman`}
@@ -495,13 +495,13 @@ export const NoteCell: React.FC<NoteCellProps> = React.memo(({
                 }
               }
             }}
-            placeholder="羅馬字 (POJ)"
+            placeholder="Roman (POJ)"
             className="w-full text-center font-serif italic text-[22px] leading-tight font-semibold px-1 py-1 rounded-lg bg-emerald-50/60 dark:bg-[#0c1410] border border-emerald-200/90 dark:border-emerald-800/60 text-emerald-800 dark:text-emerald-300 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 focus:bg-white dark:focus:bg-zinc-800 h-[42px] min-h-[42px] placeholder:text-[13px] placeholder:font-normal placeholder:not-italic placeholder:text-emerald-700/50 dark:placeholder:text-emerald-400/40 touch-manipulation"
-            title="羅馬字 (POJ) - Space, hyphen, or Tab moves to next note"
+            title="Romanization (POJ) - Space, hyphen, or Tab moves to next note"
           />
         </div>
 
-        {/* 漢羅 Lyric Input */}
+        {/* Hanlo Lyric Input */}
         <div className="w-full flex flex-col shrink-0">
           <input
             id={`lyric-input-${mIdx}-${nIdx}-hanlo`}
@@ -527,9 +527,9 @@ export const NoteCell: React.FC<NoteCellProps> = React.memo(({
                 }
               }
             }}
-            placeholder="漢羅"
+            placeholder="Han-lô"
             className="w-full text-center font-bold text-[25px] leading-tight px-1 py-1 rounded-lg bg-zinc-50 dark:bg-[#0a0c10] border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-2 focus:ring-amber-500 focus:bg-white dark:focus:bg-zinc-800 h-[46px] min-h-[46px] placeholder:text-[14px] placeholder:font-normal placeholder:text-zinc-400 dark:placeholder:text-zinc-500 touch-manipulation"
-            title="漢羅 (Han-lô) - Space or Tab moves to next note"
+            title="Han-lô / Lyrics - Space or Tab moves to next note"
           />
         </div>
       </div>

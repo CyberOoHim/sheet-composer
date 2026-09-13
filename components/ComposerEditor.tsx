@@ -591,6 +591,14 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
     [selectedMeasureIndex, selectedNoteIndex, updateNoteAt]
   );
 
+  // Direct note updater for RealSheetCanvas
+  const handleUpdateNoteDirect = useCallback(
+    (mIdx: number, nIdx: number, partialNote: Partial<NumberedNotationNote>) => {
+      updateNoteAt(mIdx, nIdx, n => ({ ...n, ...partialNote }));
+    },
+    [updateNoteAt]
+  );
+
   // Measure Multi-Selection State for batch operations
   const [selectedMeasureIndices, setSelectedMeasureIndices] = useState<Set<number>>(new Set());
 
@@ -866,7 +874,7 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
   const handleToggleTie = useCallback(() => {
     updateSelectedNote(n => {
       const nextTie = !(n.tieToNext ?? n.isTied);
-      showNotice(nextTie ? '已設定連結音 ⌒ (Tie - 融合成一音)' : '已關閉連結音');
+      showNotice(nextTie ? 'Tie enabled ⌒' : 'Tie disabled');
       return { ...n, tieToNext: nextTie, isTied: nextTie };
     });
   }, [updateSelectedNote, showNotice]);
@@ -875,7 +883,7 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
   const handleToggleSlur = useCallback(() => {
     updateSelectedNote(n => {
       const nextSlur = !n.slurToNext;
-      showNotice(nextSlur ? '已設定圓滑線 ⌢ (Slur / 一字多音)' : '已關閉圓滑線');
+      showNotice(nextSlur ? 'Slur enabled ⌢' : 'Slur disabled');
       return { ...n, slurToNext: nextSlur };
     });
   }, [updateSelectedNote, showNotice]);
@@ -883,7 +891,7 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
   // Set articulation
   const handleSetArticulation = useCallback((art: ArticulationType) => {
     updateSelectedNote(n => {
-      showNotice(`記號設定：${art}`);
+      showNotice(`Articulation set: ${art}`);
       return { ...n, articulation: art };
     });
   }, [updateSelectedNote, showNotice]);
@@ -901,7 +909,7 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
         if (n.duration === 0.333) nextDur = 0.5;
         else if (n.duration === 0.667) nextDur = 1;
       }
-      showNotice(nextTrip ? '已切換為三連音 ┌ 3 ┐' : '已關閉三連音');
+      showNotice(nextTrip ? 'Triplet mode ┌ 3 ┐' : 'Triplet mode disabled');
       return { ...n, isTriplet: nextTrip, duration: nextDur };
     });
   }, [updateSelectedNote, showNotice]);
@@ -918,7 +926,7 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
         if (n.duration === 1.75) nextDur = 1;
         else if (n.duration === 3.5) nextDur = 2;
       }
-      showNotice(nextDouble ? '已切換為雙附點 ··' : '已關閉雙附點');
+      showNotice(nextDouble ? 'Double dotted ··' : 'Double dotted disabled');
       return { ...n, isDoubleDotted: nextDouble, duration: nextDur };
     });
   }, [updateSelectedNote, showNotice]);
@@ -1488,7 +1496,7 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
         measures: renumbered,
       });
 
-      showNotice(`成功彈奏轉譜並插入 ${measures.length} 個小節！(Transcribed ${measures.length} measures from keyboard)`);
+      showNotice(`Successfully transcribed and inserted ${measures.length} measures from keyboard!`);
     },
     [song, selectedMeasureIndex, onUpdateSong, showNotice]
   );
@@ -1560,7 +1568,7 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
     (vIdx: number) => {
       const updated = autoArrangeVerseChords(song, vIdx, verses);
       onUpdateSong(updated);
-      showNotice(`🪄 第 ${vIdx + 1} 段歌詞所有小節已完成智慧配和弦！`);
+      showNotice(`🪄 Auto-harmonized chords for Verse #${vIdx + 1}!`);
     },
     [song, verses, onUpdateSong, showNotice]
   );
@@ -1569,7 +1577,7 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
   const handleAutoHarmonizeSong = useCallback(() => {
     const updated = autoArrangeSongChords(song);
     onUpdateSong(updated);
-    showNotice(`🪄 全曲已智慧自動配和弦！共配置 ${updated.measures.length} 個小節`);
+    showNotice(`🪄 Auto-harmonized chords across all ${updated.measures.length} measures!`);
   }, [song, onUpdateSong, showNotice]);
 
   // Measure Section change
@@ -2653,18 +2661,18 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
         >
           {/* TIER 1: Primary Controls & Mode Switchers */}
           <div className="flex items-center justify-between flex-wrap gap-2.5">
-            {/* Left: View Perspectives (Note Mode: 樂句 / 小節 + Sheet Mode: 總譜) */}
+            {/* Left: View Perspectives (Verse View / Measure View / Sheet Music) */}
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-xs font-black text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5 shrink-0 mr-0.5">
                 <Sparkles className="w-4 h-4 text-amber-500" />
-                <span>檢視模式:</span>
+                <span>View Mode:</span>
               </span>
 
               <div
                 id="score-deck-view-switch-group"
                 className="flex items-center bg-zinc-100 dark:bg-zinc-900/90 p-1 rounded-xl border border-zinc-200 dark:border-zinc-700/80 shadow-2xs"
               >
-                {/* 樂句檢視 (Verse Edit) */}
+                {/* Verse Edit */}
                 <button
                   id="score-deck-mode-verse-btn"
                   type="button"
@@ -2686,16 +2694,16 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
                       ? 'bg-amber-500 text-zinc-950 shadow-xs font-black'
                       : 'text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white'
                   }`}
-                  title="樂句檢視 (Verse Edit): 依標點與語氣流暢分組編輯"
+                  title="Verse View: Grouped by poetic lines and breathing phrasing"
                 >
                   <AlignLeft className="w-3.5 h-3.5" />
-                  <span>樂句檢視</span>
+                  <span>Verse View</span>
                   <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-zinc-200/80 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 font-mono font-bold">
                     {verses.length}
                   </span>
                 </button>
 
-                {/* 小節檢視 (Measure Edit) */}
+                {/* Measure Edit */}
                 <button
                   id="score-deck-mode-measure-btn"
                   type="button"
@@ -2713,16 +2721,16 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
                       ? 'bg-amber-500 text-zinc-950 shadow-xs font-black'
                       : 'text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white'
                   }`}
-                  title="小節檢視 (Measure Edit): 依拍號與小節線結構編輯"
+                  title="Measure View: Structured by barlines and measure time signatures"
                 >
                   <Layers className="w-3.5 h-3.5" />
-                  <span>小節檢視</span>
+                  <span>Measure View</span>
                   <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-zinc-200/80 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 font-mono font-bold">
                     {song.measures.length}
                   </span>
                 </button>
 
-                {/* 總譜檢視 (Sheet Mode) */}
+                {/* Sheet Music (WYSIWYG & Full Score) */}
                 <button
                   id="score-deck-mode-sheet-btn"
                   type="button"
@@ -2732,12 +2740,12 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
                       ? 'bg-amber-500 text-zinc-950 shadow-xs font-black'
                       : 'text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white'
                   }`}
-                  title="總譜檢視 (Sheet Mode): 整頁排版、系統行分段與節奏健康檢視"
+                  title="Sheet Music: Authentic paper sheet engraving & systems layout"
                 >
                   <FileSpreadsheet className="w-3.5 h-3.5" />
-                  <span>總譜檢視</span>
+                  <span>Sheet Music</span>
                   {incompleteMeasuresCount > 0 && (
-                    <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-rose-600 text-white font-mono font-black" title={`${incompleteMeasuresCount} 小節拍數不符`}>
+                    <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-rose-600 text-white font-mono font-black" title={`${incompleteMeasuresCount} measures with incomplete beats`}>
                       {incompleteMeasuresCount}
                     </span>
                   )}
@@ -2751,11 +2759,11 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
                   type="button"
                   onClick={() => onReturnToKaraoke(karaokeReturnTarget.originalMeasureIndex)}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold rounded-xl text-xs shadow-xs transition-all active:scale-95 cursor-pointer touch-manipulation min-h-[36px]"
-                  title={`返回卡拉OK播放 (第 ${karaokeReturnTarget.originalMeasureIndex + 1} 小節)`}
+                  title={`Return to Karaoke (Measure ${karaokeReturnTarget.originalMeasureIndex + 1})`}
                 >
                   <CornerUpLeft className="w-3.5 h-3.5" />
                   <Mic2 className="w-3.5 h-3.5" />
-                  <span>返回卡拉OK (第{karaokeReturnTarget.originalMeasureIndex + 1}節)</span>
+                  <span>Return to Karaoke (M.{karaokeReturnTarget.originalMeasureIndex + 1})</span>
                 </button>
               )}
 
@@ -2765,11 +2773,11 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
                   type="button"
                   onClick={() => handleReturnToSheet(sheetReturnTarget.originalMeasureIndex)}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-white text-white dark:text-zinc-900 font-bold rounded-xl text-xs shadow-xs transition-all active:scale-95 cursor-pointer touch-manipulation min-h-[36px]"
-                  title={`返回總譜檢視 (第 ${sheetReturnTarget.originalMeasureIndex + 1} 小節)`}
+                  title={`Return to Sheet Music (Measure ${sheetReturnTarget.originalMeasureIndex + 1})`}
                 >
                   <CornerUpLeft className="w-3.5 h-3.5" />
                   <FileSpreadsheet className="w-3.5 h-3.5" />
-                  <span>返回總譜 (第{sheetReturnTarget.originalMeasureIndex + 1}節)</span>
+                  <span>Return to Sheet (M.{sheetReturnTarget.originalMeasureIndex + 1})</span>
                 </button>
               )}
             </div>
@@ -2783,10 +2791,10 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
                   type="button"
                   onClick={handleStopAudio}
                   className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-black bg-rose-600 hover:bg-rose-500 text-white shadow-xs transition-all active:scale-95 cursor-pointer touch-manipulation min-h-[36px] animate-pulse"
-                  title="停止當前播放"
+                  title="Stop playback"
                 >
                   <Square className="w-3.5 h-3.5 fill-current text-white" />
-                  <span>停止播放</span>
+                  <span>Stop</span>
                 </button>
               ) : onPlayKaraoke ? (
                 <div
@@ -2798,11 +2806,11 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
                     type="button"
                     onClick={() => onPlayKaraoke()}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-zinc-950 shadow-xs transition-all active:scale-95 cursor-pointer touch-manipulation min-h-[34px]"
-                    title="跳轉至卡拉OK舞台從頭播放"
+                    title="Start Karaoke Playback"
                   >
                     <Mic2 className="w-3.5 h-3.5 text-zinc-950" />
                     <Play className="w-3 h-3 fill-current text-zinc-950" />
-                    <span>卡拉OK演唱</span>
+                    <span>Karaoke</span>
                   </button>
                   {selectedMeasureIndex !== null && selectedMeasureIndex > 0 && (
                     <button
@@ -2810,9 +2818,9 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
                       type="button"
                       onClick={() => onPlayKaraoke(selectedMeasureIndex)}
                       className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold text-amber-900 dark:text-amber-200 hover:bg-amber-500/20 transition-all active:scale-95 cursor-pointer touch-manipulation min-h-[34px]"
-                      title={`從第 ${selectedMeasureIndex + 1} 小節開始卡拉OK播放`}
+                      title={`Play Karaoke from Measure ${selectedMeasureIndex + 1}`}
                     >
-                      <span>從第{selectedMeasureIndex + 1}節</span>
+                      <span>From M.{selectedMeasureIndex + 1}</span>
                     </button>
                   )}
                 </div>
@@ -2824,10 +2832,10 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
                 type="button"
                 onClick={() => setIsKeyboardModalOpen(true)}
                 className="flex items-center gap-1.5 px-3.5 py-1.5 bg-gradient-to-r from-amber-500/20 to-amber-400/20 hover:from-amber-500/30 hover:to-amber-400/30 text-amber-900 dark:text-amber-200 border border-amber-400/70 dark:border-amber-600/70 rounded-xl font-bold shadow-xs transition-all active:scale-95 cursor-pointer touch-manipulation min-h-[36px]"
-                title="鍵盤彈奏即時轉譜工作站 (支援觸控鋼琴、QWERTY 打字、Web MIDI)"
+                title="Keyboard Transcribe Studio (Touch Piano, QWERTY typing, Web MIDI)"
               >
                 <Keyboard className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                <span>彈奏轉譜</span>
+                <span>Transcribe</span>
               </button>
 
               {/* Measure Insert / Delete */}
@@ -2837,10 +2845,10 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
                   type="button"
                   onClick={handleAddMeasure}
                   className="flex items-center gap-1 px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 rounded-lg font-bold shadow-xs transition-all active:scale-95 cursor-pointer touch-manipulation min-h-[34px]"
-                  title="在樂曲末端新增小節"
+                  title="Add Measure at End"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  <span>加小節</span>
+                  <span>Add Bar</span>
                 </button>
 
                 <button
@@ -2854,12 +2862,12 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
                   className="flex items-center gap-1 px-2.5 py-1.5 text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-950/50 rounded-lg font-bold transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer touch-manipulation min-h-[34px]"
                   title={
                     song.measures.length <= 1
-                      ? '樂曲必須保留至少一個小節'
-                      : `刪除第 ${(selectedMeasureIndex !== null ? selectedMeasureIndex : song.measures.length - 1) + 1} 小節`
+                      ? 'Song must retain at least one measure'
+                      : `Delete Measure ${(selectedMeasureIndex !== null ? selectedMeasureIndex : song.measures.length - 1) + 1}`
                   }
                 >
                   <Trash2 className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
-                  <span>刪除</span>
+                  <span>Delete</span>
                   {song.measures.length > 1 && (
                     <span className="text-[10px] font-mono opacity-80">
                       (M.{(selectedMeasureIndex !== null ? selectedMeasureIndex : song.measures.length - 1) + 1})
@@ -2874,10 +2882,10 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
                 type="button"
                 onClick={handleAutoHarmonizeSong}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 hover:from-indigo-500 hover:via-indigo-400 hover:to-purple-500 text-white border border-indigo-400/80 rounded-xl font-bold shadow-xs transition-all active:scale-95 cursor-pointer touch-manipulation min-h-[36px]"
-                title="智慧分析旋律音高與節奏，為全曲所有小節自動配和弦 (可隨時復原)"
+                title="Auto-analyze melody and harmonize chords for all measures (reversable)"
               >
                 <Wand2 className="w-3.5 h-3.5 text-amber-300 stroke-[2.5]" />
-                <span className="text-white font-bold">全曲和弦</span>
+                <span className="text-white font-bold">Auto Chords</span>
               </button>
 
               {/* Rhythm Tools Toggle Button (Expands Duration adjustments on demand) */}
@@ -2891,10 +2899,10 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
                       ? 'bg-amber-500/20 text-amber-900 dark:text-amber-200 border border-amber-400/80 font-black shadow-xs ring-1 ring-amber-400/50'
                       : 'bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 border border-zinc-200/90 dark:border-zinc-700 font-bold shadow-2xs'
                   }`}
-                  title="批次時值調整與節奏工具"
+                  title="Batch duration adjustment and rhythm tools"
                 >
                   <Clock className="w-3.5 h-3.5 text-amber-500" />
-                  <span>時值工具</span>
+                  <span>Rhythm Tools</span>
                   {selectedMeasureIndices.size > 0 && (
                     <span className="text-[10px] px-1.5 py-0.2 bg-amber-500 text-zinc-950 rounded-full font-mono font-black">
                       {selectedMeasureIndices.size}
@@ -2913,10 +2921,10 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
                     ? 'bg-amber-500 text-zinc-950 font-black shadow-xs ring-2 ring-amber-400'
                     : 'bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 border border-zinc-200/90 dark:border-zinc-700 font-bold shadow-2xs'
                 }`}
-                title="搜尋曲內小節與樂句 [Ctrl+F / ⌘F]"
+                title="Search measures and verses [Ctrl+F / ⌘F]"
               >
                 <Search className="w-3.5 h-3.5 text-amber-500" />
-                <span>搜尋</span>
+                <span>Search</span>
                 <kbd className="hidden md:inline text-[10px] px-1 py-0.2 rounded bg-zinc-200 dark:bg-zinc-700 font-mono">⌘F</kbd>
               </button>
             </div>
@@ -2932,19 +2940,19 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs font-black text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5 shrink-0">
                   <Clock className="w-3.5 h-3.5 text-amber-500" />
-                  <span>時值拍長:</span>
+                  <span>Duration / Beats:</span>
                 </span>
 
                 {/* Target Scope Pill */}
                 <div className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-500/10 dark:bg-amber-950/40 border border-amber-300/80 dark:border-amber-700/80 text-amber-900 dark:text-amber-200 rounded-xl text-xs font-bold">
-                  <span>目標:</span>
+                  <span>Target:</span>
                   {selectedMeasureIndices.size > 0 ? (
                     <span className="font-mono font-black">
-                      已選 {selectedMeasureIndices.size} 節 (M.{Array.from(selectedMeasureIndices).map(i => i + 1).join(', ')})
+                      {selectedMeasureIndices.size} selected (M.{Array.from(selectedMeasureIndices).map(i => i + 1).join(', ')})
                     </span>
                   ) : (
                     <span className="font-mono font-black">
-                      目前 M.{(selectedMeasureIndex !== null ? selectedMeasureIndex : 0) + 1}
+                      Current M.{(selectedMeasureIndex !== null ? selectedMeasureIndex : 0) + 1}
                     </span>
                   )}
                 </div>
@@ -2955,18 +2963,18 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
                     type="button"
                     onClick={handleSelectAllMeasures}
                     className="px-2 py-1 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg text-xs font-bold transition-all cursor-pointer min-h-[30px]"
-                    title="全選所有小節進行批次時值調整"
+                    title="Select all measures for batch duration adjustments"
                   >
-                    全選小節
+                    Select All
                   </button>
                   {selectedMeasureIndices.size > 0 && (
                     <button
                       type="button"
                       onClick={handleClearMeasureSelection}
                       className="px-2 py-1 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg text-xs font-bold transition-all cursor-pointer min-h-[30px]"
-                      title="清除小節多選"
+                      title="Clear measure multi-selection"
                     >
-                      清除 ({selectedMeasureIndices.size})
+                      Clear ({selectedMeasureIndices.size})
                     </button>
                   )}
                 </div>
@@ -2981,10 +2989,10 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
                     type="button"
                     onClick={() => handleScaleMeasureDuration(0.5)}
                     className="flex items-center gap-1 px-2.5 py-1 text-zinc-800 dark:text-zinc-200 hover:bg-white dark:hover:bg-zinc-700 rounded-lg text-xs font-bold transition-all active:scale-95 cursor-pointer min-h-[30px]"
-                    title="將目標小節音符時值依比例減半 (÷2) (如 1 → 0.5, 0.5 → 0.25)"
+                    title="Scale note durations by half (÷2) (e.g. 1 → 0.5, 0.5 → 0.25)"
                   >
                     <span className="font-mono font-black text-amber-600 dark:text-amber-400">÷2</span>
-                    <span>減半</span>
+                    <span>Halve</span>
                   </button>
 
                   <button
@@ -2992,21 +3000,21 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
                     type="button"
                     onClick={() => handleScaleMeasureDuration(2.0)}
                     className="flex items-center gap-1 px-2.5 py-1 text-zinc-800 dark:text-zinc-200 hover:bg-white dark:hover:bg-zinc-700 rounded-lg text-xs font-bold transition-all active:scale-95 cursor-pointer min-h-[30px]"
-                    title="將目標小節音符時值依比例加倍 (×2) (如 0.5 → 1, 1 → 2)"
+                    title="Scale note durations by double (×2) (e.g. 0.5 → 1, 1 → 2)"
                   >
                     <span className="font-mono font-black text-amber-600 dark:text-amber-400">×2</span>
-                    <span>加倍</span>
+                    <span>Double</span>
                   </button>
                 </div>
 
                 {/* Direct Uniform Duration Presets */}
                 <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800/90 p-0.5 rounded-xl border border-zinc-200/90 dark:border-zinc-700 shadow-2xs">
-                  <span className="text-[11px] font-bold text-zinc-600 dark:text-zinc-400 px-1.5">設為:</span>
+                  <span className="text-[11px] font-bold text-zinc-600 dark:text-zinc-400 px-1.5">Set:</span>
                   <button
                     type="button"
                     onClick={() => handleSetUniformMeasureDuration(0.5)}
                     className="px-2 py-1 text-zinc-800 dark:text-zinc-200 hover:bg-white dark:hover:bg-zinc-700 rounded-lg text-xs font-bold transition-all cursor-pointer min-h-[30px]"
-                    title="將目標小節所有音符設為八分音符 (0.5 拍)"
+                    title="Set all notes in target measures to eighth notes (0.5 beats)"
                   >
                     ♪ 0.5
                   </button>
@@ -3014,7 +3022,7 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
                     type="button"
                     onClick={() => handleSetUniformMeasureDuration(1.0)}
                     className="px-2 py-1 text-zinc-800 dark:text-zinc-200 hover:bg-white dark:hover:bg-zinc-700 rounded-lg text-xs font-bold transition-all cursor-pointer min-h-[30px]"
-                    title="將目標小節所有音符設為四分音符 (1.0 拍)"
+                    title="Set all notes in target measures to quarter notes (1.0 beat)"
                   >
                     ♩ 1.0
                   </button>
@@ -3022,7 +3030,7 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
                     type="button"
                     onClick={() => handleSetUniformMeasureDuration(2.0)}
                     className="px-2 py-1 text-zinc-800 dark:text-zinc-200 hover:bg-white dark:hover:bg-zinc-700 rounded-lg text-xs font-bold transition-all cursor-pointer min-h-[30px]"
-                    title="將目標小節所有音符設為二分音符 (2.0 拍)"
+                    title="Set all notes in target measures to half notes (2.0 beats)"
                   >
                     𝅗𝅥 2.0
                   </button>
@@ -3167,6 +3175,9 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
             onDuplicateVerse={handleDuplicateVerse}
             onDeleteVerse={handleDeleteVerse}
             onAddVerse={handleAddVerse}
+            onUpdateSong={onUpdateSong}
+            onUpdateNote={handleUpdateNoteDirect}
+            previewNoteAudio={(k, n) => audioEngine.previewNote(k, n)}
           />
         )}
 

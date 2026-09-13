@@ -51,9 +51,9 @@ export default function Error({
           <AlertTriangle className="w-8 h-8" />
         </div>
 
-        <h2 className="text-xl font-black mb-2">發生非預期錯誤 (Unexpected Error)</h2>
+        <h2 className="text-xl font-black mb-2">Unexpected Error</h2>
         <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-6 leading-relaxed">
-          應用程式在運作或播放時遇到異常。您的樂譜資料已自動保存在本機，可透過下方按鈕立即備份下載。
+          An error occurred during operation or playback. Your score data is saved locally in your browser and can be exported as a backup below.
         </p>
 
         {error.message && (
@@ -69,7 +69,7 @@ export default function Error({
             className="w-full py-3 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer"
           >
             <Download className="w-4 h-4" />
-            <span>{downloaded ? '已成功下載備份 (Saved)' : '下載樂譜緊急備份 (Download Backup)'}</span>
+            <span>{downloaded ? 'Backup Downloaded' : 'Download Score Backup'}</span>
           </button>
 
           <button
@@ -78,7 +78,7 @@ export default function Error({
             className="w-full py-3 px-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 font-bold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer"
           >
             <RotateCcw className="w-4 h-4 text-zinc-500" />
-            <span>重試並重新載入 (Try Again)</span>
+            <span>Try Again</span>
           </button>
 
           <button
@@ -87,7 +87,7 @@ export default function Error({
             className="w-full py-2 px-4 rounded-xl text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300 font-medium text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
           >
             <Home className="w-3.5 h-3.5" />
-            <span>重新載入頁面 (Reload Page)</span>
+            <span>Reload Page</span>
           </button>
         </div>
       </div>

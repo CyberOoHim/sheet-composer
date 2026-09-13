@@ -383,7 +383,7 @@ export const VerseModeView: React.FC<VerseModeViewProps> = React.memo(({
                 scrollToScoreTop();
               }}
               className="absolute top-3.5 right-3.5 sm:top-4 sm:right-4 z-10 flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-zinc-100/95 hover:bg-amber-500 hover:text-zinc-950 dark:bg-[#0a0c10]/95 dark:hover:bg-amber-400 dark:hover:text-zinc-950 text-zinc-700 dark:text-zinc-300 border border-zinc-200/90 dark:border-zinc-700 shadow-2xs hover:shadow-xs transition-all active:scale-95 cursor-pointer touch-manipulation min-h-[36px]"
-              title={`回到頁首 (Jump to top of score editor from Verse #${vIdx + 1})`}
+              title={`Jump to top of score editor from Verse #${vIdx + 1}`}
               aria-label={`Jump to top of score editor from Verse #${vIdx + 1}`}
             >
               <ArrowUpToLine className="w-3.5 h-3.5" />
@@ -597,10 +597,10 @@ export const VerseModeView: React.FC<VerseModeViewProps> = React.memo(({
                       onAutoHarmonizeVerse(vIdx);
                     }}
                     className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-amber-500/20 to-amber-400/20 hover:from-amber-500/30 hover:to-amber-400/30 text-amber-900 dark:text-amber-200 rounded-xl font-bold text-xs border border-amber-300 dark:border-amber-700/80 transition-colors cursor-pointer touch-manipulation min-h-[40px]"
-                    title="為此段歌詞所有小節智慧配置最佳和弦 (Auto-Harmonize Verse)"
+                    title="Auto-harmonize all measures in this verse"
                   >
                     <Wand2 className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                    <span>🪄 本段配和弦</span>
+                    <span>🪄 Harmonize Verse</span>
                   </button>
                 )}
 
@@ -648,7 +648,7 @@ export const VerseModeView: React.FC<VerseModeViewProps> = React.memo(({
                   </span>
                   <div className="flex items-center gap-2">
                     <span className="text-[11px] text-zinc-400 font-normal hidden sm:inline">
-                      點擊進度條跳至該小節 (Click bar to jump)
+                      Click bar to jump to measure
                     </span>
                     <span className="text-[11px] font-medium text-zinc-500 font-mono">
                       Time: {song.timeSignature || '4/4'}
@@ -718,7 +718,7 @@ export const VerseModeView: React.FC<VerseModeViewProps> = React.memo(({
                             ? 'border-amber-500 bg-amber-500/10 dark:border-amber-400 dark:bg-amber-950/40 ring-1 ring-amber-500/40 shadow-xs'
                             : 'border-zinc-200/80 dark:border-zinc-700/60 bg-white dark:bg-zinc-900/60 hover:border-amber-400/80 dark:hover:border-amber-500/60 hover:bg-zinc-50/80 dark:hover:bg-zinc-800/60 shadow-2xs'
                         }`}
-                        title={`跳至第 ${mIdx + 1} 小節 (Click to jump to Measure #${mIdx + 1})\n節奏: ${rhythm.currentBeats}/${rhythm.expectedBeats} beats${hasLyrics ? `\n歌詞: ${hanloLyric ? hanloLyric : ''} ${pojLyric ? `(${pojLyric})` : ''}` : '\n(無歌詞)'}`}
+                        title={`Jump to Measure #${mIdx + 1}\nRhythm: ${rhythm.currentBeats}/${rhythm.expectedBeats} beats${hasLyrics ? `\nLyrics: ${hanloLyric ? hanloLyric : ''} ${pojLyric ? `(${pojLyric})` : ''}` : '\n(No lyrics)'}`}
                       >
                         <div className="flex items-center justify-between gap-1 mb-1.5">
                           <div className="flex items-center gap-1 font-bold truncate">
@@ -734,7 +734,7 @@ export const VerseModeView: React.FC<VerseModeViewProps> = React.memo(({
                                   if (firstChord) audioEngine.previewChord(firstChord);
                                 }}
                                 className="text-amber-600 hover:text-amber-500 dark:text-amber-400 text-[10px] sm:text-[11px] font-mono shrink-0 cursor-pointer hover:underline"
-                                title={`點擊試聽和弦 [${measure.chord}]`}
+                                title={`Audition chord [${measure.chord}]`}
                               >
                                 [{measure.chord}]
                               </button>
@@ -862,7 +862,7 @@ export const VerseModeView: React.FC<VerseModeViewProps> = React.memo(({
                             </div>
                           ) : (
                             <div className="flex items-center gap-1 min-w-0 text-zinc-400 dark:text-zinc-500">
-                              <span className="text-[10px] italic select-none">(無歌詞)</span>
+                              <span className="text-[10px] italic select-none">(No lyrics)</span>
                             </div>
                           )}
                         </div>
@@ -1144,7 +1144,7 @@ export const VerseModeView: React.FC<VerseModeViewProps> = React.memo(({
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full">
                 <span className="text-xs font-bold text-amber-700 dark:text-amber-300 shrink-0 flex items-center gap-1.5 select-none">
                   <MessageSquareQuote className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                  <span>段落歌詞填入 (羅馬字 / 漢羅):</span>
+                  <span>Verse Lyrics (Roman / Han-lo):</span>
                 </span>
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                   <input
@@ -1163,7 +1163,7 @@ export const VerseModeView: React.FC<VerseModeViewProps> = React.memo(({
                         onDistributeVerseLyrics(verse, vIdx);
                       }
                     }}
-                    placeholder="輸入歌詞並按「批次套用」，將自動逐字套入此段落音符..."
+                    placeholder="Enter lyrics and click 'Batch Apply' to map syllables to notes..."
                     className="flex-1 min-w-0 px-3 py-1.5 bg-zinc-50 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-700 rounded-xl text-xs focus:ring-2 focus:ring-amber-500 focus:outline-hidden min-h-[36px] text-zinc-900 dark:text-zinc-100"
                   />
                   <button
@@ -1171,9 +1171,9 @@ export const VerseModeView: React.FC<VerseModeViewProps> = React.memo(({
                     type="button"
                     onClick={() => onDistributeVerseLyrics(verse, vIdx)}
                     className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-zinc-950 font-bold rounded-xl text-xs shadow-xs transition-colors shrink-0 min-h-[36px] cursor-pointer touch-manipulation whitespace-nowrap flex items-center justify-center"
-                    title="批次套用歌詞至此段落音符"
+                    title="Batch apply lyrics to verse notes"
                   >
-                    批次套用
+                    Batch Apply
                   </button>
                 </div>
               </div>
@@ -1181,7 +1181,7 @@ export const VerseModeView: React.FC<VerseModeViewProps> = React.memo(({
               {/* Row 2: Quick Punctuation Buttons Row */}
               <div className="flex items-center gap-2 flex-wrap pt-0.5">
                 <span className="text-[11px] text-zinc-500 dark:text-zinc-400 font-semibold mr-0.5 shrink-0 select-none">
-                  常用標點:
+                  Punctuation:
                 </span>
                 <div className="flex items-center gap-1.5 flex-wrap">
                   {['，', '。', '、', '！', '？', '—', '…', '「', '」', 'V'].map((punct, pIdx) => (
@@ -1191,7 +1191,7 @@ export const VerseModeView: React.FC<VerseModeViewProps> = React.memo(({
                       type="button"
                       onClick={() => onInsertPunctuationToNote(punct)}
                       className="px-2.5 py-1 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-lg text-xs font-mono font-bold transition-colors cursor-pointer touch-manipulation min-h-[32px] min-w-[32px] flex items-center justify-center border border-zinc-200/80 dark:border-zinc-700/80 hover:border-amber-400/80 dark:hover:border-amber-500/80"
-                      title={`在選取音符插入標點符號「${punct}」`}
+                      title={`Insert punctuation "${punct}" at selected note`}
                     >
                       {punct}
                     </button>

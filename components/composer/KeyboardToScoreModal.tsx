@@ -964,13 +964,13 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
   );
 
   const getBeatDurationLabel = useCallback((beats: number): string => {
-    if (beats >= 3.65) return '4.0 拍 (全音符 1 - - -)';
-    if (beats >= 2.65) return '3.0 拍 (附點二分 1 - -)';
-    if (beats >= 1.65) return '2.0 拍 (二分音符 1 -)';
-    if (beats >= 1.35) return '1.5 拍 (附點四分 ♩·)';
-    if (beats >= 0.7) return '1.0 拍 (四分音符 ♩)';
-    if (beats >= 0.35) return '0.5 拍 (八分音符 ♪)';
-    return `${beats.toFixed(2)} 拍 (十六分 𝅘𝅥𝅯)`;
+    if (beats >= 3.65) return '4.0 beats (Whole note 1 - - -)';
+    if (beats >= 2.65) return '3.0 beats (Dotted half 1 - -)';
+    if (beats >= 1.65) return '2.0 beats (Half note 1 -)';
+    if (beats >= 1.35) return '1.5 beats (Dotted quarter ♩·)';
+    if (beats >= 0.7) return '1.0 beat (Quarter note ♩)';
+    if (beats >= 0.35) return '0.5 beat (Eighth note ♪)';
+    return `${beats.toFixed(2)} beats (16th 𝅘𝅥𝅯)`;
   }, []);
 
   if (!isOpen) return null;
@@ -1006,7 +1006,7 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                   id="keyboard-modal-title"
                   className="text-base sm:text-lg font-black tracking-tight text-zinc-900 dark:text-zinc-100"
                 >
-                  鍵盤彈奏即時轉譜工作站
+                  Keyboard to Score Studio
                 </h2>
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300 font-extrabold uppercase font-mono tracking-wider">
                   Keyboard Studio
@@ -1019,7 +1019,7 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                 )}
               </div>
               <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                專業即時簡譜轉錄工作站 · 支援螢幕觸控鋼琴、電腦鍵盤打字 (QWERTY)、USB/藍牙 Web MIDI 實體電子琴
+                Real-time numbered notation transcriber · Multi-touch screen piano, QWERTY typing, and USB/Bluetooth Web MIDI
               </p>
             </div>
           </div>
@@ -1034,7 +1034,7 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                     : 'text-zinc-600 dark:text-zinc-400'
                 }`}
               >
-                1. 設定
+                1. Setup
               </span>
               <span
                 className={`px-2.5 py-1 rounded-lg transition-colors ${
@@ -1043,7 +1043,7 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                     : 'text-zinc-600 dark:text-zinc-400'
                 }`}
               >
-                2. 彈奏
+                2. Play
               </span>
               <span
                 className={`px-2.5 py-1 rounded-lg transition-colors ${
@@ -1052,7 +1052,7 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                     : 'text-zinc-600 dark:text-zinc-400'
                 }`}
               >
-                3. 轉譜
+                3. Transcribe
               </span>
             </div>
 
@@ -1064,8 +1064,8 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                 onClose();
               }}
               className="p-2 rounded-xl text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/60 dark:hover:bg-zinc-800/60 transition-colors cursor-pointer"
-              title="關閉 (Esc)"
-              aria-label="關閉"
+              title="Close (Esc)"
+              aria-label="Close"
             >
               <X className="w-5 h-5" />
             </button>
@@ -1085,13 +1085,13 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                 <div className="flex flex-col gap-2 p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800">
                   <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
                     <Music2 className="w-3.5 h-3.5 text-amber-500" />
-                    <span>調號 (Key Signature)</span>
+                    <span>Key Signature</span>
                   </label>
                   <select
                     id="keyboard-key-select"
                     value={activeKey}
                     onChange={e => setActiveKey(e.target.value as KeySignature)}
-                    aria-label="調號"
+                    aria-label="Key Signature"
                     className="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-xl font-bold text-sm text-zinc-900 dark:text-zinc-100 cursor-pointer shadow-2xs focus:ring-2 focus:ring-amber-500"
                   >
                     {CHROMATIC_KEYS.map(k => (
@@ -1102,7 +1102,7 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                   </select>
 
                   <div className="flex items-center justify-between gap-1 mt-1">
-                    <span className="text-[11px] text-zinc-500">升降偏好：</span>
+                    <span className="text-[11px] text-zinc-500">Accidentals:</span>
                     <div className="flex gap-1">
                       {(['auto', 'sharp', 'flat'] as const).map(pref => (
                         <button
@@ -1115,7 +1115,7 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                               : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700'
                           }`}
                         >
-                          {pref === 'auto' ? '自動' : pref === 'sharp' ? '♯' : '♭'}
+                          {pref === 'auto' ? 'Auto' : pref === 'sharp' ? '♯' : '♭'}
                         </button>
                       ))}
                     </div>
@@ -1127,7 +1127,7 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
                       <Clock className="w-3.5 h-3.5 text-amber-500" />
-                      <span>速度與拍號 (BPM &amp; Meter)</span>
+                      <span>Tempo &amp; Meter (BPM)</span>
                     </label>
                     <span className="text-xs font-mono font-bold text-amber-600 dark:text-amber-400">
                       {activeBpm} BPM
@@ -1143,14 +1143,14 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                       step={1}
                       value={activeBpm}
                       onChange={e => setActiveBpm(parseInt(e.target.value, 10))}
-                      aria-label="彈奏速度 BPM"
+                      aria-label="Playing tempo BPM"
                       className="flex-1 accent-amber-500 cursor-pointer h-2 bg-zinc-200 dark:bg-zinc-700 rounded-lg"
                     />
                     <select
                       id="keyboard-time-sig-select"
                       value={activeTimeSignature}
                       onChange={e => setActiveTimeSignature(e.target.value as TimeSignature)}
-                      aria-label="拍號"
+                      aria-label="Time Signature"
                       className="px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-xl font-mono font-bold text-xs cursor-pointer"
                     >
                       {STANDARD_TIME_SIGNATURES.map(ts => (
@@ -1172,7 +1172,7 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                         }`}
                       />
                       <span className="font-mono font-bold">
-                        第 {setupPreviewBeat} 拍 / {activeTimeSignature.split('/')[0]} 拍
+                        Beat {setupPreviewBeat} / {activeTimeSignature.split('/')[0]}
                       </span>
                     </div>
                     <button
@@ -1188,7 +1188,7 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                         <VolumeX className="w-3 h-3" />
                       )}
                       <span>
-                        {audibleClickDuringRecording ? '節拍器有聲' : '節拍器靜音'}
+                        {audibleClickDuringRecording ? 'Metronome On' : 'Metronome Muted'}
                       </span>
                     </button>
                   </div>
@@ -1198,7 +1198,7 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                 <div className="flex flex-col gap-2 p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800">
                   <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
                     <SlidersHorizontal className="w-3.5 h-3.5 text-amber-500" />
-                    <span>節拍量化顆粒 (Quantize Grid)</span>
+                    <span>Quantize Grid</span>
                   </label>
 
                   <div className="flex items-center gap-1.5">
@@ -1213,7 +1213,7 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                             : 'bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 border-zinc-300 dark:border-zinc-700'
                         }`}
                       >
-                        {grid === 'quarter' ? '♩ 四分' : grid === 'eighth' ? '♪ 八分' : '𝅘𝅥𝅯 十六分'}
+                        {grid === 'quarter' ? '♩ Quarter' : grid === 'eighth' ? '♪ 8th' : '𝅘𝅥𝅯 16th'}
                       </button>
                     ))}
                   </div>
@@ -1228,7 +1228,7 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                           onChange={e => setEnableCountIn(e.target.checked)}
                           className="rounded-md accent-amber-500 cursor-pointer"
                         />
-                        <span>預備拍倒數 (Count-in)</span>
+                        <span>Count-in</span>
                       </label>
 
                       <label className="flex items-center gap-1.5 text-[11px] text-zinc-600 dark:text-zinc-400 cursor-pointer">
@@ -1239,14 +1239,14 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                           onChange={e => setAllowTriplets(e.target.checked)}
                           className="rounded-md accent-amber-500 cursor-pointer"
                         />
-                        <span>三連音 (Triplets)</span>
+                        <span>Triplets</span>
                       </label>
                     </div>
 
                     {enableCountIn && (
                       <div className="flex items-center justify-between gap-1.5 bg-zinc-100/90 dark:bg-zinc-800/80 p-1 rounded-xl">
                         <span className="text-[10px] text-zinc-500 dark:text-zinc-400 pl-1 font-semibold shrink-0">
-                          倒數拍數：
+                          Count-in:
                         </span>
                         <div className="flex items-center gap-1 flex-1">
                           {([2, 3, 4, 'auto'] as const).map(opt => (
@@ -1262,8 +1262,8 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                               }`}
                             >
                               {opt === 'auto'
-                                ? `自動 (${activeTimeSignature.split('/')[0]}拍)`
-                                : `${opt} 拍`}
+                                ? `Auto (${activeTimeSignature.split('/')[0]} beats)`
+                                : `${opt} beats`}
                             </button>
                           ))}
                         </div>
@@ -1279,10 +1279,10 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                 <div className="p-3.5 rounded-2xl bg-zinc-50/80 dark:bg-zinc-900/40 border border-zinc-200/80 dark:border-zinc-800/80 flex flex-col gap-1.5">
                   <div className="flex items-center gap-2 font-bold text-xs text-zinc-800 dark:text-zinc-200">
                     <span className="text-base">📱</span>
-                    <span>螢幕多點觸控鋼琴</span>
+                    <span>Touch Screen Piano</span>
                   </div>
                   <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                    在下方琴鍵上自由單音演奏，支援多指滑音 (Glissando) 與零延遲發聲。
+                    Perform melodies freely on the onscreen keyboard below with multi-touch glissando and zero-latency audio.
                   </p>
                 </div>
 
@@ -1291,7 +1291,7 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 font-bold text-xs text-zinc-800 dark:text-zinc-200">
                       <span className="text-base">⌨️</span>
-                      <span>電腦鍵盤打字 (QWERTY)</span>
+                      <span>Computer Keyboard (QWERTY)</span>
                     </div>
                     <button
                       type="button"
@@ -1303,25 +1303,25 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                         )
                       }
                       className="text-[10px] text-amber-600 dark:text-amber-400 underline font-bold cursor-pointer"
-                      title="切換首調唱名 / 固定音高模式"
+                      title="Toggle Movable Do / Fixed Pitch"
                     >
-                      {qwertyMappingMode === 'chromatic_piano' ? '固定音高' : '首調唱名'}
+                      {qwertyMappingMode === 'chromatic_piano' ? 'Fixed Pitch' : 'Movable Do'}
                     </button>
                   </div>
                   <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed font-mono">
-                    白鍵：
+                    White keys:
                     <span className="text-amber-600 dark:text-amber-400 font-bold">
                       A S D F G H J K
                     </span>{' '}
                     (1-7)
                     <br />
-                    黑鍵：
+                    Black keys:
                     <span className="text-zinc-700 dark:text-zinc-300 font-bold">
                       W E T Y U
                     </span>{' '}
                     (♯1, ♯2, ♯4, ♯5, ♯6)
                     <br />
-                    休止符：<span className="font-bold">Space</span> · 撤銷：
+                    Rest: <span className="font-bold">Space</span> · Undo:
                     <span className="font-bold">Backspace</span>
                   </p>
                 </div>
@@ -1330,17 +1330,17 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                 <div className="p-3.5 rounded-2xl bg-zinc-50/80 dark:bg-zinc-900/40 border border-zinc-200/80 dark:border-zinc-800/80 flex flex-col gap-1.5">
                   <div className="flex items-center gap-2 font-bold text-xs text-zinc-800 dark:text-zinc-200">
                     <span className="text-base">𝄢</span>
-                    <span>Web MIDI 實體電子琴</span>
+                    <span>Web MIDI Hardware Keyboard</span>
                   </div>
                   <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
                     {isMidiConnected ? (
                       <span className="text-emerald-600 dark:text-emerald-400 font-bold">
-                        🟢 已連接：{activeMidiDevice}，直接彈奏鍵盤即可入譜！
+                        🟢 Connected: {activeMidiDevice}. Play any key to transcribe directly!
                       </span>
                     ) : isMidiSupported ? (
-                      '接上 USB 或藍牙 MIDI 鍵盤後將自動連線，即插即彈。'
+                      'Connect a USB or Bluetooth MIDI keyboard to auto-pair and play instantly.'
                     ) : (
-                      '瀏覽器未啟用 Web MIDI API，仍可使用螢幕鋼琴與電腦鍵盤。'
+                      'Web MIDI API is not supported in this browser. You can still use the onscreen piano and QWERTY keyboard.'
                     )}
                   </p>
                 </div>
@@ -1360,7 +1360,7 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div className="w-3 h-3 rounded-full bg-amber-400 animate-ping shrink-0" />
                       <span className="text-xs sm:text-sm font-black text-amber-300 tracking-wide truncate">
-                        預備拍倒數中（{countdownBeat} / {getEffectiveCountdownBeats()} 拍）•••請準備在第 1 拍開始彈奏！
+                        Counting in ({countdownBeat} / {getEffectiveCountdownBeats()} beats) ••• Get ready to play on beat 1!
                       </span>
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
@@ -1376,7 +1376,7 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                         }}
                         className="px-3 py-1.5 rounded-xl border border-zinc-700 text-xs font-bold text-zinc-300 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
                       >
-                        取消預備
+                        Cancel
                       </button>
                     </div>
                   </>
@@ -1404,7 +1404,7 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                           }`}
                         />
                         <span className="text-xs font-mono font-bold text-zinc-300 hidden sm:inline">
-                          第 {currentBeatInBar} 拍 / {activeTimeSignature.split('/')[0]} 拍
+                          Beat {currentBeatInBar} / {activeTimeSignature.split('/')[0]}
                         </span>
                       </div>
 
@@ -1414,7 +1414,7 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                           setAudibleClickDuringRecording(!audibleClickDuringRecording)
                         }
                         className="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 cursor-pointer shrink-0"
-                        title={audibleClickDuringRecording ? '靜音節拍聲' : '開啟節拍聲'}
+                        title={audibleClickDuringRecording ? 'Mute metronome' : 'Enable metronome'}
                       >
                         {audibleClickDuringRecording ? (
                           <Volume2 className="w-3.5 h-3.5 text-amber-400" />
@@ -1426,7 +1426,7 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
 
                     {/* Last Played Note & Live Held Duration Readout */}
                     <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-xs text-zinc-400 hidden sm:inline">當前音高：</span>
+                      <span className="text-xs text-zinc-400 hidden sm:inline">Current pitch:</span>
                       {lastPlayedNote ? (
                         <div className="flex items-center gap-2">
                           <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono font-bold text-xs">
@@ -1446,14 +1446,14 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                           {activeHeldBeats !== null && (
                             <div className="hidden sm:flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono font-bold text-xs animate-pulse">
                               <span className="text-[10px] text-emerald-400 uppercase tracking-wider">
-                                持續按住:
+                                Held:
                               </span>
                               <span>{getBeatDurationLabel(activeHeldBeats)}</span>
                             </div>
                           )}
                         </div>
                       ) : (
-                        <span className="text-xs text-zinc-500 italic">等待彈奏...</span>
+                        <span className="text-xs text-zinc-500 italic">Waiting for input...</span>
                       )}
                     </div>
                   </>
@@ -1473,9 +1473,9 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                         ? 'bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border-zinc-700 hover:border-zinc-600 shadow-2xs'
                         : 'bg-zinc-800/40 text-zinc-500 border-zinc-800 cursor-not-allowed'
                     }`}
-                    title="輸入休止符 0 (快捷鍵: Spacebar 空白鍵)"
+                    title="Insert rest 0 (Shortcut: Spacebar)"
                   >
-                    <span>休止符 (0)</span>
+                    <span>Rest (0)</span>
                   </button>
 
                   <button
@@ -1488,13 +1488,13 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                         ? 'bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border-zinc-700 hover:border-zinc-600 shadow-2xs'
                         : 'bg-zinc-800/40 text-zinc-500 border-zinc-800 cursor-not-allowed'
                     }`}
-                    title="撤銷上一個音 (快捷鍵: Backspace 倒退鍵)"
+                    title="Undo last note (Shortcut: Backspace)"
                   >
-                    <span>撤銷 (Undo)</span>
+                    <span>Undo</span>
                   </button>
 
                   <span className="text-[11px] text-zinc-400 font-mono hidden sm:inline ml-2">
-                    快捷鍵：<kbd className="px-1 py-0.5 rounded bg-zinc-800 text-zinc-300 font-mono text-[10px]">Space</kbd> 休止 · <kbd className="px-1 py-0.5 rounded bg-zinc-800 text-zinc-300 font-mono text-[10px]">Backspace</kbd> 撤銷
+                    Shortcuts: <kbd className="px-1 py-0.5 rounded bg-zinc-800 text-zinc-300 font-mono text-[10px]">Space</kbd> Rest · <kbd className="px-1 py-0.5 rounded bg-zinc-800 text-zinc-300 font-mono text-[10px]">Backspace</kbd> Undo
                   </span>
                 </div>
 
@@ -1510,7 +1510,7 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                 {liveRecordedNotes.length > 0 ? (
                   <>
                     <span className="text-[10px] font-bold text-zinc-400 font-mono shrink-0">
-                      已錄入音符：
+                      Recorded Notes:
                     </span>
                     <div className="flex items-center gap-1.5 flex-nowrap">
                       {liveRecordedNotes.map(n => (
@@ -1525,10 +1525,10 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                           </span>
                           <span className="text-[10px] px-1 rounded bg-zinc-800 text-zinc-300">
                             {n.duration >= 1
-                              ? `${n.duration}拍`
+                              ? `${n.duration} beats`
                               : n.duration === 0.5
-                                ? '½拍'
-                                : `${n.duration}拍`}
+                                ? '½ beat'
+                                : `${n.duration} beats`}
                           </span>
                         </div>
                       ))}
@@ -1540,8 +1540,8 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                       <span>🎹</span>
                       <span>
                         {step === 'COUNTING_IN'
-                          ? '彈奏音符流水線就緒，倒數結束後彈奏即時顯示在此...'
-                          : '彈奏中，音符將隨彈奏即時顯示在此流水線中。'}
+                          ? 'Ready to record. Notes will appear in this pipeline in real-time as you play.'
+                          : 'Recording in progress. Notes stream here as you play.'}
                       </span>
                     </span>
                     <span className="font-mono text-[10px] text-zinc-600 shrink-0">
@@ -1561,9 +1561,9 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
               {/* Summary Telemetry Badges */}
               <div className="flex flex-wrap items-center justify-between gap-2 p-3.5 bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 rounded-2xl">
                 <div className="flex items-center gap-2 flex-wrap text-xs">
-                  <span className="font-bold text-zinc-800 dark:text-zinc-200">轉譜成果：</span>
+                  <span className="font-bold text-zinc-800 dark:text-zinc-200">Results:</span>
                   <span className="px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-800 dark:text-amber-300 font-bold">
-                    {transcriptionResult.measures.length} 個小節
+                    {transcriptionResult.measures.length} measures
                   </span>
                   <span className="px-2 py-0.5 rounded-md bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 font-bold">
                     1 = {activeKey}
@@ -1572,7 +1572,7 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                     {activeBpm} BPM
                   </span>
                   <span className="px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 font-bold">
-                    音準精準度 100% (Zero Drift)
+                    100% Pitch Accuracy (Zero Drift)
                   </span>
                 </div>
 
@@ -1586,7 +1586,7 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-xs font-bold rounded-xl transition-colors cursor-pointer"
                 >
                   <RotateCcw className="w-3.5 h-3.5 text-amber-500" />
-                  <span>重新彈奏 (Re-take)</span>
+                  <span>Re-take</span>
                 </button>
               </div>
 
@@ -1597,10 +1597,10 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-amber-400 flex items-center gap-1.5">
                       <Clock className="w-3.5 h-3.5 text-amber-400" />
-                      <span>軌道 1：原始按鍵回放 (Raw Keystrokes)</span>
+                      <span>Track 1: Raw Keystrokes Playback</span>
                     </span>
                     <span className="text-[10px] font-mono text-zinc-400">
-                      {isRawPlaying ? `${Math.round(rawPlaybackProgress)}%` : '微秒級精準時序'}
+                      {isRawPlaying ? `${Math.round(rawPlaybackProgress)}%` : 'Microsecond precision'}
                     </span>
                   </div>
 
@@ -1610,7 +1610,7 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                       type="button"
                       onClick={handleToggleRawPlay}
                       className="p-2.5 rounded-xl bg-amber-500 text-zinc-950 hover:bg-amber-400 font-bold transition-all cursor-pointer shrink-0"
-                      title={isRawPlaying ? '暫停原始回放' : '播放原始按鍵'}
+                      title={isRawPlaying ? 'Pause raw playback' : 'Play raw keystrokes'}
                     >
                       {isRawPlaying ? (
                         <Pause className="w-4 h-4 fill-current" />
@@ -1620,7 +1620,7 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                     </button>
                     <div className="flex-1 flex flex-col gap-1">
                       <span className="text-xs font-mono text-zinc-300">
-                        {isRawPlaying ? '原始按鍵時序播放中...' : '聆聽彈奏原貌與停頓'}
+                        {isRawPlaying ? 'Playing raw keystroke timing...' : 'Listen to original performance timing and pauses'}
                       </span>
                       {/* Progress Bar */}
                       <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
@@ -1638,20 +1638,20 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-amber-400 flex items-center gap-1.5">
                       <Volume2 className="w-3.5 h-3.5 text-amber-400" />
-                      <span>軌道 2：簡譜合成試聽 (Synth Preview)</span>
+                      <span>Track 2: Synthesized Score Audition</span>
                     </span>
                     <select
                       id="keyboard-synth-instrument-select"
                       value={synthInstrument}
                       onChange={e => setSynthInstrument(e.target.value as InstrumentType)}
-                      aria-label="合成樂器"
+                      aria-label="Synthesizer instrument"
                       className="px-2 py-0.5 text-[10px] bg-zinc-800 text-zinc-200 border border-zinc-700 rounded-lg cursor-pointer"
                     >
-                      <option value="piano">鋼琴 (Piano)</option>
-                      <option value="flute">竹笛 (Flute)</option>
-                      <option value="cello">大提琴 (Cello)</option>
-                      <option value="guitar">吉他 (Guitar)</option>
-                      <option value="synth">合成器 (Synth)</option>
+                      <option value="piano">Piano</option>
+                      <option value="flute">Bamboo Flute</option>
+                      <option value="cello">Cello</option>
+                      <option value="guitar">Guitar</option>
+                      <option value="synth">Synthesizer</option>
                     </select>
                   </div>
 
@@ -1661,7 +1661,7 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                       type="button"
                       onClick={handleToggleSynthPlay}
                       className="p-2.5 rounded-xl bg-amber-500 text-zinc-950 hover:bg-amber-400 font-bold transition-all cursor-pointer shrink-0"
-                      title={isSynthPlaying ? '停止合成試聽' : '播放簡譜合成音'}
+                      title={isSynthPlaying ? 'Stop synth preview' : 'Play synthesized score'}
                     >
                       {isSynthPlaying ? (
                         <Pause className="w-4 h-4 fill-current" />
@@ -1670,7 +1670,7 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                       )}
                     </button>
                     <span className="text-xs font-mono text-zinc-300">
-                      {isSynthPlaying ? '合成樂器演奏中...' : '聆聽量化後簡譜拍點 (曲終自動停止)'}
+                      {isSynthPlaying ? 'Playing synthesized notes...' : 'Listen to quantized numbered notation playback'}
                     </span>
                   </div>
                 </div>
@@ -1681,10 +1681,10 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
                     <Music2 className="w-3.5 h-3.5 text-amber-500" />
-                    <span>轉譜簡譜預覽 (Transcribed Numbered Notation Sheet)</span>
+                    <span>Transcribed Numbered Notation Sheet</span>
                   </label>
                   <span className="text-[10px] text-zinc-500 font-mono">
-                    {activeTimeSignature} 拍 · 1 = {activeKey}
+                    {activeTimeSignature} · 1 = {activeKey}
                   </span>
                 </div>
 
@@ -1693,7 +1693,7 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                   className="p-4 bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800 rounded-2xl flex flex-wrap items-center gap-3 min-h-[90px] overflow-x-auto"
                 >
                   {transcriptionResult.measures.length === 0 ? (
-                    <span className="text-xs text-zinc-400 italic">未偵測到足夠音符</span>
+                    <span className="text-xs text-zinc-400 italic">No notes detected</span>
                   ) : (
                     transcriptionResult.measures.map((measure, mIdx) => (
                       <div
@@ -1725,7 +1725,7 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                 {/* 1. Octave Shift */}
                 <div className="flex flex-col gap-1">
                   <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
-                    八度微調 (Shift Octave)
+                    Shift Octave
                   </label>
                   <div className="flex items-center gap-1.5">
                     <button
@@ -1737,13 +1737,13 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                         retranscribeCurrent({ octaveShift: next });
                       }}
                       className="p-1.5 bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 rounded-lg text-xs font-bold cursor-pointer"
-                      title="降 1 八度"
+                      title="Shift 1 Octave Down"
                     >
                       <ArrowDown className="w-3.5 h-3.5 text-amber-500" />
                     </button>
                     <span className="text-xs font-mono font-bold px-2 py-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg flex-1 text-center">
                       {octaveShiftVal === 0
-                        ? '原八度'
+                        ? 'Original'
                         : `${octaveShiftVal > 0 ? '+' : ''}${octaveShiftVal} Oct`}
                     </span>
                     <button
@@ -1755,7 +1755,7 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                         retranscribeCurrent({ octaveShift: next });
                       }}
                       className="p-1.5 bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 rounded-lg text-xs font-bold cursor-pointer"
-                      title="升 1 八度"
+                      title="Shift 1 Octave Up"
                     >
                       <ArrowUp className="w-3.5 h-3.5 text-amber-500" />
                     </button>
@@ -1765,7 +1765,7 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                 {/* 2. Re-Quantize Grid */}
                 <div className="flex flex-col gap-1">
                   <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
-                    重新量化 (Re-Quantize)
+                    Re-Quantize
                   </label>
                   <div className="flex items-center gap-1">
                     {(['quarter', 'eighth', 'sixteenth'] as QuantizeGrid[]).map(g => (
@@ -1791,7 +1791,7 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                 {/* 3. Accidental Preference */}
                 <div className="flex flex-col gap-1">
                   <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
-                    升降記號偏好 (Accidental)
+                    Accidental Preference
                   </label>
                   <div className="flex items-center gap-1">
                     {(['auto', 'sharp', 'flat'] as const).map(p => (
@@ -1808,7 +1808,7 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                             : 'bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300'
                         }`}
                       >
-                        {p === 'auto' ? '自動' : p === 'sharp' ? '升 (#)' : '降 (b)'}
+                        {p === 'auto' ? 'Auto' : p === 'sharp' ? 'Sharp (♯)' : 'Flat (♭)'}
                       </button>
                     ))}
                   </div>
@@ -1820,7 +1820,7 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                 <div className="flex items-center gap-2">
                   <Layers className="w-4 h-4 text-amber-500" />
                   <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
-                    插入樂譜位置：
+                    Insert Location:
                   </span>
                 </div>
 
@@ -1835,7 +1835,7 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                         : 'bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300'
                     }`}
                   >
-                    當前游標後 (M.{selectedMeasureIndex ? selectedMeasureIndex + 1 : 1})
+                    After Cursor (M.{selectedMeasureIndex ? selectedMeasureIndex + 1 : 1})
                   </button>
 
                   <button
@@ -1848,7 +1848,7 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                         : 'bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300'
                     }`}
                   >
-                    追加至曲末 (Append)
+                    Append to End
                   </button>
 
                   <button
@@ -1861,7 +1861,7 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                         : 'bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300'
                     }`}
                   >
-                    替換當前小節 (Replace)
+                    Replace Current Measure
                   </button>
                 </div>
               </div>
@@ -1883,21 +1883,21 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
             octaveShiftVal={octaveShiftVal}
             statusTitle={
               step === 'SETUP'
-                ? '琴鍵試音練習：'
+                ? 'Practice / Audition:'
                 : step === 'COUNTING_IN'
-                  ? '琴鍵預備中：'
+                  ? 'Counting In:'
                   : step === 'RECORDING'
-                    ? '琴鍵即時收音中：'
-                    : '琴鍵試音對照：'
+                    ? 'Recording Performance:'
+                    : 'Audition & Compare:'
             }
             statusSubtitle={
               step === 'SETUP'
-                ? '點擊琴鍵或電腦鍵盤試聽，不計入樂譜'
+                ? 'Play keys or keyboard to test sounds without affecting score'
                 : step === 'COUNTING_IN'
-                  ? `倒數 ${countdownBeat} 拍後請於第 1 拍開始彈奏`
+                  ? `Counting down ${countdownBeat}: prepare to play on beat 1`
                   : step === 'RECORDING'
-                    ? '按住保持時值，鬆開自動量化'
-                    : '點擊琴鍵可即時試聽音高，對照上方簡譜'
+                    ? 'Hold key for duration, release to quantize automatically'
+                    : 'Play keys to compare pitches with the transcribed score above'
             }
           />
         </div>
@@ -1907,11 +1907,11 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
           {step === 'SETUP' && (
             <>
               <div className="text-xs text-zinc-500">
-                按{' '}
+                Press{' '}
                 <kbd className="px-1.5 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 font-mono font-bold text-zinc-700 dark:text-zinc-300">
-                  空白鍵
+                  Space
                 </kbd>{' '}
-                或點擊按鈕開始
+                or click start button
               </div>
 
               <div className="flex items-center gap-3">
@@ -1924,7 +1924,7 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                   }}
                   className="px-4 py-2 text-xs font-bold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200/60 dark:hover:bg-zinc-800/60 rounded-xl transition-colors cursor-pointer min-h-[42px] flex items-center"
                 >
-                  取消
+                  Cancel
                 </button>
 
                 <button
@@ -1934,7 +1934,7 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                   className="flex items-center justify-center gap-2 px-6 py-2.5 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-zinc-950 font-black text-xs sm:text-sm rounded-xl shadow-md transition-all active:scale-95 cursor-pointer touch-manipulation min-h-[42px]"
                 >
                   <Play className="w-4 h-4 fill-current ml-0.5" />
-                  <span>開始彈奏錄音 (Start Recording)</span>
+                  <span>Start Recording</span>
                 </button>
               </div>
             </>
@@ -1944,7 +1944,7 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
             <>
               <div className="flex items-center gap-2 text-xs text-amber-500 font-bold">
                 <div className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping" />
-                <span>預備拍倒數中 · 準備彈奏</span>
+                <span>Count-in active · Ready to play</span>
               </div>
 
               <button
@@ -1955,7 +1955,7 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                 }}
                 className="px-4 py-2.5 text-xs font-bold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200/60 dark:hover:bg-zinc-800/60 rounded-xl transition-colors cursor-pointer min-h-[42px] flex items-center"
               >
-                取消預備
+                Cancel
               </button>
             </>
           )}
@@ -1972,7 +1972,7 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                 className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200/60 dark:hover:bg-zinc-800/60 rounded-xl transition-colors cursor-pointer min-h-[42px]"
               >
                 <RotateCcw className="w-3.5 h-3.5 text-amber-500" />
-                <span>重新開始 (Restart)</span>
+                <span>Restart</span>
               </button>
 
               <button
@@ -1982,7 +1982,7 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                 className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-zinc-950 font-black text-xs sm:text-sm rounded-xl shadow-md transition-all active:scale-95 cursor-pointer touch-manipulation min-h-[42px]"
               >
                 <Check className="w-4 h-4 stroke-[3]" />
-                <span>完成彈奏轉譜 (Finish &amp; Transcribe)</span>
+                <span>Finish &amp; Transcribe</span>
               </button>
             </>
           )}
@@ -1999,7 +1999,7 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                 className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200/60 dark:hover:bg-zinc-800/60 rounded-xl transition-colors cursor-pointer min-h-[42px]"
               >
                 <RotateCcw className="w-3.5 h-3.5 text-amber-500" />
-                <span>重新彈奏 (Re-take)</span>
+                <span>Re-take</span>
               </button>
 
               <div className="flex items-center gap-3">
@@ -2012,7 +2012,7 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                   }}
                   className="px-4 py-2 text-xs font-bold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200/60 dark:hover:bg-zinc-800/60 rounded-xl transition-colors cursor-pointer min-h-[42px] flex items-center"
                 >
-                  取消
+                  Cancel
                 </button>
 
                 <button
@@ -2022,7 +2022,7 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
                   className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-zinc-950 font-black text-xs sm:text-sm rounded-xl shadow-md transition-all active:scale-95 cursor-pointer touch-manipulation min-h-[42px]"
                 >
                   <Check className="w-4 h-4 text-zinc-950 stroke-[3]" />
-                  <span>確定置入樂譜 (Insert into Score)</span>
+                  <span>Insert into Score</span>
                 </button>
               </div>
             </>

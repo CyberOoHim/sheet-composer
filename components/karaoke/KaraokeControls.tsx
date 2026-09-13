@@ -378,19 +378,19 @@ export const KaraokeControls: React.FC<KaraokeControlsProps> = React.memo(({
             onChange={e => onSetInstrument(e.target.value as InstrumentType)}
             className="bg-[#121520] hover:bg-[#181d2a] text-amber-300 font-semibold px-2.5 py-1.5 min-h-[36px] rounded-lg border border-amber-500/40 hover:border-amber-400 focus:outline-hidden focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 cursor-pointer touch-manipulation transition-all shadow-xs text-xs tracking-wide"
           >
-            <option value="piano" className="bg-[#121520] text-zinc-100 py-1">🎹 Grand Piano (鋼琴)</option>
-            <option value="flute" className="bg-[#121520] text-zinc-100 py-1">🎋 Traditional Flute (竹笛)</option>
-            <option value="whistle" className="bg-[#121520] text-zinc-100 py-1">🎵 Whistle (口笛)</option>
-            <option value="guitar" className="bg-[#121520] text-zinc-100 py-1">🎸 Acoustic Guitar (吉他)</option>
-            <option value="synth" className="bg-[#121520] text-zinc-100 py-1">⚡ 80s Synth (合成器)</option>
-            <option value="bell" className="bg-[#121520] text-zinc-100 py-1">🔔 Glockenspiel (鐘琴)</option>
-            <option value="cello" className="bg-[#121520] text-zinc-100 py-1">🎻 Cello (大提琴)</option>
+            <option value="piano" className="bg-[#121520] text-zinc-100 py-1">🎹 Grand Piano</option>
+            <option value="flute" className="bg-[#121520] text-zinc-100 py-1">🎋 Traditional Flute</option>
+            <option value="whistle" className="bg-[#121520] text-zinc-100 py-1">🎵 Whistle</option>
+            <option value="guitar" className="bg-[#121520] text-zinc-100 py-1">🎸 Acoustic Guitar</option>
+            <option value="synth" className="bg-[#121520] text-zinc-100 py-1">⚡ 80s Synth</option>
+            <option value="bell" className="bg-[#121520] text-zinc-100 py-1">🔔 Glockenspiel</option>
+            <option value="cello" className="bg-[#121520] text-zinc-100 py-1">🎻 Cello</option>
           </select>
           <button
             id="ktv-instrument-audition-btn"
             type="button"
             onClick={() => onSetInstrument(instrument)}
-            title="Test & Audition Tone (試聽音色)"
+            title="Test & Audition Tone"
             aria-label="Test & Audition Tone"
             className="w-8 h-8 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 hover:text-amber-300 flex items-center justify-center transition-all active:scale-90 cursor-pointer touch-manipulation"
           >
@@ -430,7 +430,7 @@ export const KaraokeControls: React.FC<KaraokeControlsProps> = React.memo(({
                 onClick={onZoomOut}
                 disabled={zoomScale <= 1.0}
                 className="min-w-[36px] min-h-[36px] px-2 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 disabled:opacity-30 disabled:hover:bg-zinc-800 font-bold text-zinc-200 transition-all active:scale-90 touch-manipulation flex items-center justify-center cursor-pointer disabled:cursor-not-allowed"
-                title="縮小舞台歌詞 Stage Lyrics Zoom Out (-)"
+                title="Stage Lyrics Zoom Out (-)"
               >
                 <Minus className="w-4 h-4 text-zinc-300" />
               </button>
@@ -451,7 +451,7 @@ export const KaraokeControls: React.FC<KaraokeControlsProps> = React.memo(({
                 onClick={onZoomIn}
                 disabled={zoomScale >= 1.75}
                 className="min-w-[36px] min-h-[36px] px-2 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 disabled:opacity-30 disabled:hover:bg-zinc-800 font-bold text-zinc-200 transition-all active:scale-90 touch-manipulation flex items-center justify-center cursor-pointer disabled:cursor-not-allowed"
-                title="放大舞台歌詞 Stage Lyrics Zoom In (+)"
+                title="Stage Lyrics Zoom In (+)"
               >
                 <Plus className="w-4 h-4 text-amber-400" />
               </button>

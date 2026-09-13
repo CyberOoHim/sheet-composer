@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { BarlineType, LyricDisplayMode, Song, VerseItem, VerseNoteRef } from '@/types/song';
+import { BarlineType, KeySignature, LyricDisplayMode, NumberedNotationNote, Song, VerseItem, VerseNoteRef } from '@/types/song';
 import { getMeasureRhythmReport, groupSongIntoVerses } from '@/lib/taigiUtils';
 import { scrollToScoreTop } from '@/lib/utils';
 import { NumberedNotationNoteComponent } from '@/components/NumberedNotationNoteComponent';
 import { ChordPlaybackControl } from '@/components/ChordPlaybackControl';
+import { RealSheetCanvas } from './RealSheetCanvas';
 import {
   CheckCircle2,
   AlertCircle,
@@ -24,6 +25,7 @@ import {
   Copy,
   SlidersHorizontal,
   FileSpreadsheet,
+  FileText,
   SplitSquareVertical,
   ChevronLeft,
   ChevronRight,
@@ -87,6 +89,11 @@ export interface SheetModeViewProps {
   onDuplicateVerse?: (verse: VerseItem) => void;
   onDeleteVerse?: (verse: VerseItem) => void;
   onAddVerse?: () => void;
+
+  // Direct editing callbacks for RealSheetCanvas
+  onUpdateSong?: (updatedSong: Song) => void;
+  onUpdateNote?: (measureIndex: number, noteIndex: number, partialNote: Partial<NumberedNotationNote>) => void;
+  previewNoteAudio?: (key: KeySignature, note: NumberedNotationNote) => void;
 }
 
 export const SheetModeView: React.FC<SheetModeViewProps> = ({
@@ -126,9 +133,12 @@ export const SheetModeView: React.FC<SheetModeViewProps> = ({
   onDuplicateVerse,
   onDeleteVerse,
   onAddVerse,
+  onUpdateSong,
+  onUpdateNote,
+  previewNoteAudio,
 }) => {
-  // Primary sub-mode in Sheet Mode: 'measure' (Systems & Measures) vs 'verse' (Phrasing & Sections)
-  const [sheetPerspective, setSheetPerspective] = useState<'measure' | 'verse'>('measure');
+  // Primary sub-mode in Sheet Mode: 'canvas' (WYSIWYG Real Sheet) vs 'measure' (Systems & Measures) vs 'verse' (Phrasing & Sections)
+  const [sheetPerspective, setSheetPerspective] = useState<'canvas' | 'measure' | 'verse'>('canvas');
   const [filterMode, setFilterMode] = useState<'all' | 'incomplete'>('all');
   const [groupBySystems, setGroupBySystems] = useState<boolean>(true);
   const [verseLyricInputs, setVerseLyricInputs] = useState<{ [vIdx: number]: string }>({});
@@ -370,6 +380,23 @@ export const SheetModeView: React.FC<SheetModeViewProps> = ({
 
             <div className="flex bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl border border-zinc-200 dark:border-zinc-700">
               <button
+                id="sheet-perspective-canvas-btn"
+                type="button"
+                onClick={() => setSheetPerspective('canvas')}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation min-h-[34px] ${
+                  sheetPerspective === 'canvas'
+                    ? 'bg-amber-500 text-zinc-950 shadow-xs font-black'
+                    : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
+                }`}
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span>Real Sheet</span>
+                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-200/80 dark:bg-amber-900/60 text-amber-950 dark:text-amber-200 font-mono font-bold ml-0.5">
+                  WYSIWYG
+                </span>
+              </button>
+
+              <button
                 id="sheet-perspective-measure-btn"
                 type="button"
                 onClick={() => setSheetPerspective('measure')}
@@ -567,7 +594,36 @@ export const SheetModeView: React.FC<SheetModeViewProps> = ({
       </div>
 
       {/* ========================================================================= */}
-      {/* 2. MEASURE PERSPECTIVE (Systems, Line Breaks, Barlines, Rhythm Health)    */}
+      {/* 2. REAL SHEET WYSIWYG CANVAS PERSPECTIVE (Engraved Paper Sheet)           */}
+      {/* ========================================================================= */}
+      {sheetPerspective === 'canvas' && (
+        <RealSheetCanvas
+          song={song}
+          onUpdateSong={onUpdateSong || (() => {})}
+          selectedMeasureIndex={selectedMeasureIndex}
+          selectedNoteIndex={selectedNoteIndex}
+          onSelectNote={onSelectNote}
+          onSelectMeasure={onSelectMeasure}
+          activePlaybackNoteId={activePlaybackNoteId}
+          isPlaying={isPlayingSheet}
+          onTogglePlay={
+            onTogglePlaySheetFromNote
+              ? () => onTogglePlaySheetFromNote(selectedMeasureIndex ?? 0, selectedNoteIndex ?? 0)
+              : undefined
+          }
+          onUpdateNote={onUpdateNote}
+          onAddMeasure={onAddMeasure}
+          onDeleteMeasure={onDeleteMeasure}
+          onToggleLineBreak={onToggleLineBreak}
+          onUpdateBarlineType={onUpdateBarlineType}
+          onAutoFillRest={onAutoFillRest}
+          previewNoteAudio={previewNoteAudio}
+          displayMode={displayMode}
+        />
+      )}
+
+      {/* ========================================================================= */}
+      {/* 3. MEASURE PERSPECTIVE (Systems, Line Breaks, Barlines, Rhythm Health)    */}
       {/* ========================================================================= */}
       {sheetPerspective === 'measure' && (
         <div id="sheet-measures-container" className="flex flex-col gap-2.5 sm:gap-3">
@@ -646,7 +702,7 @@ export const SheetModeView: React.FC<SheetModeViewProps> = ({
                         scrollToScoreTop();
                       }}
                       className="flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold bg-zinc-100 hover:bg-amber-500 hover:text-zinc-950 dark:bg-zinc-800 dark:hover:bg-amber-400 dark:hover:text-zinc-950 text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 shadow-2xs transition-all active:scale-95 cursor-pointer touch-manipulation min-h-[30px]"
-                      title="回到頁首 (Jump to top of score editor)"
+                      title="Jump to top of score editor"
                     >
                       <ArrowUpToLine className="w-3.5 h-3.5" />
                       <span className="text-[11px] font-bold">Top</span>
@@ -1472,7 +1528,7 @@ export const SheetModeView: React.FC<SheetModeViewProps> = ({
                             scrollToScoreTop();
                           }}
                           className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-zinc-100 hover:bg-amber-500 hover:text-zinc-950 dark:bg-zinc-800 dark:hover:bg-amber-400 dark:hover:text-zinc-950 text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 shadow-2xs transition-all active:scale-95 cursor-pointer touch-manipulation"
-                          title="回到頁首 (Jump to top of score editor)"
+                          title="Jump to top of score editor"
                         >
                           <ArrowUpToLine className="w-3.5 h-3.5" />
                           <span className="text-[11px] font-bold">Top</span>
@@ -1484,10 +1540,10 @@ export const SheetModeView: React.FC<SheetModeViewProps> = ({
                     <div className="flex flex-wrap items-center justify-between gap-2.5 pt-2 border-t border-zinc-100 dark:border-zinc-800 text-xs">
                       {/* Complete Lyric Display for Verse */}
                       <div className="flex flex-col sm:flex-row sm:items-baseline gap-1.5 flex-1 min-w-[200px]">
-                        <span className="text-[11px] font-bold text-zinc-400 shrink-0">歌詞:</span>
+                        <span className="text-[11px] font-bold text-zinc-400 shrink-0">Lyrics:</span>
                         <div className="flex items-baseline gap-2 flex-wrap">
                           <span className="text-zinc-800 dark:text-zinc-100 font-bold font-serif text-xs sm:text-sm">
-                            {lyricPreview ? `“${lyricPreview}”` : <span className="italic text-zinc-400 font-normal">(無歌詞)</span>}
+                            {lyricPreview ? `“${lyricPreview}”` : <span className="italic text-zinc-400 font-normal">(No lyrics)</span>}
                           </span>
                           {(verse.lyricSummary.poj || verse.lyricSummary.tl) && (
                             <span className="text-emerald-600 dark:text-emerald-400 text-xs font-serif italic">
@@ -1512,7 +1568,7 @@ export const SheetModeView: React.FC<SheetModeViewProps> = ({
                                 handleDistributeLyric(verse, vIdx);
                               }
                             }}
-                            placeholder="填入段落歌詞 (羅馬字 / 漢羅)..."
+                            placeholder="Enter verse lyrics (Romanization / Hanlo)..."
                             className="flex-1 px-2.5 py-1 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs focus:ring-2 focus:ring-amber-500 font-serif"
                           />
                           <button
@@ -1521,7 +1577,7 @@ export const SheetModeView: React.FC<SheetModeViewProps> = ({
                             disabled={!(verseLyricInputs[vIdx] || '').trim()}
                             className="px-2.5 py-1 bg-amber-500 hover:bg-amber-400 disabled:opacity-35 text-zinc-950 font-bold rounded-lg text-xs transition-colors shrink-0 cursor-pointer"
                           >
-                            分發歌詞
+                            Distribute
                           </button>
                         </div>
                       )}
@@ -1531,7 +1587,7 @@ export const SheetModeView: React.FC<SheetModeViewProps> = ({
                     <div className="w-full pt-1.5 border-t border-zinc-100 dark:border-zinc-800/80">
                       <div className="flex items-center justify-between mb-0.5 text-[11px] text-zinc-400">
                         <span className="font-bold text-zinc-500 dark:text-zinc-400 text-xs">
-                          音符與歌詞 (Notes &amp; Lyrics across Verse Measures):
+                          Notes &amp; Lyrics across Verse Measures:
                         </span>
                         <span className="font-mono text-[10px] text-zinc-400">
                           {verse.notes.length} notes

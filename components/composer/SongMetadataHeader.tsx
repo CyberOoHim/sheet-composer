@@ -167,19 +167,19 @@ export const SongMetadataHeader: React.FC<SongMetadataHeaderProps> = React.memo(
   const getDisplayModeSummary = () => {
     switch (displayMode) {
       case 'roman':
-        return '羅馬字';
+        return 'Roman (POJ)';
       case 'hanlo':
       case 'hanji_only':
       case 'custom_only':
-        return '漢羅';
+        return 'Han-lô';
       case 'roman_major_hanlo':
       case 'all':
-        return '雙語(羅主)';
+        return 'Bilingual (Roman)';
       case 'hanlo_major_roman':
       case 'hanji_poj':
-        return '雙語(漢主)';
+        return 'Bilingual (Han-lô)';
       default:
-        return '歌詞模式';
+        return 'Lyric Mode';
     }
   };
 
@@ -211,7 +211,7 @@ export const SongMetadataHeader: React.FC<SongMetadataHeaderProps> = React.memo(
               type="button"
               onClick={() => setIsSettingsModalOpen(true)}
               className="flex items-center gap-1.5 text-left font-extrabold text-sm text-zinc-900 dark:text-zinc-100 hover:text-amber-600 dark:hover:text-amber-400 transition-colors cursor-pointer group max-w-[180px] sm:max-w-[260px] truncate"
-              title="點擊編輯歌曲資訊與排版設定"
+              title="Click to edit song details and layout settings"
             >
               <span className="truncate">{song.title || 'Untitled Song'}</span>
               <FileEdit className="w-3.5 h-3.5 text-zinc-400 group-hover:text-amber-500 shrink-0 opacity-70" />
@@ -230,7 +230,7 @@ export const SongMetadataHeader: React.FC<SongMetadataHeaderProps> = React.memo(
                     ? 'ring-2 ring-amber-400 border-amber-500 brightness-110 text-amber-300'
                     : 'border-amber-500/20 hover:border-amber-400/60 hover:brightness-105 active:scale-95'
                 }`}
-                title="調號 (Key Signature: 1 = ?)"
+                title="Key Signature: 1 = ?"
               >
                 <span>1 = {song.key}</span>
                 <ChevronDown className="w-3 h-3 text-amber-500/70" />
@@ -244,7 +244,7 @@ export const SongMetadataHeader: React.FC<SongMetadataHeaderProps> = React.memo(
                   <div className="flex items-center justify-between pb-2 mb-2.5 border-b border-zinc-200 dark:border-zinc-800">
                     <div className="flex items-center gap-1.5 text-xs font-bold text-zinc-900 dark:text-zinc-100">
                       <Music className="w-3.5 h-3.5 text-amber-500" />
-                      <span>調號設定 (Key: 1 = ?)</span>
+                      <span>Key Signature (1 = ?)</span>
                     </div>
                     <button
                       type="button"
@@ -264,7 +264,7 @@ export const SongMetadataHeader: React.FC<SongMetadataHeaderProps> = React.memo(
                       title="Down 1 semitone"
                     >
                       <ArrowDown className="w-3.5 h-3.5 text-amber-500" />
-                      <span>-1 半音</span>
+                      <span>-1 Semitone</span>
                     </button>
 
                     <div className="daw-lcd px-2.5 py-1 text-xs font-mono font-bold rounded-lg shrink-0">
@@ -279,7 +279,7 @@ export const SongMetadataHeader: React.FC<SongMetadataHeaderProps> = React.memo(
                       title="Up 1 semitone"
                     >
                       <ArrowUp className="w-3.5 h-3.5 text-amber-500" />
-                      <span>+1 半音</span>
+                      <span>+1 Semitone</span>
                     </button>
                   </div>
 
@@ -315,10 +315,10 @@ export const SongMetadataHeader: React.FC<SongMetadataHeaderProps> = React.memo(
                     />
                     <div className="flex flex-col">
                       <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
-                        自動移調小節和弦
+                        Auto-transpose measure chords
                       </span>
                       <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
-                        換調時同步變更樂譜和弦（如 Gm → Am）
+                        Transpose chords when changing key (e.g. Gm → Am)
                       </span>
                     </div>
                   </label>
@@ -337,7 +337,7 @@ export const SongMetadataHeader: React.FC<SongMetadataHeaderProps> = React.memo(
                     ? 'ring-2 ring-amber-400 border-amber-500 brightness-110 text-amber-300'
                     : 'border-amber-500/20 hover:border-amber-400/60 hover:brightness-105 active:scale-95'
                 }`}
-                title="拍號 (Time Signature / Meter)"
+                title="Time Signature / Meter"
               >
                 <span>{song.timeSignature}</span>
                 <ChevronDown className="w-3 h-3 text-amber-500/70" />
@@ -351,7 +351,7 @@ export const SongMetadataHeader: React.FC<SongMetadataHeaderProps> = React.memo(
                   <div className="flex items-center justify-between pb-2 mb-2.5 border-b border-zinc-200 dark:border-zinc-800">
                     <div className="flex items-center gap-1.5 text-xs font-bold text-zinc-900 dark:text-zinc-100">
                       <Activity className="w-3.5 h-3.5 text-amber-500" />
-                      <span>拍號設定 (Time Signature)</span>
+                      <span>Time Signature Settings</span>
                     </div>
                     <button
                       type="button"
@@ -393,7 +393,7 @@ export const SongMetadataHeader: React.FC<SongMetadataHeaderProps> = React.memo(
                       onClick={() => handleSmartRebar(song.timeSignature)}
                       className="w-full py-1.5 px-2.5 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 rounded-xl text-xs font-bold transition-colors cursor-pointer text-left"
                     >
-                      智慧依新拍號重整小節 (Smart Re-bar)
+                      Smart Re-bar to new meter
                     </button>
 
                     <button
@@ -401,7 +401,7 @@ export const SongMetadataHeader: React.FC<SongMetadataHeaderProps> = React.memo(
                       onClick={handleAutoFillRests}
                       className="w-full py-1.5 px-2.5 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 rounded-xl text-xs font-bold transition-colors cursor-pointer text-left"
                     >
-                      自動補足不足拍小節休止符 (Auto Fill Rests)
+                      Auto Fill Rests for incomplete measures
                     </button>
 
                     <label className="flex items-center gap-2 px-1 cursor-pointer">
@@ -412,7 +412,7 @@ export const SongMetadataHeader: React.FC<SongMetadataHeaderProps> = React.memo(
                         className="w-3.5 h-3.5 rounded text-amber-500"
                       />
                       <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                        套用至所有未自訂拍號之小節
+                        Apply to all measures without custom meter
                       </span>
                     </label>
                   </div>
@@ -431,7 +431,7 @@ export const SongMetadataHeader: React.FC<SongMetadataHeaderProps> = React.memo(
                     ? 'ring-2 ring-amber-400 border-amber-500 brightness-110 text-amber-300'
                     : 'border-amber-500/20 hover:border-amber-400/60 hover:brightness-105 active:scale-95'
                 }`}
-                title="速度 (Tempo: BPM)"
+                title="Tempo (BPM)"
               >
                 <span>♩ = {song.bpm}</span>
                 <ChevronDown className="w-3 h-3 text-amber-500/70" />
@@ -445,7 +445,7 @@ export const SongMetadataHeader: React.FC<SongMetadataHeaderProps> = React.memo(
                   <div className="flex items-center justify-between pb-2 mb-2.5 border-b border-zinc-200 dark:border-zinc-800">
                     <div className="flex items-center gap-1.5 text-xs font-bold text-zinc-900 dark:text-zinc-100">
                       <Activity className="w-3.5 h-3.5 text-amber-500" />
-                      <span>速度設定 (Tempo · BPM)</span>
+                      <span>Tempo Settings (BPM)</span>
                     </div>
                     <button
                       type="button"
@@ -541,7 +541,7 @@ export const SongMetadataHeader: React.FC<SongMetadataHeaderProps> = React.memo(
                       className="w-full py-2 px-3 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-zinc-950 font-black text-xs rounded-xl shadow-xs transition-all active:scale-95 cursor-pointer touch-manipulation flex items-center justify-center gap-1.5"
                     >
                       <Activity className="w-4 h-4 text-zinc-950" />
-                      <span>Tap Tempo (連續點擊測速)</span>
+                      <span>Tap Tempo</span>
                     </button>
 
                     {tapTempoFeedback && (
@@ -577,9 +577,9 @@ export const SongMetadataHeader: React.FC<SongMetadataHeaderProps> = React.memo(
                     ? 'bg-amber-500 text-zinc-950 shadow-xs font-black'
                     : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
                 }`}
-                title="僅顯示羅馬字 (POJ/TL)"
+                title="Romanization Only (POJ/TL)"
               >
-                羅馬字
+                Roman
               </button>
               <button
                 type="button"
@@ -589,9 +589,9 @@ export const SongMetadataHeader: React.FC<SongMetadataHeaderProps> = React.memo(
                     ? 'bg-amber-500 text-zinc-950 shadow-xs font-black'
                     : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
                 }`}
-                title="僅顯示漢羅 (Hanlo)"
+                title="Han-lô Only"
               >
-                漢羅
+                Han-lô
               </button>
               <button
                 type="button"
@@ -601,9 +601,9 @@ export const SongMetadataHeader: React.FC<SongMetadataHeaderProps> = React.memo(
                     ? 'bg-amber-500 text-zinc-950 shadow-xs font-black'
                     : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
                 }`}
-                title="雙語對照模式"
+                title="Bilingual Mode"
               >
-                <span>雙語</span>
+                <span>Bilingual</span>
                 <ChevronDown className="w-3 h-3" />
               </button>
             </div>
@@ -615,7 +615,7 @@ export const SongMetadataHeader: React.FC<SongMetadataHeaderProps> = React.memo(
                 className="absolute right-0 top-full mt-2 z-40 w-56 p-2 bg-white dark:bg-[#161922] border border-zinc-200 dark:border-zinc-700/80 rounded-2xl shadow-xl animate-in fade-in zoom-in-95 duration-150 flex flex-col gap-1 text-xs"
               >
                 <div className="px-2 py-1 text-[11px] font-bold text-zinc-400 uppercase tracking-wider">
-                  雙語對齊顯示
+                  Bilingual Alignment Display
                 </div>
                 <button
                   type="button"
@@ -629,7 +629,7 @@ export const SongMetadataHeader: React.FC<SongMetadataHeaderProps> = React.memo(
                       : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
                   }`}
                 >
-                  <span>羅馬字 (主) + 漢羅</span>
+                  <span>Roman (Primary) + Han-lô</span>
                   {(displayMode === 'roman_major_hanlo' || displayMode === 'all') && (
                     <Check className="w-3.5 h-3.5 text-amber-600" />
                   )}
@@ -646,7 +646,7 @@ export const SongMetadataHeader: React.FC<SongMetadataHeaderProps> = React.memo(
                       : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
                   }`}
                 >
-                  <span>漢羅 (主) + 羅馬字</span>
+                  <span>Han-lô (Primary) + Roman</span>
                   {(displayMode === 'hanlo_major_roman' || displayMode === 'hanji_poj') && (
                     <Check className="w-3.5 h-3.5 text-amber-600" />
                   )}
@@ -661,10 +661,10 @@ export const SongMetadataHeader: React.FC<SongMetadataHeaderProps> = React.memo(
             type="button"
             onClick={onOpenAligner}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-900/90 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-bold text-xs rounded-xl border border-zinc-200/90 dark:border-zinc-750 shadow-2xs transition-all active:scale-95 cursor-pointer touch-manipulation min-h-[34px]"
-            title="歌詞對齊台 (支援 羅馬字 與 漢羅)"
+            title="Lyric Aligner (Supports Roman and Han-lô)"
           >
             <AlignLeft className="w-3.5 h-3.5 text-amber-500" />
-            <span className="hidden sm:inline">歌詞對齊</span>
+            <span className="hidden sm:inline">Align Lyrics</span>
           </button>
 
           {/* Song Settings / Metadata Dialog Trigger */}
@@ -673,10 +673,10 @@ export const SongMetadataHeader: React.FC<SongMetadataHeaderProps> = React.memo(
             type="button"
             onClick={() => setIsSettingsModalOpen(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 font-bold text-xs rounded-xl border transition-all cursor-pointer min-h-[34px] touch-manipulation bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-900/90 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200/90 dark:border-zinc-750 shadow-2xs"
-            title="歌曲詳細設定 (曲名、作詞作曲、每行小節數、背景故事等)"
+            title="Song Settings (Title, Composer, Lyricist, Layout, Notes)"
           >
             <SlidersHorizontal className="w-3.5 h-3.5 text-amber-500" />
-            <span className="hidden sm:inline">曲目設定</span>
+            <span className="hidden sm:inline">Song Settings</span>
           </button>
         </div>
       </div>
@@ -701,10 +701,10 @@ export const SongMetadataHeader: React.FC<SongMetadataHeaderProps> = React.memo(
                 </div>
                 <div>
                   <h3 className="font-extrabold text-sm text-zinc-900 dark:text-zinc-100">
-                    曲目設定與背景資料 (Song Settings)
+                    Song Settings & Details
                   </h3>
                   <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                    編輯樂譜標題、作詞作曲者資訊、每行排版與歷史故事
+                    Edit score title, credits, layout per line, and background notes
                   </p>
                 </div>
               </div>
@@ -725,7 +725,7 @@ export const SongMetadataHeader: React.FC<SongMetadataHeaderProps> = React.memo(
                   htmlFor="composer-song-title-input"
                   className="block text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1"
                 >
-                  曲名 (Title) *
+                  Title *
                 </label>
                 <input
                   id="composer-song-title-input"
@@ -733,7 +733,7 @@ export const SongMetadataHeader: React.FC<SongMetadataHeaderProps> = React.memo(
                   value={song.title}
                   onChange={e => onUpdateSong({ ...song, title: e.target.value })}
                   className="w-full text-sm font-bold text-zinc-900 dark:text-zinc-100 bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 rounded-xl px-3 py-2 focus:outline-hidden focus:ring-2 focus:ring-amber-500 transition-all"
-                  placeholder="如：望春風..."
+                  placeholder="e.g. Bang Chhun-hong..."
                 />
               </div>
 
@@ -743,7 +743,7 @@ export const SongMetadataHeader: React.FC<SongMetadataHeaderProps> = React.memo(
                   htmlFor="composer-song-subtitle-input"
                   className="block text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1"
                 >
-                  副標題 / 英文 (Subtitle)
+                  Subtitle / English
                 </label>
                 <input
                   id="composer-song-subtitle-input"
@@ -751,7 +751,7 @@ export const SongMetadataHeader: React.FC<SongMetadataHeaderProps> = React.memo(
                   value={song.subtitle || ''}
                   onChange={e => onUpdateSong({ ...song, subtitle: e.target.value })}
                   className="w-full text-sm font-medium text-zinc-900 dark:text-zinc-100 bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 rounded-xl px-3 py-2 focus:outline-hidden focus:ring-2 focus:ring-amber-500 transition-all"
-                  placeholder="如：Bang Chhun-hong · Taiwanese Folk..."
+                  placeholder="e.g. Taiwanese Folk Song..."
                 />
               </div>
 
@@ -761,7 +761,7 @@ export const SongMetadataHeader: React.FC<SongMetadataHeaderProps> = React.memo(
                   htmlFor="composer-song-composer-input"
                   className="block text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1"
                 >
-                  作曲 (Composer)
+                  Composer
                 </label>
                 <input
                   id="composer-song-composer-input"
@@ -769,7 +769,7 @@ export const SongMetadataHeader: React.FC<SongMetadataHeaderProps> = React.memo(
                   value={song.composer || ''}
                   onChange={e => onUpdateSong({ ...song, composer: e.target.value })}
                   className="w-full text-sm font-medium text-zinc-900 dark:text-zinc-100 bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 rounded-xl px-3 py-2 focus:outline-hidden focus:ring-2 focus:ring-amber-500 transition-all"
-                  placeholder="如：鄧雨賢..."
+                  placeholder="e.g. Tēng Ú-hiân..."
                 />
               </div>
 
@@ -779,7 +779,7 @@ export const SongMetadataHeader: React.FC<SongMetadataHeaderProps> = React.memo(
                   htmlFor="composer-song-lyricist-input"
                   className="block text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1"
                 >
-                  作詞 (Lyricist)
+                  Lyricist
                 </label>
                 <input
                   id="composer-song-lyricist-input"
@@ -787,7 +787,7 @@ export const SongMetadataHeader: React.FC<SongMetadataHeaderProps> = React.memo(
                   value={song.lyricist || ''}
                   onChange={e => onUpdateSong({ ...song, lyricist: e.target.value })}
                   className="w-full text-sm font-medium text-zinc-900 dark:text-zinc-100 bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 rounded-xl px-3 py-2 focus:outline-hidden focus:ring-2 focus:ring-amber-500 transition-all"
-                  placeholder="如：李臨秋..."
+                  placeholder="e.g. Lí Lîm-chhiu..."
                 />
               </div>
             </div>
@@ -799,7 +799,7 @@ export const SongMetadataHeader: React.FC<SongMetadataHeaderProps> = React.memo(
                   htmlFor="composer-notes-per-line-select"
                   className="block text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1"
                 >
-                  總譜每行小節數 (Measures Per Line)
+                  Measures Per Line
                 </label>
                 <select
                   id="composer-notes-per-line-select"
@@ -809,24 +809,24 @@ export const SongMetadataHeader: React.FC<SongMetadataHeaderProps> = React.memo(
                   }
                   className="w-full bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 font-bold rounded-xl px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-amber-500 transition-colors cursor-pointer"
                 >
-                  <option value="2">2 小節 / 行 (寬鬆大字)</option>
-                  <option value="3">3 小節 / 行</option>
-                  <option value="4">4 小節 / 行 (標準 4/4 推薦)</option>
-                  <option value="5">5 小節 / 行</option>
-                  <option value="6">6 小節 / 行 (高密度)</option>
+                  <option value="2">2 Measures / Line</option>
+                  <option value="3">3 Measures / Line</option>
+                  <option value="4">4 Measures / Line (Standard 4/4)</option>
+                  <option value="5">5 Measures / Line</option>
+                  <option value="6">6 Measures / Line (Compact)</option>
                 </select>
               </div>
 
               <div>
                 <label className="block text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">
-                  樂曲結構總計
+                  Structure Summary
                 </label>
                 <div className="flex items-center gap-2 p-2 bg-zinc-50 dark:bg-zinc-800/60 rounded-xl border border-zinc-200 dark:border-zinc-700 text-xs font-mono font-bold text-zinc-700 dark:text-zinc-300">
-                  <span>共 {song.measures.length} 個小節</span>
+                  <span>{song.measures.length} Measures</span>
                   <span>·</span>
-                  <span>調號 1 = {song.key}</span>
+                  <span>Key 1 = {song.key}</span>
                   <span>·</span>
-                  <span>{song.timeSignature} 拍</span>
+                  <span>{song.timeSignature} Meter</span>
                   <span>·</span>
                   <span>{song.bpm} BPM</span>
                 </div>
@@ -839,7 +839,7 @@ export const SongMetadataHeader: React.FC<SongMetadataHeaderProps> = React.memo(
                 htmlFor="composer-song-description-textarea"
                 className="block text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider"
               >
-                樂曲解說、歷史背景與演唱筆記
+                Background & Performance Notes
               </label>
               <textarea
                 id="composer-song-description-textarea"
@@ -847,7 +847,7 @@ export const SongMetadataHeader: React.FC<SongMetadataHeaderProps> = React.memo(
                 value={song.description || ''}
                 onChange={e => onUpdateSong({ ...song, description: e.target.value })}
                 className="w-full text-xs font-normal leading-relaxed text-zinc-800 dark:text-zinc-200 bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 rounded-xl p-3 focus:outline-hidden focus:ring-2 focus:ring-amber-500 transition-all resize-y"
-                placeholder="輸入樂曲歷史創作背景、台語歌詞意境、文化註釋或演唱提示..."
+                placeholder="Enter historical background, lyrical context, or performance tips..."
               />
             </div>
 
@@ -864,7 +864,7 @@ export const SongMetadataHeader: React.FC<SongMetadataHeaderProps> = React.memo(
                     className="flex items-center gap-1.5 px-3 py-1.5 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
                   >
                     <FilePlus2 className="w-3.5 h-3.5 text-amber-500" />
-                    <span>開新空白曲</span>
+                    <span>New Blank Song</span>
                   </button>
                 )}
               </div>
@@ -874,7 +874,7 @@ export const SongMetadataHeader: React.FC<SongMetadataHeaderProps> = React.memo(
                 onClick={() => setIsSettingsModalOpen(false)}
                 className="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
               >
-                完成 (Done)
+                Done
               </button>
             </div>
           </div>

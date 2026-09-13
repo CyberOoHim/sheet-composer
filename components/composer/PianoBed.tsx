@@ -414,14 +414,14 @@ export const PianoBed: React.FC<PianoBedProps> = ({
           ) : isRecording ? (
             <>
               <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse shrink-0" />
-              <span className="font-extrabold text-[11px]">琴鍵即時收音中：</span>
-              <span className="text-[11px] text-zinc-300">按住保持時值，鬆開自動量化</span>
+              <span className="font-extrabold text-[11px]">Live Recording:</span>
+              <span className="text-[11px] text-zinc-300">Hold to sustain, release to quantize</span>
             </>
           ) : (
             <>
               <Volume2 className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-              <span className="font-extrabold text-[11px]">琴鍵試音練習：</span>
-              <span className="text-[11px] text-zinc-300">支援滑音(Glissando)與點擊，鬆開即停</span>
+              <span className="font-extrabold text-[11px]">Keyboard Audition:</span>
+              <span className="text-[11px] text-zinc-300">Supports glissando and tap preview</span>
             </>
           )}
         </div>
@@ -430,14 +430,14 @@ export const PianoBed: React.FC<PianoBedProps> = ({
         <div className="flex items-center gap-2 flex-wrap">
           {onOctaveBedViewChange && (
             <div className="flex items-center gap-1 bg-zinc-900/90 p-1 rounded-xl border border-zinc-800">
-              <span className="text-zinc-500 text-[10px] font-bold px-1 hidden sm:inline">琴鍵：</span>
+              <span className="text-zinc-500 text-[10px] font-bold px-1 hidden sm:inline">Keys:</span>
               {(
                 [
-                  { id: '88keys', label: '88鍵全鋼琴' },
-                  { id: '61keys', label: '61鍵' },
-                  { id: 'all', label: '3八度' },
-                  { id: 'mid_high', label: '中高音' },
-                  { id: 'low_mid', label: '低中音' },
+                  { id: '88keys', label: '88 Keys' },
+                  { id: '61keys', label: '61 Keys' },
+                  { id: 'all', label: '3 Octaves' },
+                  { id: 'mid_high', label: 'Mid/High' },
+                  { id: 'low_mid', label: 'Low/Mid' },
                 ] as const
               ).map(viewOption => (
                 <button
@@ -462,7 +462,7 @@ export const PianoBed: React.FC<PianoBedProps> = ({
               <button
                 type="button"
                 onClick={() => scrollOctave('left')}
-                title="向左滾動低音區"
+                title="Scroll Left (Bass)"
                 className="p-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 transition-colors cursor-pointer"
               >
                 <ChevronLeft className="w-3.5 h-3.5" />
@@ -470,16 +470,16 @@ export const PianoBed: React.FC<PianoBedProps> = ({
               <button
                 type="button"
                 onClick={() => scrollToMiddleC('smooth')}
-                title="快速對齊中央 C (C4)"
+                title="Scroll to Middle C (C4)"
                 className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-[10px] font-bold text-amber-300 transition-colors cursor-pointer"
               >
                 <Compass className="w-3 h-3 text-amber-400" />
-                中央 C
+                Middle C
               </button>
               <button
                 type="button"
                 onClick={() => scrollOctave('right')}
-                title="向右滾動高音區"
+                title="Scroll Right (Treble)"
                 className="p-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 transition-colors cursor-pointer"
               >
                 <ChevronRight className="w-3.5 h-3.5" />
@@ -490,7 +490,7 @@ export const PianoBed: React.FC<PianoBedProps> = ({
           <div className="text-[11px] text-zinc-400 font-mono hidden md:flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-zinc-900 border border-zinc-800">
             <span className="font-bold text-amber-400">1 = {activeKey}</span>
             {octaveShiftVal !== 0 && (
-              <span className="text-zinc-500">· 移調 {octaveShiftVal > 0 ? `+${octaveShiftVal}` : octaveShiftVal}</span>
+              <span className="text-zinc-500">· Transpose {octaveShiftVal > 0 ? `+${octaveShiftVal}` : octaveShiftVal}</span>
             )}
           </div>
         </div>
@@ -544,7 +544,7 @@ export const PianoBed: React.FC<PianoBedProps> = ({
                 {/* Middle C marker or Octave Note Name on C keys */}
                 {wk.isMiddleC ? (
                   <div className="absolute top-1.5 px-1 py-0.2 rounded bg-amber-500/90 text-zinc-950 text-[7px] font-black tracking-tight uppercase shadow-xs">
-                    C4 (中央)
+                    C4 (Mid)
                   </div>
                 ) : wk.isC ? (
                   <div className="absolute top-1.5 text-[8px] font-bold text-zinc-400">

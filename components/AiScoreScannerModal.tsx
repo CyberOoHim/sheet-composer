@@ -621,7 +621,7 @@ export const AiScoreScannerModal: React.FC<AiScoreScannerModalProps> = ({
                 <ScanLine className="w-5 h-5" />
                 <span>
                   {!hasApiKey
-                    ? 'AI 辨識已靜音 (無環境金鑰)'
+                    ? 'AI Scan Unavailable (No API Key)'
                     : !isAiAuthenticated
                     ? 'Passcode Verification Required'
                     : `Start AI Score Recognition (${images.length} Pages)`}

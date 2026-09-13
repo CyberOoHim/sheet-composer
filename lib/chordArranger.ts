@@ -70,7 +70,7 @@ export function getDiatonicCandidateChords(key: KeySignature): CandidateChord[] 
     {
       chord: getRootName(base),
       degree: 'I',
-      label: '主和弦 (I)',
+      label: 'Tonic (I)',
       rootSemitone: (base + 0) % 12,
       chordTones: [1, 3, 5],
       rootDegree: 1,
@@ -79,7 +79,7 @@ export function getDiatonicCandidateChords(key: KeySignature): CandidateChord[] 
     {
       chord: `${getRootName(base + 2)}m`,
       degree: 'ii',
-      label: '上主和弦 (ii)',
+      label: 'Supertonic (ii)',
       rootSemitone: (base + 2) % 12,
       chordTones: [2, 4, 6],
       rootDegree: 2,
@@ -88,7 +88,7 @@ export function getDiatonicCandidateChords(key: KeySignature): CandidateChord[] 
     {
       chord: `${getRootName(base + 4)}m`,
       degree: 'iii',
-      label: '中音和弦 (iii)',
+      label: 'Mediant (iii)',
       rootSemitone: (base + 4) % 12,
       chordTones: [3, 5, 7],
       rootDegree: 3,
@@ -97,7 +97,7 @@ export function getDiatonicCandidateChords(key: KeySignature): CandidateChord[] 
     {
       chord: getRootName(base + 5),
       degree: 'IV',
-      label: '下屬和弦 (IV)',
+      label: 'Subdominant (IV)',
       rootSemitone: (base + 5) % 12,
       chordTones: [4, 6, 1],
       rootDegree: 4,
@@ -106,7 +106,7 @@ export function getDiatonicCandidateChords(key: KeySignature): CandidateChord[] 
     {
       chord: getRootName(base + 7),
       degree: 'V',
-      label: '屬和弦 (V)',
+      label: 'Dominant (V)',
       rootSemitone: (base + 7) % 12,
       chordTones: [5, 7, 2],
       rootDegree: 5,
@@ -115,7 +115,7 @@ export function getDiatonicCandidateChords(key: KeySignature): CandidateChord[] 
     {
       chord: `${getRootName(base + 7)}7`,
       degree: 'V7',
-      label: '屬七和弦 (V7)',
+      label: 'Dominant 7th (V7)',
       rootSemitone: (base + 7) % 12,
       chordTones: [5, 7, 2, 4],
       rootDegree: 5,
@@ -124,7 +124,7 @@ export function getDiatonicCandidateChords(key: KeySignature): CandidateChord[] 
     {
       chord: `${getRootName(base + 9)}m`,
       degree: 'vi',
-      label: '下中音和弦 (vi)',
+      label: 'Submediant (vi)',
       rootSemitone: (base + 9) % 12,
       chordTones: [6, 1, 3],
       rootDegree: 6,
@@ -206,7 +206,7 @@ function scoreChordForNotes(
     } else if (chord.degree === 'I') {
       emptyScore += 2.0;
     }
-    return { score: emptyScore, matchedNotes: [], rationaleDetails: ['休止小節以主和弦或延續前和小節為基準'] };
+    return { score: emptyScore, matchedNotes: [], rationaleDetails: ['Rest measure default to Tonic or previous chord'] };
   }
 
   let totalWeight = 0;
@@ -249,7 +249,7 @@ function scoreChordForNotes(
   if (context.isFirst) {
     if (chord.degree === 'I') {
       normalizedScore += 3.5;
-      rationaleDetails.push('首小節主和弦開場');
+      rationaleDetails.push('Opening measure resolves to Tonic');
     }
   }
 
@@ -257,10 +257,10 @@ function scoreChordForNotes(
   if (context.isLast) {
     if (chord.degree === 'I') {
       normalizedScore += 4.5;
-      rationaleDetails.push('終止小節回歸主和弦 (I)');
+      rationaleDetails.push('Final cadence resolution to Tonic (I)');
     } else if (chord.degree === 'V' || chord.degree === 'V7') {
       normalizedScore += 2.0;
-      rationaleDetails.push('半終止屬和弦 (V)');
+      rationaleDetails.push('Half cadence on Dominant (V)');
     }
   }
 
@@ -280,10 +280,10 @@ function scoreChordForNotes(
       const isPrevV = context.prevChord.startsWith('G') || context.prevChord.endsWith('7');
       if (isPrevV && chord.degree === 'I') {
         normalizedScore += 2.5;
-        rationaleDetails.push('正格終止 (V → I)');
+        rationaleDetails.push('Authentic cadence (V → I)');
       } else if (chord.degree === 'I' && (context.prevChord.includes('IV') || context.prevChord.startsWith('F'))) {
         normalizedScore += 2.0;
-        rationaleDetails.push('變格終止 (IV → I)');
+        rationaleDetails.push('Plagal cadence (IV → I)');
       } else if (chord.degree === 'V' || chord.degree === 'V7') {
         normalizedScore += 1.0;
       }
@@ -362,7 +362,7 @@ export function suggestChordsForMeasure(
             chords: [bestFirst.c.chord, bestSecond.c.chord],
             formatted: `${bestFirst.c.chord} ${bestSecond.c.chord}`,
             confidence: dualConfidence,
-            rationale: `前段含音 [${bestFirst.matchedNotes.sort().join(', ')}] 配 ${bestFirst.c.chord} (${bestFirst.c.degree})，後段含音 [${bestSecond.matchedNotes.sort().join(', ')}] 配 ${bestSecond.c.chord} (${bestSecond.c.degree})`,
+            rationale: `Part 1 [${bestFirst.matchedNotes.sort().join(', ')}] fits ${bestFirst.c.chord} (${bestFirst.c.degree}), Part 2 [${bestSecond.matchedNotes.sort().join(', ')}] fits ${bestSecond.c.chord} (${bestSecond.c.degree})`,
           };
         }
       }
@@ -382,8 +382,8 @@ export function suggestChordsForMeasure(
   // Calculate single chord confidence (scaled 0-99%)
   const confidence = Math.min(99, Math.max(55, Math.round((bestSingle.score / 22) * 100)));
   const matchedStr = bestSingle.matchedNotes.length > 0
-    ? `旋律主音：${bestSingle.matchedNotes.sort().join(', ')}`
-    : '依調性機能配置';
+    ? `Melody tones: [${bestSingle.matchedNotes.sort().join(', ')}]`
+    : 'Harmonic functional progression';
   const detailStr = bestSingle.rationaleDetails.length > 0
     ? ` · ${bestSingle.rationaleDetails.join(' · ')}`
     : '';
@@ -394,7 +394,7 @@ export function suggestChordsForMeasure(
     chords: [bestSingle.chord],
     formatted: bestSingle.chord,
     confidence,
-    rationale: `${matchedStr} → 配 ${bestSingle.chord} (${bestSingle.degree})${detailStr}`,
+    rationale: `${matchedStr} → ${bestSingle.chord} (${bestSingle.degree})${detailStr}`,
     alternatives,
   };
 }

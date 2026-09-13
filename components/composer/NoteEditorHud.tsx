@@ -164,27 +164,27 @@ export const NoteGlyph: React.FC<{ type: NoteGlyphType; className?: string }> = 
   className = 'w-3.5 h-3.5',
 }) => {
   switch (type) {
-    case 'whole': // 4 beats (Whole note / 全音符)
+    case 'whole': // 4 beats (Whole note)
       return (
         <svg viewBox="0 0 18 16" className={`${className} inline-block shrink-0`} fill="none" stroke="currentColor">
           <ellipse cx="9" cy="8.5" rx="6.5" ry="4" transform="rotate(-15 9 8.5)" strokeWidth="2.2" />
         </svg>
       );
-    case 'half': // 2 beats (Half note / 二分音符)
+    case 'half': // 2 beats (Half note)
       return (
         <svg viewBox="0 0 16 16" className={`${className} inline-block shrink-0`} fill="currentColor">
           <ellipse cx="5.5" cy="11.5" rx="4.5" ry="3" transform="rotate(-20 5.5 11.5)" fill="none" stroke="currentColor" strokeWidth="1.8" />
           <path d="M9.5 11.5 V 2.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
         </svg>
       );
-    case 'quarter': // 1 beat (Quarter note / 四分音符)
+    case 'quarter': // 1 beat (Quarter note)
       return (
         <svg viewBox="0 0 16 16" className={`${className} inline-block shrink-0`} fill="currentColor">
           <ellipse cx="5.5" cy="11.5" rx="4.5" ry="3" transform="rotate(-20 5.5 11.5)" />
           <path d="M9.5 11.5 V 2.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
         </svg>
       );
-    case 'eighth': // 0.5 beat (8th note / 八分音符)
+    case 'eighth': // 0.5 beat (8th note)
       return (
         <svg viewBox="0 0 16 16" className={`${className} inline-block shrink-0`} fill="currentColor">
           <ellipse cx="5" cy="11.5" rx="4" ry="2.8" transform="rotate(-20 5 11.5)" />
@@ -192,7 +192,7 @@ export const NoteGlyph: React.FC<{ type: NoteGlyphType; className?: string }> = 
           <path d="M8.5 2 C 11.5 3.5, 13 5.5, 12 8" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
         </svg>
       );
-    case 'sixteenth': // 0.25 beat (16th note / 十六分音符)
+    case 'sixteenth': // 0.25 beat (16th note)
       return (
         <svg viewBox="0 0 16 16" className={`${className} inline-block shrink-0`} fill="currentColor">
           <ellipse cx="5" cy="12" rx="3.8" ry="2.6" transform="rotate(-20 5 12)" />
@@ -201,7 +201,7 @@ export const NoteGlyph: React.FC<{ type: NoteGlyphType; className?: string }> = 
           <path d="M8.5 4.5 C 11 6, 12.5 8, 11.5 10" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
         </svg>
       );
-    case 'thirtysecond': // 0.125 beat (32nd note / 三十二分音符)
+    case 'thirtysecond': // 0.125 beat (32nd note)
       return (
         <svg viewBox="0 0 16 16" className={`${className} inline-block shrink-0`} fill="currentColor">
           <ellipse cx="5" cy="12.5" rx="3.8" ry="2.6" transform="rotate(-20 5 12.5)" />
@@ -211,7 +211,7 @@ export const NoteGlyph: React.FC<{ type: NoteGlyphType; className?: string }> = 
           <path d="M8.5 6.8 C 11 8.1, 12.5 9.6, 11.5 11.4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
         </svg>
       );
-    case 'dotted-quarter': // 1.5 beats (Dotted Quarter / 附點四分)
+    case 'dotted-quarter': // 1.5 beats (Dotted Quarter)
       return (
         <svg viewBox="0 0 18 16" className={`${className} inline-block shrink-0`} fill="currentColor">
           <ellipse cx="5" cy="11.5" rx="4.5" ry="3" transform="rotate(-20 5 11.5)" />
@@ -219,7 +219,7 @@ export const NoteGlyph: React.FC<{ type: NoteGlyphType; className?: string }> = 
           <circle cx="13.5" cy="10.5" r="1.5" fill="currentColor" />
         </svg>
       );
-    case 'dotted-eighth': // 0.75 beats (Dotted 8th / 附點八分)
+    case 'dotted-eighth': // 0.75 beats (Dotted 8th)
       return (
         <svg viewBox="0 0 18 16" className={`${className} inline-block shrink-0`} fill="currentColor">
           <ellipse cx="4.5" cy="11.5" rx="4" ry="2.8" transform="rotate(-20 4.5 11.5)" />
@@ -228,7 +228,7 @@ export const NoteGlyph: React.FC<{ type: NoteGlyphType; className?: string }> = 
           <circle cx="13.5" cy="10.5" r="1.5" fill="currentColor" />
         </svg>
       );
-    case 'dotted-half': // 3 beats (Dotted Half / 附點二分)
+    case 'dotted-half': // 3 beats (Dotted Half)
       return (
         <svg viewBox="0 0 18 16" className={`${className} inline-block shrink-0`} fill="currentColor">
           <ellipse cx="5" cy="11.5" rx="4.5" ry="3" transform="rotate(-20 5 11.5)" fill="none" stroke="currentColor" strokeWidth="1.8" />
@@ -236,20 +236,20 @@ export const NoteGlyph: React.FC<{ type: NoteGlyphType; className?: string }> = 
           <circle cx="13.5" cy="10.5" r="1.5" fill="currentColor" />
         </svg>
       );
-    case 'double-dot': // 1.75 beats (Double Dot / 雙附點)
+    case 'double-dot': // 1.75 beats (Double Dot)
       return (
         <div className="flex items-center gap-0.5 shrink-0">
           <span className="w-1.5 h-1.5 rounded-full bg-current inline-block" />
           <span className="w-1.5 h-1.5 rounded-full bg-current inline-block" />
         </div>
       );
-    case 'triplet': // Triplet / 三連音
+    case 'triplet': // Triplet
       return (
         <span className="font-mono text-xs font-black tracking-tighter shrink-0 leading-none">
           ┌3┐
         </span>
       );
-    case 'spacer': // Spacer / 空白
+    case 'spacer': // Spacer
       return (
         <svg viewBox="0 0 16 16" className={`${className} inline-block shrink-0`} fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M3 7 V 11 H 13 V 7" strokeLinecap="round" strokeLinejoin="round" />
@@ -272,25 +272,25 @@ interface DurationPresetItem {
 
 const DURATION_PRESETS: DurationPresetItem[] = [
   // Core Beats (Primary pulse values)
-  { dur: 1, glyphType: 'quarter', beatLabel: '1 拍', subLabel: '四分', jianpuSymbol: '5', desc: 'Quarter Note (1 beat) · 基準四分音符', category: 'core' },
-  { dur: 0.5, glyphType: 'eighth', beatLabel: '½ 拍', subLabel: '八分', jianpuSymbol: '5̲', desc: '8th Note (0.5 beats) · 八分音符 (單底線)', category: 'core' },
-  { dur: 2, glyphType: 'half', beatLabel: '2 拍', subLabel: '二分', jianpuSymbol: '5 -', desc: 'Half Note (2 beats) · 二分音符 (加一橫線)', category: 'core' },
-  { dur: 4, glyphType: 'whole', beatLabel: '4 拍', subLabel: '全音', jianpuSymbol: '5 - - -', desc: 'Whole Note (4 beats) · 全音符 (加三橫線)', category: 'core' },
+  { dur: 1, glyphType: 'quarter', beatLabel: '1 beat', subLabel: 'Quarter', jianpuSymbol: '5', desc: 'Quarter Note (1 beat)', category: 'core' },
+  { dur: 0.5, glyphType: 'eighth', beatLabel: '½ beat', subLabel: 'Eighth', jianpuSymbol: '5̲', desc: '8th Note (0.5 beats · single underline)', category: 'core' },
+  { dur: 2, glyphType: 'half', beatLabel: '2 beats', subLabel: 'Half', jianpuSymbol: '5 -', desc: 'Half Note (2 beats · dashed line)', category: 'core' },
+  { dur: 4, glyphType: 'whole', beatLabel: '4 beats', subLabel: 'Whole', jianpuSymbol: '5 - - -', desc: 'Whole Note (4 beats · three dashed lines)', category: 'core' },
 
   // Subdivisions (Rapid runs)
-  { dur: 0.25, glyphType: 'sixteenth', beatLabel: '¼ 拍', subLabel: '16分', jianpuSymbol: '5̳', desc: '16th Note (0.25 beats) · 十六分音符 (雙底線)', category: 'subdivision' },
-  { dur: 0.125, glyphType: 'thirtysecond', beatLabel: '⅛ 拍', subLabel: '32分', jianpuSymbol: '5̷', desc: '32nd Note (0.125 beats) · 三十二分音符 (三底線)', category: 'subdivision' },
+  { dur: 0.25, glyphType: 'sixteenth', beatLabel: '¼ beat', subLabel: '16th', jianpuSymbol: '5̳', desc: '16th Note (0.25 beats · double underline)', category: 'subdivision' },
+  { dur: 0.125, glyphType: 'thirtysecond', beatLabel: '⅛ beat', subLabel: '32nd', jianpuSymbol: '5̷', desc: '32nd Note (0.125 beats · triple underline)', category: 'subdivision' },
 
   // Dotted & Compound
-  { dur: 1.5, glyphType: 'dotted-quarter', beatLabel: '1½ 拍', subLabel: '附點4', jianpuSymbol: '5·', desc: 'Dotted Quarter Note (1.5 beats) · 附點四分', category: 'dotted' },
-  { dur: 0.75, glyphType: 'dotted-eighth', beatLabel: '¾ 拍', subLabel: '附點8', jianpuSymbol: '5̲·', desc: 'Dotted 8th Note (0.75 beats) · 附點八分', category: 'dotted' },
-  { dur: 3, glyphType: 'dotted-half', beatLabel: '3 拍', subLabel: '附點2', jianpuSymbol: '5 - -', desc: 'Dotted Half Note (3 beats) · 附點二分', category: 'dotted' },
-  { dur: 1.75, glyphType: 'double-dot', beatLabel: '1¾ 拍', subLabel: '雙附點', jianpuSymbol: '5··', desc: 'Double Dotted Quarter (1.75 beats) · 雙附點四分', category: 'dotted' },
+  { dur: 1.5, glyphType: 'dotted-quarter', beatLabel: '1½ beats', subLabel: 'Dotted 4th', jianpuSymbol: '5·', desc: 'Dotted Quarter Note (1.5 beats)', category: 'dotted' },
+  { dur: 0.75, glyphType: 'dotted-eighth', beatLabel: '¾ beat', subLabel: 'Dotted 8th', jianpuSymbol: '5̲·', desc: 'Dotted 8th Note (0.75 beats)', category: 'dotted' },
+  { dur: 3, glyphType: 'dotted-half', beatLabel: '3 beats', subLabel: 'Dotted Half', jianpuSymbol: '5 - -', desc: 'Dotted Half Note (3 beats)', category: 'dotted' },
+  { dur: 1.75, glyphType: 'double-dot', beatLabel: '1¾ beats', subLabel: 'Dbl Dot', jianpuSymbol: '5··', desc: 'Double Dotted Quarter (1.75 beats)', category: 'dotted' },
 
   // Triplets & Spacers
-  { dur: 0.333, glyphType: 'triplet', beatLabel: '⅓ 拍', subLabel: '三連8', jianpuSymbol: '⅓', desc: '8th Note Triplet (0.333 beats) · 八分三連音', category: 'triplet' },
-  { dur: 0.667, glyphType: 'triplet', beatLabel: '⅔ 拍', subLabel: '三連4', jianpuSymbol: '⅔', desc: 'Quarter Note Triplet (0.667 beats) · 四分三連音', category: 'triplet' },
-  { dur: 0, glyphType: 'spacer', beatLabel: '0 拍', subLabel: '空/間隔', jianpuSymbol: '␣', desc: 'Zero Duration · 空音符/標點間隔 (0拍)', category: 'rest' },
+  { dur: 0.333, glyphType: 'triplet', beatLabel: '⅓ beat', subLabel: 'Triplet 8th', jianpuSymbol: '⅓', desc: '8th Note Triplet (0.333 beats)', category: 'triplet' },
+  { dur: 0.667, glyphType: 'triplet', beatLabel: '⅔ beat', subLabel: 'Triplet 4th', jianpuSymbol: '⅔', desc: 'Quarter Note Triplet (0.667 beats)', category: 'triplet' },
+  { dur: 0, glyphType: 'spacer', beatLabel: '0 beats', subLabel: 'Spacer', jianpuSymbol: '␣', desc: 'Zero Duration · Spacer / Punctuation (0 beats)', category: 'rest' },
 ];
 
 export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
@@ -380,7 +380,7 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
     const updated = chordMode === 'append' ? [...current, ...tokens] : tokens;
     onUpdateMeasureChord(selectedMeasureIndex, formatMeasureChords(updated));
     setChordInputText('');
-    showNotice(`已更新第 ${selectedMeasureIndex + 1} 小節和弦：${formatMeasureChords(updated)}`);
+    showNotice(`Updated Measure ${selectedMeasureIndex + 1} chords: ${formatMeasureChords(updated)}`);
     if (tokens[0]) audioEngine.previewChord(tokens[0]);
   }, [chordInputText, chordMode, currentMeasure, onUpdateMeasureChord, selectedMeasureIndex, showNotice, audioEngine]);
 
@@ -390,7 +390,7 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
     const updated = chordMode === 'append' ? [...current, chord] : [chord];
     onUpdateMeasureChord(selectedMeasureIndex, formatMeasureChords(updated));
     audioEngine.previewChord(chord);
-    showNotice(`已設定和弦：${formatMeasureChords(updated)}`);
+    showNotice(`Set chord: ${formatMeasureChords(updated)}`);
   }, [chordMode, currentMeasure, onUpdateMeasureChord, selectedMeasureIndex, showNotice, audioEngine]);
 
   const handleReorderChord = React.useCallback((fromIdx: number, toIdx: number) => {
@@ -411,7 +411,7 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
   const handleClearAllChords = React.useCallback(() => {
     if (!onUpdateMeasureChord || selectedMeasureIndex === null) return;
     onUpdateMeasureChord(selectedMeasureIndex, '');
-    showNotice(`已清除第 ${selectedMeasureIndex + 1} 小節所有和弦`);
+    showNotice(`Cleared all chords for Measure ${selectedMeasureIndex + 1}`);
   }, [onUpdateMeasureChord, selectedMeasureIndex, showNotice]);
 
   const handleAutoHarmonizeCurrentMeasure = React.useCallback(() => {
@@ -424,7 +424,7 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
     );
     setLastHarmonization(result);
     onUpdateMeasureChord(selectedMeasureIndex, result.formatted);
-    showNotice(`🪄 智慧配和弦：${result.formatted} (${result.rationale})`);
+    showNotice(`🪄 Auto Harmonize: ${result.formatted} (${result.rationale})`);
     if (result.chords[0]) {
       audioEngine.previewChord(result.chords[0]);
     }
@@ -444,13 +444,13 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
     currentNote.pitch === 0
       ? '0 (Rest)'
       : isStandaloneAnnotationNote(currentNote)
-      ? `標記: ${currentNote.annotation} (0拍)`
+      ? `Annotation: ${currentNote.annotation} (0 beats)`
       : isLineBreakNote
-      ? '↵ (Line Break · 0拍)'
+      ? '↵ (Line Break · 0 beats)'
       : isPunctuationZeroNote(currentNote)
-      ? `"${punctChar}" (標點符號 · 0拍)`
+      ? `"${punctChar}" (Punctuation · 0 beats)`
       : currentNote.pitch === 'empty'
-      ? '␣ (Empty / 0拍)'
+      ? '␣ (Empty / 0 beats)'
       : `${currentNote.accidental || ''}${currentNote.pitch}${
           currentNote.octave > 0
             ? '̇'.repeat(currentNote.octave)
@@ -463,7 +463,7 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
   const handleAddPreGrace = () => {
     const existing = currentNote.preGraceNotes || [];
     if (existing.length >= 3) {
-      showNotice('前裝飾音最多支援 3 個小音符');
+      showNotice('Pre-grace notes support up to 3 notes');
       return;
     }
     const defaultPitch = (typeof currentNote.pitch === 'number' && currentNote.pitch > 0 ? currentNote.pitch : 1) as 1 | 2 | 3 | 4 | 5 | 6 | 7;
@@ -494,7 +494,7 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
   const handleAddPostGrace = () => {
     const existing = currentNote.postGraceNotes || [];
     if (existing.length >= 3) {
-      showNotice('後裝飾音最多支援 3 個小音符');
+      showNotice('Post-grace notes support up to 3 notes');
       return;
     }
     const defaultPitch = (typeof currentNote.pitch === 'number' && currentNote.pitch > 0 ? currentNote.pitch : 1) as 1 | 2 | 3 | 4 | 5 | 6 | 7;
@@ -536,18 +536,18 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
     switch (type) {
       case 'upper_single':
         updatedPre = [{ pitch: wrapPitch(baseP + 1), octave: currentNote.octave || 0 }];
-        showNotice('已套用：單音上倚音');
+        showNotice('Applied: Single Upper Acciaccatura');
         break;
       case 'lower_single':
         updatedPre = [{ pitch: wrapPitch(baseP - 1), octave: currentNote.octave || 0 }];
-        showNotice('已套用：單音下倚音');
+        showNotice('Applied: Single Lower Acciaccatura');
         break;
       case 'double_slide':
         updatedPre = [
           { pitch: wrapPitch(baseP - 2), octave: currentNote.octave || 0 },
           { pitch: wrapPitch(baseP - 1), octave: currentNote.octave || 0 },
         ];
-        showNotice('已套用：雙音滑轉');
+        showNotice('Applied: Double Slide (Mordent)');
         break;
       case 'triple_turn':
         updatedPre = [
@@ -555,20 +555,20 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
           { pitch: wrapPitch(baseP), octave: currentNote.octave || 0 },
           { pitch: wrapPitch(baseP - 1), octave: currentNote.octave || 0 },
         ];
-        showNotice('已套用：三音迴音');
+        showNotice('Applied: Triple Turn (Gruppetto)');
         break;
       case 'post_drop':
         updatedPost = [{ pitch: wrapPitch(baseP - 1), octave: currentNote.octave || 0 }];
-        showNotice('已套用：尾音下拋');
+        showNotice('Applied: Post-Drop (Downward Fall)');
         break;
       case 'post_lift':
         updatedPost = [{ pitch: wrapPitch(baseP + 1), octave: currentNote.octave || 0 }];
-        showNotice('已套用：尾音上提');
+        showNotice('Applied: Post-Lift (Upward Scoop)');
         break;
       case 'clear':
         updatedPre = [];
         updatedPost = [];
-        showNotice('已清除裝飾音');
+        showNotice('Cleared ornaments and grace notes');
         break;
     }
 
@@ -623,14 +623,14 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
                   audioEngine.previewNote(keySignature, { ...currentNote, instrument: val });
                 }}
                 className="bg-transparent font-bold text-xs text-amber-600 dark:text-amber-400 focus:outline-hidden cursor-pointer"
-                title="音色覆蓋 (Sound Source Override - Overrides primary song tone)"
+                title="Sound Source Override (Overrides primary song tone)"
               >
                 <option value="" className="bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300">
-                  預設 (Default)
+                  Default
                 </option>
                 {INSTRUMENT_OPTIONS.map(opt => (
                   <option key={opt.value} value={opt.value} className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100">
-                    {opt.labelZh} ({opt.value})
+                    {opt.labelEn} ({opt.value})
                   </option>
                 ))}
               </select>
@@ -638,55 +638,55 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
           </div>
 
           {(currentNote.tieToNext || (currentNote.isTied && !currentNote.slurToNext)) && (
-            <span className="text-xs bg-amber-400/20 text-amber-700 dark:text-amber-300 px-2.5 py-1 rounded-md font-bold border border-amber-400/40" title="Tie: 連結音 (音色融合成一音)">
-              Tie ⌒ (連結)
+            <span className="text-xs bg-amber-400/20 text-amber-700 dark:text-amber-300 px-2.5 py-1 rounded-md font-bold border border-amber-400/40" title="Tie: Connect same pitch smoothly">
+              Tie ⌒
             </span>
           )}
 
           {currentNote.slurToNext && (
-            <span className="text-xs bg-purple-500/20 text-purple-700 dark:text-purple-300 px-2.5 py-1 rounded-md font-bold border border-purple-400/40" title="Slur: 圓滑音 (連音/一字多音)">
-              Slur ⌢ (圓滑)
+            <span className="text-xs bg-purple-500/20 text-purple-700 dark:text-purple-300 px-2.5 py-1 rounded-md font-bold border border-purple-400/40" title="Slur: Smooth phrase or melisma">
+              Slur ⌢
             </span>
           )}
 
           {currentNote.articulation && currentNote.articulation !== 'none' && (
             <span className="text-xs bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 px-2 py-1 rounded-md font-bold border border-cyan-400/40">
-              {currentNote.articulation === 'fermata' && '延長 𝄐'}
-              {currentNote.articulation === 'accent' && '重音 >'}
-              {currentNote.articulation === 'staccato' && '跳音 ·'}
-              {currentNote.articulation === 'tenuto' && '保持 —'}
-              {currentNote.articulation === 'portamento_up' && '上滑 ↗'}
-              {currentNote.articulation === 'portamento_down' && '下滑 ↘'}
+              {currentNote.articulation === 'fermata' && 'Fermata 𝄐'}
+              {currentNote.articulation === 'accent' && 'Accent >'}
+              {currentNote.articulation === 'staccato' && 'Staccato ·'}
+              {currentNote.articulation === 'tenuto' && 'Tenuto —'}
+              {currentNote.articulation === 'portamento_up' && 'Port. Up ↗'}
+              {currentNote.articulation === 'portamento_down' && 'Port. Down ↘'}
             </span>
           )}
 
           {currentNote.isTriplet && (
             <span className="text-xs bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 px-2 py-1 rounded-md font-bold border border-indigo-400/40">
-              三連音 3
+              Triplet 3
             </span>
           )}
 
           {((currentNote.preGraceNotes?.length || 0) + (currentNote.postGraceNotes?.length || 0) > 0) && (
             <span className="text-xs bg-rose-500/15 text-rose-700 dark:text-rose-300 px-2 py-1 rounded-md font-bold border border-rose-400/30">
-              裝飾: {formatGraceNotes(currentNote.preGraceNotes)} {currentNote.pitch} {formatGraceNotes(currentNote.postGraceNotes)}
+              Grace: {formatGraceNotes(currentNote.preGraceNotes)} {currentNote.pitch} {formatGraceNotes(currentNote.postGraceNotes)}
             </span>
           )}
 
           {isStandaloneAnnotationNote(currentNote) && (
             <span className="text-xs bg-indigo-600 text-white dark:bg-indigo-500 px-2.5 py-1 rounded-md font-bold shadow-xs">
-              標記 · 0拍: {currentNote.annotation}
+              Annotation (0-beat): {currentNote.annotation}
             </span>
           )}
 
           {isPunctuationZeroNote(currentNote) && (
             <span className="text-xs bg-amber-500/20 text-amber-800 dark:text-amber-300 px-2.5 py-1 rounded-md font-bold border border-amber-400/40">
-              標點/間隔 (0拍) · 僅佔 1 字元
+              Punctuation / Space (0-beat)
             </span>
           )}
 
           {currentNote.annotation && !isStandaloneAnnotationNote(currentNote) && (
             <span className="text-xs bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 px-2.5 py-1 rounded-md font-bold border border-indigo-400/30">
-              附屬標記: {currentNote.annotation}
+              Annotation: {currentNote.annotation}
             </span>
           )}
         </div>
@@ -873,11 +873,11 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
               type="button"
               onClick={onOpenKeyboardToScore}
               className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-zinc-950 font-black rounded-xl text-xs shadow-xs transition-all active:scale-95 cursor-pointer touch-manipulation min-h-[40px]"
-              title="鍵盤彈奏轉譜工作站 (Keyboard-to-Score Studio)"
+              title="Keyboard-to-Score Studio"
             >
               <Keyboard className="w-4 h-4 shrink-0" />
-              <span className="hidden sm:inline">彈奏轉譜</span>
-              <span className="sm:hidden">轉譜</span>
+              <span className="hidden sm:inline">Studio</span>
+              <span className="sm:hidden">Studio</span>
             </button>
           )}
 
@@ -972,7 +972,7 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
                 }`}
               >
                 <Sparkles className="w-4 h-4" />
-                <span>裝飾音 (Grace)</span>
+                <span>Grace</span>
                 {((currentNote.preGraceNotes?.length || 0) + (currentNote.postGraceNotes?.length || 0) > 0) && (
                   <span className="ml-0.5 px-1.5 py-0.2 bg-purple-600 text-white rounded-full text-[10px] font-black">
                     {(currentNote.preGraceNotes?.length || 0) + (currentNote.postGraceNotes?.length || 0)}
@@ -991,7 +991,7 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
                 }`}
               >
                 <Layers className="w-4 h-4" />
-                <span>和弦 (Chords)</span>
+                <span>Chords</span>
                 {currentMeasure && getMeasureChords(currentMeasure).length > 0 && (
                   <span className="ml-0.5 px-1.5 py-0.2 bg-amber-600 text-white rounded-full text-[10px] font-black">
                     {getMeasureChords(currentMeasure).length}
@@ -1009,7 +1009,7 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
                 }`}
               >
                 <MessageSquareQuote className="w-4 h-4" />
-                <span>歌詞 (羅馬字 / 漢羅) 與標點</span>
+                <span>Lyrics & Punctuation</span>
               </button>
             </div>
 
@@ -1040,7 +1040,6 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
                 <div className="flex items-center gap-2 flex-wrap flex-1 min-w-[280px]">
                   <span className="text-xs font-extrabold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider shrink-0 w-12 flex flex-col items-start leading-tight">
                     <span>Pitch:</span>
-                    <span className="text-[10px] font-medium text-zinc-400">音高</span>
                   </span>
                   <div className="flex items-center gap-1.5 flex-wrap flex-1">
                     {[1, 2, 3, 4, 5, 6, 7].map(p => {
@@ -1072,10 +1071,10 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
                           ? 'bg-amber-500 text-zinc-950 ring-2 ring-amber-400 shadow-md font-black z-10'
                           : 'bg-zinc-100 dark:bg-[#0a0c10] hover:bg-zinc-200 text-zinc-700 dark:text-zinc-300 border border-zinc-200/90 dark:border-zinc-700/80 shadow-2xs'
                       }`}
-                      title="Rest (0) · 休止符"
+                      title="Rest (0)"
                     >
                       <span className="font-mono text-lg font-black">0</span>
-                      <span className="text-[10px] font-sans font-semibold opacity-70 mt-0.5">休止</span>
+                      <span className="text-[10px] font-sans font-semibold opacity-70 mt-0.5">Rest</span>
                     </button>
 
                     {/* Empty ␣ */}
@@ -1087,10 +1086,10 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
                           ? 'bg-amber-500 text-zinc-950 ring-2 ring-amber-400 shadow-md font-black border-amber-400 z-10'
                           : 'bg-zinc-100/80 dark:bg-[#0a0c10]/80 text-zinc-600 dark:text-zinc-400 border-zinc-300 dark:border-zinc-700 shadow-2xs'
                       }`}
-                      title="Empty / Spacer · 空格間隔"
+                      title="Empty / Spacer"
                     >
                       <span className="font-mono text-base font-black">␣</span>
-                      <span className="text-[10px] font-sans font-semibold opacity-70 mt-0.5">空白</span>
+                      <span className="text-[10px] font-sans font-semibold opacity-70 mt-0.5">Empty</span>
                     </button>
                   </div>
                 </div>
@@ -1107,9 +1106,9 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
                           ? 'bg-amber-500 text-zinc-950 shadow-xs font-black'
                           : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-800'
                       }`}
-                      title="Low (dot below 5̣) · 低音 (-1 八度)"
+                      title="Low (dot below 5̣) · Octave -1"
                     >
-                      <span className="font-mono text-xs font-black">5̣ 低音</span>
+                      <span className="font-mono text-xs font-black">5̣ Low</span>
                       <span className="text-[9px] opacity-70">Oct -1</span>
                     </button>
                     <button
@@ -1120,9 +1119,9 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
                           ? 'bg-amber-500 text-zinc-950 shadow-xs font-black'
                           : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-800'
                       }`}
-                      title="Mid (natural 5) · 中音 (基準八度)"
+                      title="Mid (natural 5) · Standard Octave"
                     >
-                      <span className="font-mono text-xs font-black">5 中音</span>
+                      <span className="font-mono text-xs font-black">5 Mid</span>
                       <span className="text-[9px] opacity-70">Normal</span>
                     </button>
                     <button
@@ -1133,9 +1132,9 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
                           ? 'bg-amber-500 text-zinc-950 shadow-xs font-black'
                           : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-800'
                       }`}
-                      title="High (dot above 5̇) · 高音 (+1 八度)"
+                      title="High (dot above 5̇) · Octave +1"
                     >
-                      <span className="font-mono text-xs font-black">5̇ 高音</span>
+                      <span className="font-mono text-xs font-black">5̇ High</span>
                       <span className="text-[9px] opacity-70">Oct +1</span>
                     </button>
                   </div>
@@ -1150,9 +1149,9 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
                           ? 'bg-amber-500 text-zinc-950 shadow-xs font-black'
                           : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-800'
                       }`}
-                      title="Natural ♮ / 本音還原"
+                      title="Natural ♮"
                     >
-                      <span className="font-mono text-xs font-black">♮ 本音</span>
+                      <span className="font-mono text-xs font-black">♮ Nat</span>
                       <span className="text-[9px] opacity-70">Natural</span>
                     </button>
                     <button
@@ -1163,9 +1162,9 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
                           ? 'bg-amber-500 text-zinc-950 shadow-xs font-black'
                           : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-800'
                       }`}
-                      title="Sharp ♯ / 升半音"
+                      title="Sharp ♯"
                     >
-                      <span className="font-mono text-xs font-black">♯ 升半音</span>
+                      <span className="font-mono text-xs font-black">♯ Sharp</span>
                       <span className="text-[9px] opacity-70">Sharp</span>
                     </button>
                     <button
@@ -1176,9 +1175,9 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
                           ? 'bg-amber-500 text-zinc-950 shadow-xs font-black'
                           : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-800'
                       }`}
-                      title="Flat ♭ / 降半音"
+                      title="Flat ♭"
                     >
-                      <span className="font-mono text-xs font-black">♭ 降半音</span>
+                      <span className="font-mono text-xs font-black">♭ Flat</span>
                       <span className="text-[9px] opacity-70">Flat</span>
                     </button>
                   </div>
@@ -1236,10 +1235,10 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
                           ? 'bg-amber-500 text-zinc-950 border-amber-400 ring-2 ring-amber-400 font-black shadow-md'
                           : 'border-zinc-200/90 dark:border-zinc-700/80 bg-zinc-100/90 dark:bg-[#0a0c10] text-zinc-700 dark:text-zinc-300 shadow-2xs hover:bg-amber-50 dark:hover:bg-zinc-800'
                       }`}
-                      title="Dotted (附點 ·): 延長原音符時值的一半 (×1.5)"
+                      title="Dotted (·): Extends note duration by 50%"
                     >
                       <span className="font-mono text-base font-black leading-none text-amber-600 dark:text-amber-400">·</span>
-                      <span className="whitespace-nowrap">附點 (Dot)</span>
+                      <span className="whitespace-nowrap">Dot</span>
                     </button>
 
                     {/* Toggle Double Dotted */}
@@ -1268,10 +1267,10 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
                           ? 'bg-amber-500 text-zinc-950 border-amber-400 ring-2 ring-amber-400 font-black shadow-md'
                           : 'border-zinc-200/90 dark:border-zinc-700/80 bg-zinc-100/90 dark:bg-[#0a0c10] text-zinc-700 dark:text-zinc-300 shadow-2xs hover:bg-amber-50 dark:hover:bg-zinc-800'
                       }`}
-                      title="Double Dotted (雙附點 ··): 延長原音符時值的四分之三 (×1.75)"
+                      title="Double Dotted (··): Extends note duration by 75%"
                     >
                       <span className="font-mono text-base font-black leading-none text-amber-600 dark:text-amber-400">··</span>
-                      <span className="whitespace-nowrap">雙附點</span>
+                      <span className="whitespace-nowrap">Dbl Dot</span>
                     </button>
 
                     {/* Toggle Triplet */}
@@ -1301,10 +1300,10 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
                           ? 'bg-indigo-600 text-white border-indigo-500 ring-2 ring-indigo-400 font-black shadow-md'
                           : 'border-zinc-200/90 dark:border-zinc-700/80 bg-zinc-100/90 dark:bg-[#0a0c10] text-zinc-700 dark:text-zinc-300 shadow-2xs hover:bg-indigo-50 dark:hover:bg-zinc-800'
                       }`}
-                      title="Triplet (三連音 ┌3┐): 三等分拍值"
+                      title="Triplet (┌3┐): Divides beat into 3 equal parts"
                     >
                       <span className="font-mono font-black text-indigo-500 dark:text-indigo-400">┌3┐</span>
-                      <span className="whitespace-nowrap">三連音</span>
+                      <span className="whitespace-nowrap">Triplet</span>
                     </button>
 
                     {/* Toggle Tie */}
@@ -1316,10 +1315,10 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
                           ? 'bg-amber-500 text-zinc-950 border-amber-400 ring-2 ring-amber-400 font-black shadow-md'
                           : 'border-zinc-200/90 dark:border-zinc-700/80 bg-zinc-100/90 dark:bg-[#0a0c10] text-zinc-700 dark:text-zinc-300 shadow-2xs hover:bg-amber-50 dark:hover:bg-zinc-800'
                       }`}
-                      title="Tie (連結音 ⌒): 連接同音高，演奏時融合為一持續長音"
+                      title="Tie (⌒): Connects same pitch across notes"
                     >
                       <span className="text-sm font-bold text-amber-600 dark:text-amber-400">⌒</span>
-                      <span className="whitespace-nowrap">Tie (連結)</span>
+                      <span className="whitespace-nowrap">Tie</span>
                     </button>
 
                     {/* Toggle Slur */}
@@ -1340,10 +1339,10 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
                           ? 'bg-purple-600 text-white border-purple-500 ring-2 ring-purple-400 font-black shadow-md'
                           : 'border-zinc-200/90 dark:border-zinc-700/80 bg-zinc-100/90 dark:bg-[#0a0c10] text-zinc-700 dark:text-zinc-300 shadow-2xs hover:bg-purple-50 dark:hover:bg-zinc-800'
                       }`}
-                      title="Slur (圓滑音 ⌢): 跨越不同音高圓滑唱奏，亦適用一字多音 (Melisma)"
+                      title="Slur (⌢): Smooth phrasing across different pitches / melisma"
                     >
                       <span className="text-sm font-bold text-purple-600 dark:text-purple-400">⌢</span>
-                      <span className="whitespace-nowrap">Slur (圓滑)</span>
+                      <span className="whitespace-nowrap">Slur</span>
                     </button>
                   </div>
                 </div>
@@ -1425,13 +1424,13 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
                 </span>
                 <div className="flex items-center gap-1.5 flex-wrap flex-1">
                   {[
-                    { label: '自然 (None)', art: 'none' as const },
-                    { label: '延長 𝄐 (Fermata)', art: 'fermata' as const },
-                    { label: '重音 > (Accent)', art: 'accent' as const },
-                    { label: '跳音 · (Staccato)', art: 'staccato' as const },
-                    { label: '保持 — (Tenuto)', art: 'tenuto' as const },
-                    { label: '上滑 ↗ (Port. Up)', art: 'portamento_up' as const },
-                    { label: '下滑 ↘ (Port. Down)', art: 'portamento_down' as const },
+                    { label: 'None', art: 'none' as const },
+                    { label: 'Fermata 𝄐', art: 'fermata' as const },
+                    { label: 'Accent >', art: 'accent' as const },
+                    { label: 'Staccato ·', art: 'staccato' as const },
+                    { label: 'Tenuto —', art: 'tenuto' as const },
+                    { label: 'Port. Up ↗', art: 'portamento_up' as const },
+                    { label: 'Port. Down ↘', art: 'portamento_down' as const },
                   ].map(a => {
                     const isSelected = (currentNote.articulation || 'none') === a.art;
                     return (
@@ -1550,13 +1549,13 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
             };
 
             const instrumentHints: Record<InstrumentType, { timbre: string; icon: React.ComponentType<{ className?: string }> }> = {
-              whistle: { timbre: '清亮', icon: Wind },
-              flute: { timbre: '悠揚', icon: Music },
-              piano: { timbre: '原聲', icon: Volume2 },
-              guitar: { timbre: '撥弦', icon: Sliders },
-              synth: { timbre: '電音', icon: Zap },
-              bell: { timbre: '清脆', icon: Bell },
-              cello: { timbre: '醇厚', icon: Music2 },
+              whistle: { timbre: 'Bright', icon: Wind },
+              flute: { timbre: 'Melodic', icon: Music },
+              piano: { timbre: 'Acoustic', icon: Volume2 },
+              guitar: { timbre: 'Plucked', icon: Sliders },
+              synth: { timbre: 'Synth', icon: Zap },
+              bell: { timbre: 'Crisp', icon: Bell },
+              cello: { timbre: 'Rich', icon: Music2 },
             };
 
             const ornamentPresets: {
@@ -1568,50 +1567,50 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
             }[] = [
               {
                 type: 'upper_single',
-                label: '單音上倚音',
-                desc: `Pre-grace +1 (${wrapPitch(baseP + 1)}) · 高一音前置`,
+                label: 'Upper Grace +1',
+                desc: `Pre-grace +1 (${wrapPitch(baseP + 1)}) · Step above`,
                 contour: '↗',
                 notation: `⁽${wrapPitch(baseP + 1)}⁾${baseP}`,
               },
               {
                 type: 'lower_single',
-                label: '單音下倚音',
-                desc: `Pre-grace -1 (${wrapPitch(baseP - 1)}) · 低一音前置`,
+                label: 'Lower Grace -1',
+                desc: `Pre-grace -1 (${wrapPitch(baseP - 1)}) · Step below`,
                 contour: '↘',
                 notation: `⁽${wrapPitch(baseP - 1)}⁾${baseP}`,
               },
               {
                 type: 'double_slide',
-                label: '雙音滑轉',
-                desc: `Pre-grace double (${wrapPitch(baseP - 2)} ${wrapPitch(baseP - 1)}) · 雙音滑音`,
+                label: 'Double Slide',
+                desc: `Pre-grace double (${wrapPitch(baseP - 2)} ${wrapPitch(baseP - 1)}) · Ascending slide`,
                 contour: '↝',
                 notation: `⁽${wrapPitch(baseP - 2)}${wrapPitch(baseP - 1)}⁾${baseP}`,
               },
               {
                 type: 'triple_turn',
-                label: '三音迴音',
-                desc: `Pre-grace triple turn (${wrapPitch(baseP + 1)} ${baseP} ${wrapPitch(baseP - 1)}) · 迴旋轉音`,
+                label: 'Turn / Gruppetto',
+                desc: `Pre-grace triple turn (${wrapPitch(baseP + 1)} ${baseP} ${wrapPitch(baseP - 1)}) · Turn ornament`,
                 contour: '∿',
                 notation: `⁽${wrapPitch(baseP + 1)}${baseP}${wrapPitch(baseP - 1)}⁾${baseP}`,
               },
               {
                 type: 'post_drop',
-                label: '尾音下拋',
-                desc: `Post-grace drop (${wrapPitch(baseP - 1)}) · 結尾下拋滑音`,
+                label: 'Terminal Drop',
+                desc: `Post-grace drop (${wrapPitch(baseP - 1)}) · Trailing downward slide`,
                 contour: '↘',
                 notation: `${baseP}⁽${wrapPitch(baseP - 1)}⁾`,
               },
               {
                 type: 'post_lift',
-                label: '尾音上提',
-                desc: `Post-grace lift (${wrapPitch(baseP + 1)}) · 結尾向上提音`,
+                label: 'Terminal Lift',
+                desc: `Post-grace lift (${wrapPitch(baseP + 1)}) · Trailing upward lift`,
                 contour: '↗',
                 notation: `${baseP}⁽${wrapPitch(baseP + 1)}⁾`,
               },
               {
                 type: 'clear',
-                label: '清除裝飾音',
-                desc: 'Clear all ornaments · 清除前後裝飾音',
+                label: 'Clear Ornaments',
+                desc: 'Clear all pre and post grace notes',
                 contour: '✕',
                 notation: '✕',
               },
@@ -1624,17 +1623,17 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
                 <div className="flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-amber-500" />
                   <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
-                    裝飾音編輯 (前裝飾音與後裝飾音，支援 1 至 3 個小音符)
+                    Ornament Editor (Pre & post grace notes, supports 1 to 3 grace notes)
                   </span>
                 </div>
                 <button
                   type="button"
                   onClick={() => audioEngine.previewNote(keySignature, currentNote)}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500 text-zinc-950 hover:bg-amber-400 active:scale-95 transition-all shadow-xs cursor-pointer"
-                  title="試聽本音與裝飾音 (Preview note with ornaments)"
+                  title="Audition note with ornaments"
                 >
                   <Volume2 className="w-3.5 h-3.5" />
-                  <span>試聽效果</span>
+                  <span>Audition</span>
                 </button>
               </div>
 
@@ -1643,7 +1642,7 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-black text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
                     <Disc className="w-4 h-4 text-amber-500" />
-                    <span>音色音源覆蓋 (Note Sound Source Override)</span>
+                    <span>Note Sound Source Override</span>
                   </span>
                   {currentNote.instrument && (
                     <button
@@ -1653,7 +1652,7 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
                       }}
                       className="text-[11px] text-zinc-500 hover:text-rose-500 underline cursor-pointer"
                     >
-                      重設為預設 (Reset)
+                      Reset to Default
                     </button>
                   )}
                 </div>
@@ -1671,7 +1670,7 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
                     }`}
                   >
                     <Sparkles className="w-3.5 h-3.5 text-amber-900 dark:text-zinc-950 shrink-0" />
-                    <span>預設 (Default)</span>
+                    <span>Default</span>
                     <span
                       className={`text-[9px] px-1.5 py-0.5 rounded font-mono uppercase tracking-wider ${
                         !currentNote.instrument
@@ -1679,7 +1678,7 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
                           : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500'
                       }`}
                     >
-                      全局
+                      Global
                     </span>
                     {!currentNote.instrument && <Check className="w-3 h-3 text-zinc-950 stroke-[3]" />}
                   </button>
@@ -1703,7 +1702,7 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
                         title={`${opt.labelEn} · ${meta?.timbre || ''}`}
                       >
                         <IconComp className="w-3.5 h-3.5 shrink-0" />
-                        <span>{opt.labelZh}</span>
+                        <span>{opt.labelEn}</span>
                         {meta?.timbre && (
                           <span
                             className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
@@ -1722,10 +1721,10 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
                 </div>
               </div>
 
-              {/* 經典唱腔裝飾音範本 (One-Tap Presets) */}
+              {/* Vocal & Grace Note Presets (One-Tap) */}
               <div className="flex flex-col gap-1.5">
                 <span className="text-xs font-extrabold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                  經典台語 / 流行唱腔範本 (One-Tap Presets):
+                  Vocal & Grace Note Presets (One-Tap):
                 </span>
                 <div className="flex items-center gap-1.5 flex-wrap">
                   {ornamentPresets.map(p => {
@@ -1776,32 +1775,32 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
                 </div>
               </div>
 
-              {/* 前裝飾音 (Pre-Grace Notes, 1 to 3 notes) */}
+              {/* Pre-Grace Notes (1 to 3 notes) */}
               <div className="flex flex-col gap-2 p-3 bg-zinc-100/70 dark:bg-[#0c0e14]/70 rounded-xl border border-zinc-200/80 dark:border-zinc-800">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 flex-wrap">
                     <div className="flex items-center gap-1.5">
                       <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                       <span className="text-xs font-black text-zinc-800 dark:text-zinc-200">
-                        前裝飾音 (前倚音 / Pre-Grace Notes)
+                        Pre-Grace Notes (Appoggiatura / Acciaccatura)
                       </span>
                     </div>
                     <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 font-mono text-[11px] font-bold border border-amber-400/30">
-                      <span className="text-[10px] text-zinc-500 font-sans">簡譜標示:</span>
-                      <span className="font-black text-amber-600 dark:text-amber-400">⁽ⁿ⁾[主音]</span>
+                      <span className="text-[10px] text-zinc-500 font-sans">Notation:</span>
+                      <span className="font-black text-amber-600 dark:text-amber-400">⁽ⁿ⁾[Main]</span>
                     </span>
                     {preList.length > 0 ? (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 text-[11px] font-mono font-black border border-emerald-500/30">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                        已設: ⁽{formatGraceNotes(currentNote.preGraceNotes)}⁾{currentNote.pitch}
+                        Set: ⁽{formatGraceNotes(currentNote.preGraceNotes)}⁾{currentNote.pitch}
                       </span>
                     ) : (
                       <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium hidden md:inline">
-                        主音前裝飾
+                        Before principal note
                       </span>
                     )}
                     <span className="text-[11px] font-mono font-bold px-1.5 py-0.5 rounded bg-zinc-200/80 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
-                      {preList.length} / 3 音
+                      {preList.length} / 3 Notes
                     </span>
                   </div>
                   {preList.length < 3 && (
@@ -1811,13 +1810,13 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
                       className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500 text-zinc-950 hover:bg-amber-400 active:scale-95 cursor-pointer"
                     >
                       <PlusCircle className="w-3.5 h-3.5" />
-                      <span>新增音符</span>
+                      <span>Add Note</span>
                     </button>
                   )}
                 </div>
 
                 {(!currentNote.preGraceNotes || currentNote.preGraceNotes.length === 0) ? (
-                  <p className="text-xs text-zinc-500 italic py-1">尚未設定前裝飾音（點擊上方「新增音符」或點選唱腔範本）</p>
+                  <p className="text-xs text-zinc-500 italic py-1">No pre-grace notes configured yet (click &quot;Add Note&quot; or pick a preset above)</p>
                 ) : (
                   <div className="flex flex-col gap-2">
                     {currentNote.preGraceNotes.map((g, idx) => (
@@ -1861,7 +1860,7 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
                                     : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
                                 }`}
                               >
-                                {oct === -1 ? '低̣' : oct === 1 ? '高̇' : '中'}
+                                {oct === -1 ? 'Loẉ' : oct === 1 ? 'Higḣ' : 'Mid'}
                               </button>
                             ))}
                           </div>
@@ -1889,7 +1888,7 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
                           type="button"
                           onClick={() => handleRemovePreGrace(idx)}
                           className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer"
-                          title="刪除此外飾音"
+                          title="Delete grace note"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -1899,30 +1898,30 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
                 )}
               </div>
 
-              {/* 後裝飾音 (Post-Grace Notes, 1 to 3 notes) */}
+              {/* Post-Grace Notes (1 to 3 notes) */}
               <div className="flex flex-col gap-2 p-3 bg-zinc-100/70 dark:bg-[#0c0e14]/70 rounded-xl border border-zinc-200/80 dark:border-zinc-800">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-xs font-black text-zinc-800 dark:text-zinc-200 inline-flex items-center gap-1.5">
                       <CornerDownLeft className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                      <span>後裝飾音 (尾裝飾音 / Post-Grace Notes)</span>
+                      <span>Post-Grace Notes (Trailing Grace Notes)</span>
                       <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 font-mono text-[11px] font-bold border border-amber-400/30 font-normal">
-                        <span className="text-[10px] text-zinc-500 font-sans">簡譜標示:</span>
-                        <span className="font-black text-amber-600 dark:text-amber-400">[主音]⁽ⁿ⁾</span>
+                        <span className="text-[10px] text-zinc-500 font-sans">Notation:</span>
+                        <span className="font-black text-amber-600 dark:text-amber-400">[Main]⁽ⁿ⁾</span>
                       </span>
                     </span>
                     {postList.length > 0 ? (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 text-[11px] font-mono font-black border border-emerald-500/30">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                        已設: {currentNote.pitch}⁽{formatGraceNotes(currentNote.postGraceNotes)}⁾
+                        Set: {currentNote.pitch}⁽{formatGraceNotes(currentNote.postGraceNotes)}⁾
                       </span>
                     ) : (
                       <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium hidden md:inline">
-                        主音後滑落
+                        After principal note
                       </span>
                     )}
                     <span className="text-[11px] font-mono font-bold px-1.5 py-0.5 rounded bg-zinc-200/80 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
-                      {postList.length} / 3 音
+                      {postList.length} / 3 Notes
                     </span>
                   </div>
                   {postList.length < 3 && (
@@ -1932,13 +1931,13 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
                       className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500 text-zinc-950 hover:bg-amber-400 active:scale-95 cursor-pointer"
                     >
                       <PlusCircle className="w-3.5 h-3.5" />
-                      <span>新增音符</span>
+                      <span>Add Note</span>
                     </button>
                   )}
                 </div>
 
                 {(!currentNote.postGraceNotes || currentNote.postGraceNotes.length === 0) ? (
-                  <p className="text-xs text-zinc-500 italic py-1">尚未設定後裝飾音（點擊上方「新增音符」或點選唱腔範本）</p>
+                  <p className="text-xs text-zinc-500 italic py-1">No post-grace notes configured yet (click &quot;Add Note&quot; or pick a preset above)</p>
                 ) : (
                   <div className="flex flex-col gap-2">
                     {currentNote.postGraceNotes.map((g, idx) => (
@@ -1982,7 +1981,7 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
                                     : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
                                 }`}
                               >
-                                {oct === -1 ? '低̣' : oct === 1 ? '高̇' : '中'}
+                                {oct === -1 ? 'Loẉ' : oct === 1 ? 'Higḣ' : 'Mid'}
                               </button>
                             ))}
                           </div>
@@ -2010,7 +2009,7 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
                           type="button"
                           onClick={() => handleRemovePostGrace(idx)}
                           className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer"
-                          title="刪除此外飾音"
+                          title="Delete grace note"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -2032,7 +2031,7 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-black text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
                       <Layers className="w-4 h-4 text-amber-500" />
-                      <span>小節和弦配置 (Measure #{selectedMeasureIndex + 1})</span>
+                      <span>Measure Chords (Measure #{selectedMeasureIndex + 1})</span>
                     </span>
                     {currentMeasure?.section && (
                       <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 font-bold">
@@ -2053,10 +2052,10 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
                       onClick={handleAutoHarmonizeCurrentMeasure}
                       disabled={!currentMeasure || !onUpdateMeasureChord}
                       className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-zinc-950 font-black text-xs shadow-xs transition-all active:scale-95 cursor-pointer disabled:opacity-50"
-                      title="根據本小節旋律音高智慧分析並配上最佳和弦"
+                      title="Automatically analyze melody pitches and assign optimal chords to this measure"
                     >
                       <Wand2 className="w-3.5 h-3.5" />
-                      <span>🪄 智慧配和弦</span>
+                      <span>🪄 Auto Harmonize</span>
                     </button>
                   </div>
                 </div>
@@ -2070,7 +2069,7 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
                   if (chords.length === 0) {
                     return (
                       <div className="py-2.5 px-3 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 text-center text-xs text-zinc-400">
-                        此小節目前無和弦 · 可使用下方和弦墊加入，或點擊「🪄 智慧配和弦」
+                        No chords in this measure · Add chords using the pads below, or click &quot;🪄 Auto Harmonize&quot;
                       </div>
                     );
                   }
@@ -2083,7 +2082,7 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
                         {chords.map((ch, idx) => {
                           const startBeat = Math.round(idx * beatsPerChord * 10) / 10 + 1;
                           const endBeat = Math.round((idx + 1) * beatsPerChord * 10) / 10;
-                          const beatLabel = chords.length === 1 ? '全小節' : `第 ${startBeat}–${endBeat} 拍`;
+                          const beatLabel = chords.length === 1 ? 'Whole Measure' : `Beat ${startBeat}–${endBeat}`;
 
                           return (
                             <div
@@ -2094,7 +2093,7 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
                                 type="button"
                                 onClick={() => audioEngine.previewChord(ch)}
                                 className="font-mono font-black text-sm text-amber-900 dark:text-amber-200 hover:text-amber-600 transition-colors cursor-pointer flex items-center gap-1"
-                                title="點擊試聽和弦聲音 (Preview Chord)"
+                                title="Audition chord"
                               >
                                 <Volume2 className="w-3 h-3 text-amber-500" />
                                 <span>{ch}</span>
@@ -2110,7 +2109,7 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
                                   type="button"
                                   onClick={() => handleReorderChord(idx, idx - 1)}
                                   className="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 text-xs px-0.5 cursor-pointer font-bold"
-                                  title="往前移動 (Move earlier)"
+                                  title="Move earlier"
                                 >
                                   ←
                                 </button>
@@ -2122,7 +2121,7 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
                                   type="button"
                                   onClick={() => handleReorderChord(idx, idx + 1)}
                                   className="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 text-xs px-0.5 cursor-pointer font-bold"
-                                  title="往後移動 (Move later)"
+                                  title="Move later"
                                 >
                                   →
                                 </button>
@@ -2133,7 +2132,7 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
                                 type="button"
                                 onClick={() => handleRemoveChord(idx)}
                                 className="text-zinc-400 hover:text-rose-500 ml-0.5 text-xs font-bold cursor-pointer"
-                                title="刪除此和弦"
+                                title="Delete chord"
                               >
                                 <X className="w-3.5 h-3.5" />
                               </button>
@@ -2145,9 +2144,9 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
                           type="button"
                           onClick={handleClearAllChords}
                           className="px-2.5 py-1 text-[11px] font-semibold text-zinc-500 hover:text-rose-600 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg cursor-pointer transition-colors shadow-2xs ml-auto"
-                          title="清空此小節全部和弦"
+                          title="Clear all chords in this measure"
                         >
-                          全部清除
+                          Clear All
                         </button>
                       </div>
 
@@ -2155,7 +2154,7 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
                       {lastHarmonization && (
                         <div className="text-[11px] text-amber-800 dark:text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-lg flex items-center gap-1.5">
                           <Sparkles className="w-3 h-3 text-amber-500 shrink-0" />
-                          <span>分析：{lastHarmonization.rationale} (置信度 {lastHarmonization.confidence}%)</span>
+                          <span>Analysis: {lastHarmonization.rationale} (Confidence {lastHarmonization.confidence}%)</span>
                         </div>
                       )}
                     </div>
@@ -2167,10 +2166,10 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
               <div className="p-3 bg-zinc-50 dark:bg-[#0c0e14] rounded-xl border border-zinc-200/90 dark:border-zinc-800 flex flex-col gap-2">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-extrabold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                    文字輸入多和弦 (Multi-Chord Input):
+                    Multi-Chord Text Input:
                   </span>
                   <div className="flex items-center gap-1 text-[11px]">
-                    <span className="text-zinc-400">模式：</span>
+                    <span className="text-zinc-400">Mode:</span>
                     <button
                       type="button"
                       onClick={() => setChordMode(m => m === 'append' ? 'replace' : 'append')}
@@ -2180,7 +2179,7 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
                           : 'bg-zinc-200/80 dark:bg-zinc-700/80 text-zinc-600 dark:text-zinc-300 border-zinc-300 dark:border-zinc-600'
                       }`}
                     >
-                      {chordMode === 'append' ? '+ 附加 (Append)' : '取代 (Replace)'}
+                      {chordMode === 'append' ? '+ Append' : 'Replace'}
                     </button>
                   </div>
                 </div>
@@ -2197,7 +2196,7 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
                         handleCommitFreeformChord();
                       }
                     }}
-                    placeholder="例如: C G 或 Bb F Gm C7 (以空格或逗號隔開多和弦)"
+                    placeholder="e.g. C G or Bb F Gm C7 (space or comma separated)"
                     className="flex-1 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-xl px-3 py-2 text-sm font-mono text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-hidden focus:ring-2 focus:ring-amber-400"
                   />
                   <button
@@ -2206,7 +2205,7 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
                     disabled={!chordInputText.trim() || !onUpdateMeasureChord}
                     className="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-white text-white dark:text-zinc-900 font-bold rounded-xl text-xs shadow-xs transition-all active:scale-95 cursor-pointer disabled:opacity-40"
                   >
-                    {chordMode === 'append' ? '加入' : '設定'}
+                    {chordMode === 'append' ? 'Add' : 'Set'}
                   </button>
                 </div>
               </div>
@@ -2215,9 +2214,9 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
               <div className="p-3 bg-zinc-50 dark:bg-[#0c0e14] rounded-xl border border-zinc-200/90 dark:border-zinc-800 flex flex-col gap-2.5">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-extrabold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <span>{keySignature} 調 順階自然和弦 (Diatonic Chords):</span>
+                    <span>Key of {keySignature} Diatonic Chords:</span>
                   </span>
-                  <span className="text-[11px] text-zinc-400">點擊直接加入並試聽</span>
+                  <span className="text-[11px] text-zinc-400">Click to insert and audition</span>
                 </div>
 
                 <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
@@ -2235,7 +2234,7 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
                             ? 'bg-amber-500 text-zinc-950 border-amber-600 ring-2 ring-amber-400 font-black'
                             : 'bg-white dark:bg-zinc-900 hover:bg-amber-50 dark:hover:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100'
                         }`}
-                        title={`${c.label} (${c.degree}) - 點擊${chordMode === 'append' ? '附加' : '設定'}並試聽`}
+                        title={`${c.label} (${c.degree}) - Click to ${chordMode === 'append' ? 'append' : 'set'} and preview`}
                       >
                         <span className="font-mono font-black text-sm sm:text-base leading-tight">{c.chord}</span>
                         <span className="text-[10px] font-sans font-medium opacity-75">{c.degree}</span>
@@ -2248,7 +2247,7 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
               {/* Row 4: Common Extended Qualities Bar */}
               <div className="p-3 bg-zinc-50 dark:bg-[#0c0e14] rounded-xl border border-zinc-200/90 dark:border-zinc-800 flex items-center gap-2 flex-wrap text-xs">
                 <span className="font-extrabold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider shrink-0 text-[11px]">
-                  常用變化和弦 (Extended):
+                  Extended Chords:
                 </span>
                 {['7', 'maj7', 'm7', 'sus4', 'sus2', 'dim', 'aug', 'add9'].map(q => {
                   const baseRoot = keySignature;
@@ -2259,7 +2258,7 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
                       type="button"
                       onClick={() => handleAddDiatonicChord(testChord)}
                       className="px-2.5 py-1 rounded-lg bg-white dark:bg-zinc-900 hover:bg-amber-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 font-mono font-bold text-xs cursor-pointer shadow-2xs transition-all active:scale-95"
-                      title={`點擊加入 ${testChord}`}
+                      title={`Add ${testChord}`}
                     >
                       +{q}
                     </button>
@@ -2272,23 +2271,23 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
           {/* TAB 4: LYRICS & ANNOTATIONS */}
           {activeTab === 'lyrics' && (
             <div className="flex flex-col gap-3.5">
-              {/* Single-Note Direct Lyric Syllable Editor (羅馬字 / 漢羅) */}
+              {/* Single-Note Direct Lyric Syllable Editor (Romanization / Han-lo) */}
               <div className="p-3 bg-zinc-50 dark:bg-[#0c0e14] rounded-xl border border-zinc-200/90 dark:border-zinc-800 flex flex-col gap-2.5">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-black text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
                     <MessageSquareQuote className="w-4 h-4 text-amber-500" />
-                    <span>本音歌詞設定 (羅馬字 / 漢羅)</span>
+                    <span>Note Lyrics (Romanization / Han-lo)</span>
                   </span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="flex flex-col gap-1">
                     <label className="text-xs font-bold text-amber-600 dark:text-amber-400">
-                      羅馬字 (POJ):
+                      Romanization (POJ / TL):
                     </label>
                     <input
                       type="text"
-                      placeholder="例：teng-ē 或 siú..."
+                      placeholder="e.g. teng-e or siu..."
                       value={currentNote.lyric?.poj || currentNote.lyric?.tl || ''}
                       onChange={e => {
                         const val = e.target.value;
@@ -2306,11 +2305,11 @@ export const NoteEditorHud: React.FC<NoteEditorHudProps> = ({
 
                   <div className="flex flex-col gap-1">
                     <label className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                      漢羅 (Han-lô):
+                      Han-lo (Han characters):
                     </label>
                     <input
                       type="text"
-                      placeholder="例：燈下 或 守..."
+                      placeholder="e.g. Han characters or words..."
                       value={currentNote.lyric?.hanlo || currentNote.lyric?.custom || currentNote.lyric?.hanji || ''}
                       onChange={e => {
                         const val = e.target.value;

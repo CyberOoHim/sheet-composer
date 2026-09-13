@@ -514,7 +514,7 @@ const SyllableCell: React.FC<SyllableCellProps> = React.memo(({
                   ? 'bg-gradient-to-b from-amber-300 via-amber-400 to-amber-500 shadow-[0_0_14px_rgba(251,191,36,0.95)] ring-2 ring-amber-300/80'
                   : 'bg-gradient-to-b from-blue-400 via-blue-500 to-blue-600 shadow-[0_0_12px_rgba(37,99,235,0.7)] ring-2 ring-blue-400/80'
               }`}
-              title="起唱彈跳球"
+              title="Lead-in bounce ball"
             />
           )}
 
@@ -527,7 +527,7 @@ const SyllableCell: React.FC<SyllableCellProps> = React.memo(({
               }`}
             >
               <Wind className="w-2.5 h-2.5 text-cyan-400 animate-spin" />
-              <span>吸氣</span>
+              <span>Breathe</span>
             </span>
           ) : leadIn && leadIn.isLeadIn ? (
             <span
@@ -537,7 +537,7 @@ const SyllableCell: React.FC<SyllableCellProps> = React.memo(({
                   : 'bg-blue-100 text-blue-800 border-blue-400 ring-2 ring-blue-300'
               }`}
             >
-              起唱 · {leadIn.beatsRemaining}拍
+              Cue · {leadIn.beatsRemaining} beats
             </span>
           ) : (
             <span
@@ -547,7 +547,7 @@ const SyllableCell: React.FC<SyllableCellProps> = React.memo(({
                   : 'bg-blue-100 text-blue-800 border-blue-400 ring-2 ring-blue-300'
               }`}
             >
-              起唱 · 1st
+              Cue · 1st
             </span>
           )}
         </div>
@@ -975,7 +975,7 @@ export const KaraokeStage: React.FC<KaraokeStageProps> = React.memo(({
               }`}
             >
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-              <span>本句完成 · Complete</span>
+              <span>Phrase Complete</span>
             </span>
           </motion.div>
         )}
@@ -1014,7 +1014,7 @@ export const KaraokeStage: React.FC<KaraokeStageProps> = React.memo(({
                     isDark ? 'bg-amber-400 animate-pulse' : 'bg-blue-600 animate-pulse'
                   }`}
                 />
-                <span>現唱 (Active)</span>
+                <span>Active</span>
               </span>
 
               {(currentVerse?.section || activeSection?.name) && (
@@ -1045,10 +1045,10 @@ export const KaraokeStage: React.FC<KaraokeStageProps> = React.memo(({
                       ? 'bg-zinc-800/90 hover:bg-amber-500/20 text-zinc-200 hover:text-amber-300 border-zinc-700 hover:border-amber-400/60'
                       : 'bg-white hover:bg-blue-50 text-slate-700 hover:text-blue-700 border-slate-300 hover:border-blue-400'
                   }`}
-                  title="編輯當前歌詞與音符 (Edit Current Lyric & Notes)"
+                  title="Edit Current Lyrics & Notes"
                 >
                   <Pencil className="w-3 h-3 text-amber-400" />
-                  <span>編輯歌詞</span>
+                  <span>Edit Lyrics</span>
                 </button>
               )}
 
@@ -1066,17 +1066,17 @@ export const KaraokeStage: React.FC<KaraokeStageProps> = React.memo(({
                         ? 'bg-blue-100 text-blue-800 border-blue-400'
                         : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-300'
                   }`}
-                  title={lyricAlign === 'left' ? '歌詞靠左（點擊切換為置中）' : '歌詞置中（點擊切換為靠左）'}
+                  title={lyricAlign === 'left' ? 'Align Left (Click to Center)' : 'Align Center (Click to Left)'}
                 >
                   {lyricAlign === 'left' ? (
                     <>
                       <AlignLeft className="w-3 h-3 text-amber-400" />
-                      <span>靠左</span>
+                      <span>Left</span>
                     </>
                   ) : (
                     <>
                       <AlignCenter className="w-3 h-3 text-zinc-400" />
-                      <span>置中</span>
+                      <span>Center</span>
                     </>
                   )}
                 </button>
@@ -1096,10 +1096,10 @@ export const KaraokeStage: React.FC<KaraokeStageProps> = React.memo(({
                         ? 'bg-blue-100 text-blue-800 border-blue-400'
                         : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-300'
                   }`}
-                  title={layoutMode === 'single_line' ? '單行排版（點擊切換為雙行）' : '雙行排版（點擊切換為單行）'}
+                  title={layoutMode === 'single_line' ? 'Single Line (Click for Two Lines)' : 'Two Lines (Click for Single Line)'}
                 >
                   <Rows className="w-3 h-3 text-amber-400" />
-                  <span>{layoutMode === 'single_line' ? '單行' : '雙行'}</span>
+                  <span>{layoutMode === 'single_line' ? '1 Line' : '2 Lines'}</span>
                 </button>
               )}
             </div>
@@ -1108,7 +1108,7 @@ export const KaraokeStage: React.FC<KaraokeStageProps> = React.memo(({
             <div className="flex items-center gap-2 sm:gap-3">
               {/* Beat countdown dots: 4 • 3 • 2 • 1 */}
               {leadIn && leadIn.isLeadIn && (
-                <div className="flex items-center gap-1" title="拍子倒數">
+                <div className="flex items-center gap-1" title="Beat countdown">
                   {Array.from({ length: Math.min(6, leadIn.beatsPerBar || 4) }).map((_, bIdx) => {
                     const beatNum = bIdx + 1;
                     const isCurrent = leadIn.currentBeatIndex === beatNum;
@@ -1145,7 +1145,7 @@ export const KaraokeStage: React.FC<KaraokeStageProps> = React.memo(({
                   }`}
                 >
                   <Wind className="w-3 h-3 text-cyan-400 animate-spin" />
-                  <span>🫁 準備吸氣 · Breathe In</span>
+                  <span>🫁 Breathe In</span>
                 </span>
               ) : leadIn && leadIn.isLeadIn ? (
                 <span
@@ -1155,7 +1155,7 @@ export const KaraokeStage: React.FC<KaraokeStageProps> = React.memo(({
                       : 'bg-blue-50 text-blue-700 border-blue-300'
                   }`}
                 >
-                  進歌倒數: {leadIn.timeUntilVocalSec.toFixed(1)}s ({leadIn.beatsRemaining} 拍)
+                  Entry countdown: {leadIn.timeUntilVocalSec.toFixed(1)}s ({leadIn.beatsRemaining} beats)
                 </span>
               ) : isAwaitingVocal ? (
                 <span
@@ -1163,7 +1163,7 @@ export const KaraokeStage: React.FC<KaraokeStageProps> = React.memo(({
                     isDark ? 'text-zinc-400 bg-zinc-800/50' : 'text-slate-500 bg-slate-100'
                   }`}
                 >
-                  準備進歌...
+                  Preparing vocal entry...
                 </span>
               ) : null}
             </div>
@@ -1214,8 +1214,8 @@ export const KaraokeStage: React.FC<KaraokeStageProps> = React.memo(({
                             } ${
                               isSucceedingLine
                                 ? lyricAlign === 'left'
-                                  ? 'pl-8 sm:pl-12 md:pl-16'
-                                  : 'pl-6 sm:pl-10 md:pl-12'
+                                ? 'pl-8 sm:pl-12 md:pl-16'
+                                : 'pl-6 sm:pl-10 md:pl-12'
                                 : ''
                             }`}
                           >
@@ -1260,14 +1260,14 @@ export const KaraokeStage: React.FC<KaraokeStageProps> = React.memo(({
                                 : 'bg-blue-50 text-blue-700 border-blue-200'
                             }`}
                           >
-                            接唱
+                            Next
                           </span>
                           <span className="text-xs sm:text-sm md:text-base font-medium tracking-wide truncate max-w-[80vw] opacity-75">
                             {nextLinePreview}
                           </span>
                           {nextVerseTiming && nextVerseTiming.firstVocalStartSec > playbackState.currentTime && (
                             <span className="text-[10px] sm:text-xs font-mono opacity-50 shrink-0 hidden sm:inline-block">
-                              ({Math.max(1, Math.ceil((nextVerseTiming.firstVocalStartSec - playbackState.currentTime) / (secPerBeat || 0.75)))} 拍後)
+                              ({Math.max(1, Math.ceil((nextVerseTiming.firstVocalStartSec - playbackState.currentTime) / (secPerBeat || 0.75)))} beats later)
                             </span>
                           )}
                         </div>
@@ -1284,7 +1284,7 @@ export const KaraokeStage: React.FC<KaraokeStageProps> = React.memo(({
                   }`}
                 >
                   <span className="text-xs sm:text-sm font-medium italic select-none">
-                    (全曲結束 · Finale / Rest)
+                    (Song Finale / Rest)
                   </span>
                 </div>
               )}

@@ -42,7 +42,8 @@ export interface NumberedNotationNote {
   isTriplet?: boolean;      // Part of a 3-note triplet
   articulation?: ArticulationType; // Performance articulation (e.g. staccato, fermata, accent, etc.)
   lyric: LyricSyllable;     // Aligned lyric or punctuation
-  annotation?: string;      // Optional musical / vocal annotation (e.g., 漸慢, 合唱, 間奏, rit., V, etc.)
+  lyricsByVerse?: { [verseIndex: number]: LyricSyllable }; // Multi-verse lyrics stacked by verse index (1, 2, 3...)
+  annotation?: string;      // Optional musical / vocal annotation (e.g. rit., V, intro, etc.)
   instrument?: InstrumentType; // Individual note sound source override
 }
 
@@ -58,6 +59,8 @@ export interface Measure {
   notes: NumberedNotationNote[];
   barlineType?: BarlineType; // Custom barline style at end of measure ('single' | 'double' | 'end' | 'repeat_start' | 'repeat_end')
   isLineBreak?: boolean;    // True if this measure marks the end of a line / forces a system break
+  voltaEnding?: number[];   // Volta repeat bracket numbers e.g. [1, 2] for 1st/2nd ending, [3] for 3rd ending
+  isPrelude?: boolean;      // True if part of an instrumental prelude/interlude wrapped in parentheses ( ... )
 }
 
 export interface Song {
@@ -66,6 +69,8 @@ export interface Song {
   subtitle?: string;
   composer?: string;
   lyricist?: string;
+  notator?: string;         // Score engraver / transcriber credit
+  catalogNumber?: string;   // Score catalog / serial ID e.g. "LPDC—JCR1341"
   key: KeySignature;
   timeSignature: TimeSignature;
   bpm: number;

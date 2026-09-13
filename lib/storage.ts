@@ -200,7 +200,7 @@ export function saveSongToCustomLibraryWithResult(song: Song): SaveSongResult {
   return {
     success,
     library: success ? updated : library,
-    error: success ? undefined : '儲存失敗：本機儲存空間（localStorage）已滿，請清理或改用 JSON 匯出備份。',
+    error: success ? undefined : 'Save failed: Local storage is full. Please clear space or export a JSON backup.',
   };
 }
 
@@ -362,8 +362,8 @@ export function setStoredUiZoom(zoom: number): void {
 export function getStoredEditorEditMode(): EditorEditMode {
   const val = safeGetItem(STORAGE_KEYS.EDITOR_EDIT_MODE);
   if (val === 'note' || val === 'sheet') return val;
-  if (val === 'verse' || val === 'measure') return 'note'; // Legacy migration
-  return 'note';
+  if (val === 'verse' || val === 'measure') return 'sheet';
+  return 'sheet';
 }
 
 export function setStoredEditorEditMode(mode: EditorEditMode): void {

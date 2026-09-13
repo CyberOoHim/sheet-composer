@@ -89,7 +89,7 @@ describe('Chord Arranger: Measure Chord Suggestion', () => {
     ], 16);
     const result = suggestChordsForMeasure(m, 'C', '4/4', { isLast: true, prevChord: 'G7' });
     assert.deepStrictEqual(result.chords, ['C']);
-    assert.ok(result.rationale.includes('終止'));
+    assert.ok(result.rationale.includes('cadence') || result.rationale.includes('Tonic'));
   });
 
   it('detects dual chords when a 4-beat measure splits clearly between two harmonies', () => {
