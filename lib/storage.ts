@@ -30,6 +30,7 @@ export const STORAGE_KEYS = {
   GEMINI_MODEL: 'taigi_gemini_model',
   GEMINI_THINKING_EFFORT: 'taigi_gemini_thinking_effort',
   KARAOKE_STAGE_THEME: 'taigi_karaoke_stage_theme',
+  REAL_SHEET_THEME: 'taigi_real_sheet_theme',
   KARAOKE_SHOW_NOTATION: 'taigi_karaoke_show_notation',
   KARAOKE_LAYOUT_MODE: 'taigi_karaoke_layout_mode',
   KARAOKE_LYRIC_ALIGN: 'taigi_karaoke_lyric_align',
@@ -441,6 +442,18 @@ export function getStoredStageTheme(defaultVal: KaraokeStageTheme = 'dark'): Kar
 
 export function setStoredStageTheme(theme: KaraokeStageTheme): void {
   safeSetItem(STORAGE_KEYS.KARAOKE_STAGE_THEME, theme);
+}
+
+export type RealSheetTheme = 'light' | 'dark';
+
+export function getStoredRealSheetTheme(defaultVal: RealSheetTheme = 'light'): RealSheetTheme {
+  const val = safeGetItem(STORAGE_KEYS.REAL_SHEET_THEME);
+  if (val === 'light' || val === 'dark') return val;
+  return defaultVal;
+}
+
+export function setStoredRealSheetTheme(theme: RealSheetTheme): void {
+  safeSetItem(STORAGE_KEYS.REAL_SHEET_THEME, theme);
 }
 
 export function getStoredShowNotation(defaultVal = true): boolean {

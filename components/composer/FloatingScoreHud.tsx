@@ -15,6 +15,8 @@ import {
   ChevronDown,
   Music,
   Trash2,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { NoteDuration, PitchNumber } from '@/types/song';
 
@@ -57,12 +59,14 @@ export interface FloatingScoreHudProps {
   onAutoFillRest?: () => void;
   canFillRest?: boolean;
 
-  // Zoom & Print
+  // Zoom & Print & Theme
   zoomScale: number;
   onZoomIn: () => void;
   onZoomOut: () => void;
   onResetZoom: () => void;
   onPrint: () => void;
+  sheetTheme?: 'light' | 'dark';
+  onToggleSheetTheme?: () => void;
 
   // State
   activeField: 'pitch' | 'lyric';
@@ -106,6 +110,8 @@ export const FloatingScoreHud: React.FC<FloatingScoreHudProps> = ({
   onZoomOut,
   onResetZoom,
   onPrint,
+  sheetTheme,
+  onToggleSheetTheme,
   activeField,
   onToggleActiveField,
   selectedVerseRow,
@@ -542,6 +548,21 @@ export const FloatingScoreHud: React.FC<FloatingScoreHudProps> = ({
             >
               <Printer className="w-3.5 h-3.5" />
             </button>
+            {onToggleSheetTheme && (
+              <button
+                id="floating-hud-toggle-theme-btn"
+                type="button"
+                onClick={onToggleSheetTheme}
+                className="p-1 h-7 sm:h-8 w-7 sm:w-8 rounded-lg text-zinc-700 dark:text-zinc-300 hover:bg-amber-500 hover:text-zinc-950 flex items-center justify-center transition-all cursor-pointer"
+                title={sheetTheme === 'dark' ? 'Switch score paper to Light Parchment' : 'Switch score paper to Dark Stage Mode'}
+              >
+                {sheetTheme === 'dark' ? (
+                  <Sun className="w-3.5 h-3.5 text-amber-400" />
+                ) : (
+                  <Moon className="w-3.5 h-3.5" />
+                )}
+              </button>
+            )}
           </div>
         </div>
 

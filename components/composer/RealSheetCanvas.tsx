@@ -32,7 +32,14 @@ import {
   Plus,
   Trash2,
   Music,
+  Sun,
+  Moon,
 } from 'lucide-react';
+import {
+  getStoredRealSheetTheme,
+  setStoredRealSheetTheme,
+  RealSheetTheme,
+} from '@/lib/storage';
 
 export interface RealSheetCanvasProps {
   song: Song;
@@ -66,6 +73,10 @@ export interface RealSheetCanvasProps {
 
   // Display mode
   displayMode?: LyricDisplayMode;
+
+  // Sheet Theme (Parchment Light vs Studio Dark)
+  sheetTheme?: RealSheetTheme;
+  onToggleSheetTheme?: () => void;
 }
 
 const ALL_KEYS: KeySignature[] = [
@@ -94,7 +105,25 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
   onAutoFillRest,
   previewNoteAudio,
   displayMode = 'hanlo_major_roman',
+  sheetTheme: propSheetTheme,
+  onToggleSheetTheme: propOnToggleSheetTheme,
 }) => {
+  // Theme state: light (parchment) vs dark (studio stage)
+  const [internalSheetTheme, setInternalSheetTheme] = useState<RealSheetTheme>(() => getStoredRealSheetTheme('light'));
+  const sheetTheme = propSheetTheme ?? internalSheetTheme;
+
+  const handleToggleSheetTheme = useCallback(() => {
+    if (propOnToggleSheetTheme) {
+      propOnToggleSheetTheme();
+    } else {
+      setInternalSheetTheme(prev => {
+        const next = prev === 'light' ? 'dark' : 'light';
+        setStoredRealSheetTheme(next);
+        return next;
+      });
+    }
+  }, [propOnToggleSheetTheme]);
+
   // Zoom scaling
   const [zoomScale, setZoomScale] = useState<number>(1.0);
 
@@ -637,6 +666,31 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Theme Toggle Button */}
+          <button
+            id="sheet-theme-toggle-btn"
+            type="button"
+            onClick={handleToggleSheetTheme}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all shadow-xs cursor-pointer ${
+              sheetTheme === 'dark'
+                ? 'bg-zinc-800 border-zinc-700 text-amber-400 hover:bg-zinc-700'
+                : 'bg-white border-zinc-200 text-zinc-800 hover:bg-amber-500 hover:text-zinc-950'
+            }`}
+            title={sheetTheme === 'dark' ? 'Switch Real Sheet to Light Parchment Paper' : 'Switch Real Sheet to Studio Dark Mode'}
+          >
+            {sheetTheme === 'dark' ? (
+              <>
+                <Sun className="w-3.5 h-3.5 text-amber-400" />
+                <span>Light Sheet</span>
+              </>
+            ) : (
+              <>
+                <Moon className="w-3.5 h-3.5 text-zinc-600" />
+                <span>Dark Sheet</span>
+              </>
+            )}
+          </button>
+
           <button
             id="sheet-top-print-btn"
             type="button"
@@ -657,34 +711,54 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
           transform: `scale(${zoomScale})`,
           transformOrigin: 'top center',
         }}
-        className="relative w-full max-w-5xl bg-[#FCFAF6] text-zinc-900 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.18),0_0_0_1px_rgba(0,0,0,0.06)] rounded-xs border border-[#E7E2D8] p-8 sm:p-14 md:p-20 transition-transform duration-150 print:shadow-none print:border-none print:p-0 print:max-w-none print:w-full print:rounded-none select-none"
+        className={`relative w-full max-w-5xl rounded-xs p-8 sm:p-14 md:p-20 transition-all duration-150 print:shadow-none print:border-none print:p-0 print:max-w-none print:w-full print:rounded-none select-none ${
+          sheetTheme === 'dark'
+            ? 'bg-[#14161f] text-zinc-100 border border-zinc-800 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7),0_0_0_1px_rgba(255,255,255,0.06)]'
+            : 'bg-[#FCFAF6] text-zinc-900 border border-[#E7E2D8] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.18),0_0_0_1px_rgba(0,0,0,0.06)]'
+        } print:bg-white print:text-black`}
       >
         {/* Subtle physical paper watermark / registration corner marks */}
-        <div className="absolute top-3 left-3 text-zinc-300 font-mono text-[10px] select-none pointer-events-none print:hidden">
+        <div className={`absolute top-3 left-3 font-mono text-[10px] select-none pointer-events-none print:hidden ${
+          sheetTheme === 'dark' ? 'text-zinc-700' : 'text-zinc-300'
+        }`}>
           ┌
         </div>
-        <div className="absolute top-3 right-3 text-zinc-300 font-mono text-[10px] select-none pointer-events-none print:hidden">
+        <div className={`absolute top-3 right-3 font-mono text-[10px] select-none pointer-events-none print:hidden ${
+          sheetTheme === 'dark' ? 'text-zinc-700' : 'text-zinc-300'
+        }`}>
           ┐
         </div>
-        <div className="absolute bottom-3 left-3 text-zinc-300 font-mono text-[10px] select-none pointer-events-none print:hidden">
+        <div className={`absolute bottom-3 left-3 font-mono text-[10px] select-none pointer-events-none print:hidden ${
+          sheetTheme === 'dark' ? 'text-zinc-700' : 'text-zinc-300'
+        }`}>
           └
         </div>
-        <div className="absolute bottom-3 right-3 text-zinc-300 font-mono text-[10px] select-none pointer-events-none print:hidden">
+        <div className={`absolute bottom-3 right-3 font-mono text-[10px] select-none pointer-events-none print:hidden ${
+          sheetTheme === 'dark' ? 'text-zinc-700' : 'text-zinc-300'
+        }`}>
           ┘
         </div>
 
         {/* Paper Header: Catalog ID, Title, Credits, Key & Meter */}
-        <header id="real-sheet-header" className="relative pb-6 mb-8 border-b border-zinc-200/80">
+        <header id="real-sheet-header" className={`relative pb-6 mb-8 border-b ${
+          sheetTheme === 'dark' ? 'border-zinc-800' : 'border-zinc-200/80'
+        }`}>
           {/* Top Row: Catalog ID (Left) & Controls (Right) */}
-          <div className="flex items-center justify-between text-xs text-zinc-500 font-mono mb-3">
+          <div className={`flex items-center justify-between text-xs font-mono mb-3 ${
+            sheetTheme === 'dark' ? 'text-zinc-400' : 'text-zinc-500'
+          }`}>
             <div
-              className="cursor-pointer hover:text-amber-700 transition-colors py-0.5 px-1 rounded hover:bg-amber-50 font-serif italic"
+              className={`cursor-pointer transition-colors py-0.5 px-1 rounded font-serif italic ${
+                sheetTheme === 'dark' ? 'hover:text-amber-400 hover:bg-zinc-800' : 'hover:text-amber-700 hover:bg-amber-50'
+              }`}
               onClick={() => startHeaderEdit('catalogNumber', song.catalogNumber || 'LPDC—JCR1341')}
               title="Click to edit score catalog ID"
             >
               {song.catalogNumber || 'LPDC—JCR1341'}
             </div>
-            <div className="text-[11px] font-sans tracking-widest text-zinc-400 uppercase">
+            <div className={`text-[11px] font-sans tracking-widest uppercase ${
+              sheetTheme === 'dark' ? 'text-zinc-500' : 'text-zinc-400'
+            }`}>
               Numbered Musical Notation
             </div>
           </div>
@@ -694,7 +768,9 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
             <h1
               id="sheet-song-title-display"
               onClick={() => startHeaderEdit('title', song.title)}
-              className="font-serif tracking-[0.25em] text-3xl sm:text-4xl md:text-5xl font-black text-zinc-950 cursor-pointer hover:opacity-80 transition-opacity"
+              className={`font-serif tracking-[0.25em] text-3xl sm:text-4xl md:text-5xl font-black cursor-pointer hover:opacity-80 transition-opacity ${
+                sheetTheme === 'dark' ? 'text-zinc-50' : 'text-zinc-950'
+              }`}
               title="Click to edit song title"
             >
               {song.title || 'Untitled Song'}
@@ -704,7 +780,9 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
               <p
                 id="sheet-song-subtitle-display"
                 onClick={() => startHeaderEdit('subtitle', song.subtitle || '')}
-                className="font-serif text-sm sm:text-base text-zinc-600 mt-2 cursor-pointer hover:opacity-80"
+                className={`font-serif text-sm sm:text-base mt-2 cursor-pointer hover:opacity-80 ${
+                  sheetTheme === 'dark' ? 'text-zinc-400' : 'text-zinc-600'
+                }`}
                 title="Click to edit subtitle"
               >
                 {song.subtitle}
@@ -713,16 +791,22 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
           </div>
 
           {/* Key / Time Signature / Tempo (Left) & Credits (Right) */}
-          <div className="flex flex-wrap items-end justify-between mt-6 pt-3 gap-4 border-t border-zinc-100">
+          <div className={`flex flex-wrap items-end justify-between mt-6 pt-3 gap-4 border-t ${
+            sheetTheme === 'dark' ? 'border-zinc-800' : 'border-zinc-100'
+          }`}>
             {/* Left Musical Meter Block */}
-            <div className="flex items-center gap-6 text-zinc-900 font-serif font-bold text-base sm:text-lg">
+            <div className={`flex items-center gap-6 font-serif font-bold text-base sm:text-lg ${
+              sheetTheme === 'dark' ? 'text-zinc-100' : 'text-zinc-900'
+            }`}>
               {/* Key Signature: 1 = E */}
               <div className="relative">
                 <button
                   id="sheet-key-signature-btn"
                   type="button"
                   onClick={() => setShowKeyPicker(!showKeyPicker)}
-                  className="flex items-center gap-1 hover:text-amber-700 cursor-pointer px-1 py-0.5 rounded hover:bg-amber-50 transition-colors"
+                  className={`flex items-center gap-1 cursor-pointer px-1 py-0.5 rounded transition-colors ${
+                    sheetTheme === 'dark' ? 'hover:text-amber-400 hover:bg-zinc-800' : 'hover:text-amber-700 hover:bg-amber-50'
+                  }`}
                   title="Click to change Key signature"
                 >
                   <span>1</span>
@@ -733,7 +817,9 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
                 </button>
 
                 {showKeyPicker && (
-                  <div className="absolute top-full left-0 mt-1 bg-white border border-zinc-200 shadow-xl rounded-xl p-2 grid grid-cols-4 gap-1 z-50 text-xs font-mono">
+                  <div className={`absolute top-full left-0 mt-1 border shadow-xl rounded-xl p-2 grid grid-cols-4 gap-1 z-50 text-xs font-mono ${
+                    sheetTheme === 'dark' ? 'bg-zinc-900 border-zinc-700 text-zinc-200' : 'bg-white border-zinc-200 text-zinc-800'
+                  }`}>
                     {ALL_KEYS.map(k => (
                       <button
                         key={`key-opt-${k}`}
@@ -743,7 +829,9 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
                           setShowKeyPicker(false);
                         }}
                         className={`px-2 py-1 rounded cursor-pointer ${
-                          song.key === k ? 'bg-amber-500 text-white font-bold' : 'hover:bg-zinc-100'
+                          song.key === k
+                            ? 'bg-amber-500 text-zinc-950 font-bold'
+                            : sheetTheme === 'dark' ? 'hover:bg-zinc-800' : 'hover:bg-zinc-100'
                         }`}
                       >
                         {k}
@@ -759,20 +847,24 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
                   id="sheet-time-signature-btn"
                   type="button"
                   onClick={() => setShowTimePicker(!showTimePicker)}
-                  className="flex flex-col items-center justify-center leading-none hover:text-amber-700 cursor-pointer px-1 py-0.5 rounded hover:bg-amber-50 transition-colors"
+                  className={`flex flex-col items-center justify-center leading-none cursor-pointer px-1 py-0.5 rounded transition-colors ${
+                    sheetTheme === 'dark' ? 'hover:text-amber-400 hover:bg-zinc-800' : 'hover:text-amber-700 hover:bg-amber-50'
+                  }`}
                   title="Click to change Time signature"
                 >
                   <span className="text-sm sm:text-base font-black">
                     {(song.timeSignature || '4/4').split('/')[0]}
                   </span>
-                  <span className="w-3 h-px bg-zinc-800 my-0.5" />
+                  <span className={`w-3 h-px my-0.5 ${sheetTheme === 'dark' ? 'bg-zinc-300' : 'bg-zinc-800'}`} />
                   <span className="text-sm sm:text-base font-black">
                     {(song.timeSignature || '4/4').split('/')[1]}
                   </span>
                 </button>
 
                 {showTimePicker && (
-                  <div className="absolute top-full left-0 mt-1 bg-white border border-zinc-200 shadow-xl rounded-xl p-1.5 flex flex-col gap-1 z-50 text-xs font-mono">
+                  <div className={`absolute top-full left-0 mt-1 border shadow-xl rounded-xl p-1.5 flex flex-col gap-1 z-50 text-xs font-mono ${
+                    sheetTheme === 'dark' ? 'bg-zinc-900 border-zinc-700 text-zinc-200' : 'bg-white border-zinc-200 text-zinc-800'
+                  }`}>
                     {TIME_SIGNATURES.map(ts => (
                       <button
                         key={`ts-opt-${ts}`}
@@ -783,8 +875,8 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
                         }}
                         className={`px-3 py-1.5 rounded text-left cursor-pointer ${
                           song.timeSignature === ts
-                            ? 'bg-amber-500 text-white font-bold'
-                            : 'hover:bg-zinc-100'
+                            ? 'bg-amber-500 text-zinc-950 font-bold'
+                            : sheetTheme === 'dark' ? 'hover:bg-zinc-800' : 'hover:bg-zinc-100'
                         }`}
                       >
                         {ts}
@@ -800,7 +892,9 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
                   id="sheet-tempo-btn"
                   type="button"
                   onClick={() => setShowBpmPicker(!showBpmPicker)}
-                  className="flex items-center gap-1 hover:text-amber-700 cursor-pointer px-1 py-0.5 rounded hover:bg-amber-50 transition-colors font-sans text-sm sm:text-base"
+                  className={`flex items-center gap-1 cursor-pointer px-1 py-0.5 rounded transition-colors font-sans text-sm sm:text-base ${
+                    sheetTheme === 'dark' ? 'hover:text-amber-400 hover:bg-zinc-800' : 'hover:text-amber-700 hover:bg-amber-50'
+                  }`}
                   title="Click to adjust Tempo"
                 >
                   <span className="text-base font-serif">♩</span>
@@ -809,8 +903,12 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
                 </button>
 
                 {showBpmPicker && (
-                  <div className="absolute top-full left-0 mt-1 bg-white border border-zinc-200 shadow-xl rounded-xl p-3 flex flex-col gap-2 z-50 text-xs">
-                    <label className="font-bold text-zinc-600">Tempo (BPM): {draftBpm}</label>
+                  <div className={`absolute top-full left-0 mt-1 border shadow-xl rounded-xl p-3 flex flex-col gap-2 z-50 text-xs ${
+                    sheetTheme === 'dark' ? 'bg-zinc-900 border-zinc-700 text-zinc-200' : 'bg-white border-zinc-200 text-zinc-800'
+                  }`}>
+                    <label className={`font-bold ${sheetTheme === 'dark' ? 'text-zinc-300' : 'text-zinc-600'}`}>
+                      Tempo (BPM): {draftBpm}
+                    </label>
                     <input
                       type="range"
                       min={40}
@@ -826,7 +924,7 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
                           onUpdateSong({ ...song, bpm: draftBpm });
                           setShowBpmPicker(false);
                         }}
-                        className="px-2 py-1 bg-amber-500 text-white rounded font-bold cursor-pointer"
+                        className="px-2 py-1 bg-amber-500 text-zinc-950 rounded font-bold cursor-pointer hover:bg-amber-400"
                       >
                         Apply
                       </button>
@@ -837,10 +935,12 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
             </div>
 
             {/* Right Credits Block */}
-            <div className="flex flex-col items-end text-xs sm:text-sm font-serif text-zinc-700 space-y-0.5">
+            <div className={`flex flex-col items-end text-xs sm:text-sm font-serif space-y-0.5 ${
+              sheetTheme === 'dark' ? 'text-zinc-300' : 'text-zinc-700'
+            }`}>
               {song.lyricist && (
                 <div
-                  className="cursor-pointer hover:text-amber-700"
+                  className={`cursor-pointer ${sheetTheme === 'dark' ? 'hover:text-amber-400' : 'hover:text-amber-700'}`}
                   onClick={() => startHeaderEdit('lyricist', song.lyricist || '')}
                   title="Click to edit Lyricist credit"
                 >
@@ -849,7 +949,7 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
               )}
               {song.composer && (
                 <div
-                  className="cursor-pointer hover:text-amber-700"
+                  className={`cursor-pointer ${sheetTheme === 'dark' ? 'hover:text-amber-400' : 'hover:text-amber-700'}`}
                   onClick={() => startHeaderEdit('composer', song.composer || '')}
                   title="Click to edit Composer credit"
                 >
@@ -858,7 +958,9 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
               )}
               {song.notator && (
                 <div
-                  className="cursor-pointer hover:text-amber-700 text-zinc-500 text-[11px]"
+                  className={`cursor-pointer text-[11px] ${
+                    sheetTheme === 'dark' ? 'text-zinc-500 hover:text-amber-400' : 'text-zinc-500 hover:text-amber-700'
+                  }`}
                   onClick={() => startHeaderEdit('notator', song.notator || '')}
                   title="Click to edit Notator/Engraver credit"
                 >
@@ -875,7 +977,9 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
             <div
               key={`system-${system.systemIndex}`}
               id={`sheet-system-${system.systemIndex}`}
-              className="relative w-full flex items-stretch border-l-2 border-zinc-800"
+              className={`relative w-full flex items-stretch border-l-2 ${
+                sheetTheme === 'dark' ? 'border-zinc-400' : 'border-zinc-800'
+              }`}
             >
               {system.measures.map((engravedM, mInSysIdx) => {
                 const isSelectedMeasure = engravedM.measureIndex === currentMIdx;
@@ -892,7 +996,9 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
                       }
                     }}
                     className={`relative flex-1 flex flex-col justify-between px-2 sm:px-3 pt-4 pb-2 transition-colors cursor-pointer group ${
-                      isSelectedMeasure ? 'bg-amber-50/40 dark:bg-amber-950/10' : 'hover:bg-zinc-50/80'
+                      isSelectedMeasure
+                        ? sheetTheme === 'dark' ? 'bg-amber-950/30' : 'bg-amber-50/40'
+                        : sheetTheme === 'dark' ? 'hover:bg-zinc-800/60' : 'hover:bg-zinc-50/80'
                     }`}
                   >
                     {/* Top Annotation Layer: Measure Number, Volta Brackets, Chords */}
@@ -904,22 +1010,30 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
 
                       {/* Center: Volta Bracket if applicable e.g. ┌ 1. 2. ─────┐ */}
                       {engravedM.voltaEnding && engravedM.voltaEnding.length > 0 && (
-                        <div className="absolute left-0 right-0 -top-3 flex items-center text-[11px] font-mono font-bold text-zinc-800">
-                          <span className="text-zinc-600">┌</span>
-                          <span className="px-1 bg-[#FCFAF6] font-serif">{engravedM.voltaEnding.join('. ')}.</span>
-                          <div className="flex-1 h-px bg-zinc-800" />
-                          <span className="text-zinc-600">┐</span>
+                        <div className={`absolute left-0 right-0 -top-3 flex items-center text-[11px] font-mono font-bold ${
+                          sheetTheme === 'dark' ? 'text-zinc-300' : 'text-zinc-800'
+                        }`}>
+                          <span className={sheetTheme === 'dark' ? 'text-zinc-400' : 'text-zinc-600'}>┌</span>
+                          <span className={`px-1 font-serif ${sheetTheme === 'dark' ? 'bg-[#14161f] text-zinc-200' : 'bg-[#FCFAF6] text-zinc-800'}`}>
+                            {engravedM.voltaEnding.join('. ')}.
+                          </span>
+                          <div className={`flex-1 h-px ${sheetTheme === 'dark' ? 'bg-zinc-400' : 'bg-zinc-800'}`} />
+                          <span className={sheetTheme === 'dark' ? 'text-zinc-400' : 'text-zinc-600'}>┐</span>
                         </div>
                       )}
 
                       {/* Chord Symbol */}
-                      <div className="text-xs font-mono font-black tracking-wide text-zinc-800">
+                      <div className={`text-xs font-mono font-black tracking-wide ${
+                        sheetTheme === 'dark' ? 'text-amber-400' : 'text-zinc-800'
+                      }`}>
                         {engravedM.chordText}
                       </div>
 
                       {/* Section label if present */}
                       {engravedM.sectionText && (
-                        <span className="text-[9px] font-sans font-bold px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-600">
+                        <span className={`text-[9px] font-sans font-bold px-1.5 py-0.5 rounded ${
+                          sheetTheme === 'dark' ? 'bg-zinc-800 text-zinc-300' : 'bg-zinc-100 text-zinc-600'
+                        }`}>
                           {engravedM.sectionText}
                         </span>
                       )}
@@ -927,13 +1041,19 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
 
                     {/* Upper Obbligato / Counterpoint Layer if present */}
                     {engravedM.obbligatoNotes && engravedM.obbligatoNotes.length > 0 && (
-                      <div className="w-full flex flex-col items-center justify-center py-0.5 mb-1 border-b border-dashed border-zinc-300">
-                        <div className="flex items-center justify-between w-full text-[9px] font-mono text-zinc-500 font-bold px-1">
+                      <div className={`w-full flex flex-col items-center justify-center py-0.5 mb-1 border-b border-dashed ${
+                        sheetTheme === 'dark' ? 'border-zinc-700' : 'border-zinc-300'
+                      }`}>
+                        <div className={`flex items-center justify-between w-full text-[9px] font-mono font-bold px-1 ${
+                          sheetTheme === 'dark' ? 'text-zinc-400' : 'text-zinc-500'
+                        }`}>
                           <span>{engravedM.obbligatoText || 'Obbligato (和音)'}</span>
                         </div>
                         <div className="flex items-center justify-around w-full">
                           {engravedM.obbligatoNotes.map((obNote, obIdx) => (
-                            <div key={`ob-${obIdx}`} className="flex flex-col items-center justify-center text-xs sm:text-sm font-mono font-bold text-zinc-700">
+                            <div key={`ob-${obIdx}`} className={`flex flex-col items-center justify-center text-xs sm:text-sm font-mono font-bold ${
+                              sheetTheme === 'dark' ? 'text-zinc-300' : 'text-zinc-700'
+                            }`}>
                               {obNote.octaveDotsAbove > 0 && (
                                 <div className="flex gap-0.5 text-[8px] leading-none">
                                   {Array.from({ length: obNote.octaveDotsAbove }).map((_, i) => (
@@ -942,8 +1062,12 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
                                 </div>
                               )}
                               <span>{obNote.pitchDisplay}</span>
-                              {obNote.beam1.hasBeam && <div className="h-[1.5px] w-full bg-zinc-700 mt-0.5" />}
-                              {obNote.beam2.hasBeam && <div className="h-[1.5px] w-full bg-zinc-700 mt-0.5" />}
+                              {obNote.beam1.hasBeam && (
+                                <div className={`h-[1.5px] w-full mt-0.5 ${sheetTheme === 'dark' ? 'bg-zinc-300' : 'bg-zinc-700'}`} />
+                              )}
+                              {obNote.beam2.hasBeam && (
+                                <div className={`h-[1.5px] w-full mt-0.5 ${sheetTheme === 'dark' ? 'bg-zinc-300' : 'bg-zinc-700'}`} />
+                              )}
                               {obNote.octaveDotsBelow > 0 && (
                                 <div className="flex gap-0.5 text-[8px] leading-none">
                                   {Array.from({ length: obNote.octaveDotsBelow }).map((_, i) => (
@@ -961,7 +1085,9 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
                     <div className="relative flex items-center justify-between w-full min-h-[56px] py-1">
                       {/* Prelude Open Parenthesis '(' */}
                       {engravedM.isPrelude && isFirstInSystem && (
-                        <span className="font-serif text-2xl font-bold text-zinc-700 mr-1 select-none">
+                        <span className={`font-serif text-2xl font-bold mr-1 select-none ${
+                          sheetTheme === 'dark' ? 'text-zinc-400' : 'text-zinc-700'
+                        }`}>
                           (
                         </span>
                       )}
@@ -989,9 +1115,13 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
                               }}
                               className={`relative flex flex-col items-center justify-center p-1 rounded-sm transition-all cursor-pointer ${
                                 isSelectedNote
-                                  ? 'ring-2 ring-amber-500 bg-amber-100/50'
+                                  ? sheetTheme === 'dark'
+                                    ? 'ring-2 ring-amber-400 bg-amber-950/60'
+                                    : 'ring-2 ring-amber-500 bg-amber-100/50'
                                   : isPlayingNote
-                                  ? 'ring-2 ring-emerald-500 bg-emerald-100/60 animate-pulse'
+                                  ? 'ring-2 ring-emerald-500 bg-emerald-500/20 animate-pulse'
+                                  : sheetTheme === 'dark'
+                                  ? 'hover:bg-zinc-800'
                                   : 'hover:bg-zinc-100'
                               }`}
                             >
@@ -1002,7 +1132,7 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
                                     <path
                                       d="M 2 7 Q 16 0 30 7"
                                       fill="none"
-                                      stroke="#18181B"
+                                      stroke={sheetTheme === 'dark' ? '#E4E4E7' : '#18181B'}
                                       strokeWidth="1.5"
                                       strokeLinecap="round"
                                     />
@@ -1013,7 +1143,9 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
                               {/* High Octave Dots Above */}
                               <div className="flex flex-col items-center h-2.5 justify-end">
                                 {engNote.octaveDotsAbove > 0 && (
-                                  <div className="flex gap-0.5 text-zinc-950 font-black leading-none text-[9px]">
+                                  <div className={`flex gap-0.5 font-black leading-none text-[9px] ${
+                                    sheetTheme === 'dark' ? 'text-zinc-100' : 'text-zinc-950'
+                                  }`}>
                                     {Array.from({ length: engNote.octaveDotsAbove }).map((_, i) => (
                                       <span key={`dot-above-${i}`}>•</span>
                                     ))}
@@ -1022,10 +1154,14 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
                               </div>
 
                               {/* Musical Pitch Digit with Accidental and Pre/Post Grace */}
-                              <div className="relative flex items-center font-mono font-bold text-xl sm:text-2xl text-zinc-950 leading-none select-none">
+                              <div className={`relative flex items-center font-mono font-bold text-xl sm:text-2xl leading-none select-none ${
+                                sheetTheme === 'dark' ? 'text-zinc-100' : 'text-zinc-950'
+                              }`}>
                                 {/* Accidental */}
                                 {engNote.accidentalSymbol && (
-                                  <span className="text-xs font-serif font-black -mr-0.5 text-zinc-800">
+                                  <span className={`text-xs font-serif font-black -mr-0.5 ${
+                                    sheetTheme === 'dark' ? 'text-zinc-200' : 'text-zinc-800'
+                                  }`}>
                                     {engNote.accidentalSymbol}
                                   </span>
                                 )}
@@ -1035,12 +1171,16 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
 
                                 {/* Dotted Note Dot */}
                                 {engNote.isDotted && (
-                                  <span className="text-sm font-black -ml-0.5 text-zinc-950">•</span>
+                                  <span className={`text-sm font-black -ml-0.5 ${
+                                    sheetTheme === 'dark' ? 'text-zinc-100' : 'text-zinc-950'
+                                  }`}>•</span>
                                 )}
 
                                 {/* Sustain Dashes '-' for half and whole notes */}
                                 {engNote.dashCount > 0 && (
-                                  <span className="ml-1 tracking-widest text-zinc-950 font-black">
+                                  <span className={`ml-1 tracking-widest font-black ${
+                                    sheetTheme === 'dark' ? 'text-zinc-100' : 'text-zinc-950'
+                                  }`}>
                                     {Array.from({ length: engNote.dashCount })
                                       .map(() => '-')
                                       .join(' ')}
@@ -1052,7 +1192,7 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
                               <div className="w-full flex flex-col items-center gap-[2px] mt-0.5">
                                 {engNote.beam1.hasBeam && (
                                   <div
-                                    className={`h-[2px] bg-zinc-950 ${
+                                    className={`h-[2px] ${sheetTheme === 'dark' ? 'bg-zinc-100' : 'bg-zinc-950'} ${
                                       engNote.beam1.connectsToNext && engNote.beam1.connectsToPrev
                                         ? 'w-[140%]'
                                         : engNote.beam1.connectsToNext
@@ -1065,7 +1205,7 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
                                 )}
                                 {engNote.beam2.hasBeam && (
                                   <div
-                                    className={`h-[2px] bg-zinc-950 ${
+                                    className={`h-[2px] ${sheetTheme === 'dark' ? 'bg-zinc-100' : 'bg-zinc-950'} ${
                                       engNote.beam2.connectsToNext && engNote.beam2.connectsToPrev
                                         ? 'w-[140%]'
                                         : engNote.beam2.connectsToNext
@@ -1081,7 +1221,9 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
                               {/* Low Octave Dots Below Underlines */}
                               <div className="flex flex-col items-center h-2.5 justify-start">
                                 {engNote.octaveDotsBelow > 0 && (
-                                  <div className="flex gap-0.5 text-zinc-950 font-black leading-none text-[9px]">
+                                  <div className={`flex gap-0.5 font-black leading-none text-[9px] ${
+                                    sheetTheme === 'dark' ? 'text-zinc-100' : 'text-zinc-950'
+                                  }`}>
                                     {Array.from({ length: engNote.octaveDotsBelow }).map((_, i) => (
                                       <span key={`dot-below-${i}`}>•</span>
                                     ))}
@@ -1095,16 +1237,22 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
 
                       {/* Prelude Close Parenthesis ')' */}
                       {engravedM.isPrelude && isLastInSystem && (
-                        <span className="font-serif text-2xl font-bold text-zinc-700 ml-1 select-none">
+                        <span className={`font-serif text-2xl font-bold ml-1 select-none ${
+                          sheetTheme === 'dark' ? 'text-zinc-400' : 'text-zinc-700'
+                        }`}>
                           )
                         </span>
                       )}
                     </div>
 
                     {/* Multi-Verse Stacked Lyrics Aligned Under Notes */}
-                    <div className="w-full flex flex-col gap-1 mt-2 pt-1 border-t border-zinc-100">
+                    <div className={`w-full flex flex-col gap-1 mt-2 pt-1 border-t ${
+                      sheetTheme === 'dark' ? 'border-zinc-800' : 'border-zinc-100'
+                    }`}>
                       {/* Verse 1 Line */}
-                      <div className="flex items-center justify-around w-full text-xs sm:text-sm font-sans font-medium text-zinc-900">
+                      <div className={`flex items-center justify-around w-full text-xs sm:text-sm font-sans font-medium ${
+                        sheetTheme === 'dark' ? 'text-zinc-200' : 'text-zinc-900'
+                      }`}>
                         {isFirstInSystem && (
                           <span className="text-[10px] font-mono text-zinc-400 -ml-1 mr-1 select-none font-bold">
                             1.
@@ -1133,7 +1281,11 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
                               }}
                               className={`flex-1 text-center min-w-[20px] px-0.5 py-0.5 rounded cursor-text ${
                                 isSelectedLyric1
-                                  ? 'bg-amber-200 ring-2 ring-amber-500 font-bold text-zinc-950'
+                                  ? sheetTheme === 'dark'
+                                    ? 'bg-amber-950 ring-2 ring-amber-400 font-bold text-amber-200'
+                                    : 'bg-amber-200 ring-2 ring-amber-500 font-bold text-zinc-950'
+                                  : sheetTheme === 'dark'
+                                  ? 'hover:bg-zinc-800'
                                   : 'hover:bg-zinc-100'
                               }`}
                             >
@@ -1160,7 +1312,9 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
                       </div>
 
                       {/* Verse 2 Line (if present or in multi-verse mode) */}
-                      <div className="flex items-center justify-around w-full text-xs sm:text-sm font-sans font-medium text-zinc-700">
+                      <div className={`flex items-center justify-around w-full text-xs sm:text-sm font-sans font-medium ${
+                        sheetTheme === 'dark' ? 'text-zinc-400' : 'text-zinc-700'
+                      }`}>
                         {isFirstInSystem && (
                           <span className="text-[10px] font-mono text-zinc-400 -ml-1 mr-1 select-none font-bold">
                             2.
@@ -1187,7 +1341,11 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
                               }}
                               className={`flex-1 text-center min-w-[20px] px-0.5 py-0.5 rounded cursor-text ${
                                 isSelectedLyric2
-                                  ? 'bg-amber-200 ring-2 ring-amber-500 font-bold text-zinc-950'
+                                  ? sheetTheme === 'dark'
+                                    ? 'bg-amber-950 ring-2 ring-amber-400 font-bold text-amber-200'
+                                    : 'bg-amber-200 ring-2 ring-amber-500 font-bold text-zinc-950'
+                                  : sheetTheme === 'dark'
+                                  ? 'hover:bg-zinc-800'
                                   : 'hover:bg-zinc-100'
                               }`}
                             >
@@ -1218,34 +1376,38 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
                     <div className="absolute right-0 top-0 bottom-0 flex items-center pointer-events-none">
                       {engravedM.barlineType === 'double' ? (
                         <div className="flex gap-[3px] h-full py-2 pr-0.5">
-                          <div className="w-[1.5px] bg-zinc-800 h-full" />
-                          <div className="w-[1.5px] bg-zinc-800 h-full" />
+                          <div className={`w-[1.5px] h-full ${sheetTheme === 'dark' ? 'bg-zinc-400' : 'bg-zinc-800'}`} />
+                          <div className={`w-[1.5px] h-full ${sheetTheme === 'dark' ? 'bg-zinc-400' : 'bg-zinc-800'}`} />
                         </div>
                       ) : engravedM.barlineType === 'end' ? (
                         <div className="flex gap-[3px] h-full py-2 pr-0.5">
-                          <div className="w-[1.5px] bg-zinc-800 h-full" />
-                          <div className="w-[3.5px] bg-zinc-950 h-full" />
+                          <div className={`w-[1.5px] h-full ${sheetTheme === 'dark' ? 'bg-zinc-400' : 'bg-zinc-800'}`} />
+                          <div className={`w-[3.5px] h-full ${sheetTheme === 'dark' ? 'bg-zinc-100' : 'bg-zinc-950'}`} />
                         </div>
                       ) : engravedM.barlineType === 'repeat_end' ? (
                         <div className="flex items-center gap-[2px] h-full py-2 pr-0.5">
-                          <div className="flex flex-col justify-center gap-1.5 h-full text-[9px] font-black text-zinc-900 leading-none mr-0.5 select-none">
+                          <div className={`flex flex-col justify-center gap-1.5 h-full text-[9px] font-black leading-none mr-0.5 select-none ${
+                            sheetTheme === 'dark' ? 'text-zinc-100' : 'text-zinc-900'
+                          }`}>
                             <span>•</span>
                             <span>•</span>
                           </div>
-                          <div className="w-[1.5px] bg-zinc-800 h-full" />
-                          <div className="w-[3.5px] bg-zinc-950 h-full" />
+                          <div className={`w-[1.5px] h-full ${sheetTheme === 'dark' ? 'bg-zinc-400' : 'bg-zinc-800'}`} />
+                          <div className={`w-[3.5px] h-full ${sheetTheme === 'dark' ? 'bg-zinc-100' : 'bg-zinc-950'}`} />
                         </div>
                       ) : engravedM.barlineType === 'repeat_start' ? (
                         <div className="flex items-center gap-[2px] h-full py-2 pr-0.5">
-                          <div className="w-[3.5px] bg-zinc-950 h-full" />
-                          <div className="w-[1.5px] bg-zinc-800 h-full" />
-                          <div className="flex flex-col justify-center gap-1.5 h-full text-[9px] font-black text-zinc-900 leading-none ml-0.5 select-none">
+                          <div className={`w-[3.5px] h-full ${sheetTheme === 'dark' ? 'bg-zinc-100' : 'bg-zinc-950'}`} />
+                          <div className={`w-[1.5px] h-full ${sheetTheme === 'dark' ? 'bg-zinc-400' : 'bg-zinc-800'}`} />
+                          <div className={`flex flex-col justify-center gap-1.5 h-full text-[9px] font-black leading-none ml-0.5 select-none ${
+                            sheetTheme === 'dark' ? 'text-zinc-100' : 'text-zinc-900'
+                          }`}>
                             <span>•</span>
                             <span>•</span>
                           </div>
                         </div>
                       ) : (
-                        <div className="w-[1px] bg-zinc-800 h-full py-2" />
+                        <div className={`w-[1px] h-full py-2 ${sheetTheme === 'dark' ? 'bg-zinc-400' : 'bg-zinc-800'}`} />
                       )}
                     </div>
                   </div>
@@ -1257,15 +1419,19 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
 
         {/* Paper Footnote / Attribution Notice (if available) */}
         {song.footnote && (
-          <div id="sheet-footnote-block" className="mt-10 pt-4 border-t border-zinc-200 text-[11px] font-serif text-zinc-500 leading-relaxed space-y-1">
+          <div id="sheet-footnote-block" className={`mt-10 pt-4 border-t text-[11px] font-serif leading-relaxed space-y-1 ${
+            sheetTheme === 'dark' ? 'border-zinc-800 text-zinc-400' : 'border-zinc-200 text-zinc-500'
+          }`}>
             <p>{song.footnote}</p>
           </div>
         )}
 
         {/* Paper Footer with page numbers and standard sheet music footer */}
-        <footer className="mt-8 pt-4 border-t border-zinc-200/80 flex items-center justify-between text-xs text-zinc-400 font-serif">
+        <footer className={`mt-8 pt-4 border-t flex items-center justify-between text-xs font-serif ${
+          sheetTheme === 'dark' ? 'border-zinc-800 text-zinc-400' : 'border-zinc-200/80 text-zinc-400'
+        }`}>
           <span>{song.title}</span>
-          <span className="font-mono text-zinc-600 font-bold">— 1 / 1 —</span>
+          <span className={`font-mono font-bold ${sheetTheme === 'dark' ? 'text-zinc-300' : 'text-zinc-600'}`}>— 1 / 1 —</span>
           <span>Numbered Musical Notation</span>
         </footer>
       </div>
@@ -1305,6 +1471,8 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
         onZoomOut={() => setZoomScale(s => Math.max(0.7, s - 0.1))}
         onResetZoom={() => setZoomScale(1.0)}
         onPrint={handlePrint}
+        sheetTheme={sheetTheme}
+        onToggleSheetTheme={handleToggleSheetTheme}
         activeField={activeField}
         onToggleActiveField={() => setActiveField(f => (f === 'pitch' ? 'lyric' : 'pitch'))}
         selectedVerseRow={activeVerseRow}
