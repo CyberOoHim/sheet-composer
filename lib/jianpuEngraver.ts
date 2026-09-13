@@ -44,6 +44,8 @@ export interface EngravedMeasure {
   measureIndex: number;
   measureNumber: number;
   notes: EngravedNote[];
+  obbligatoNotes?: EngravedNote[];
+  obbligatoText?: string;
   totalBeats: number;
   expectedBeats: number;
   isFull: boolean;
@@ -228,6 +230,64 @@ export function engraveMeasure(
     };
   });
 
+  let engravedObbligatoNotes: EngravedNote[] | undefined;
+  if (measure.obbligato && measure.obbligato.length > 0) {
+    let obBeat = 0;
+    const rawOb: Array<Omit<EngravedNote, 'beam1' | 'beam2'>> = [];
+    for (let oIdx = 0; oIdx < measure.obbligato.length; oIdx++) {
+      const oNote = measure.obbligato[oIdx];
+      const dur = Number(oNote.duration) || 0;
+      const beamCount = getBeamCountForDuration(dur);
+      const dashCount = getDashCountForDuration(dur, oNote.isDotted);
+      const isRest = oNote.pitch === 0;
+      const isEmpty = oNote.pitch === 'empty';
+      const pitchDisplay = isRest ? '0' : isEmpty ? '' : String(oNote.pitch);
+      rawOb.push({
+        note: oNote,
+        noteIndex: oIdx,
+        measureIndex,
+        startBeat: obBeat,
+        durationBeats: dur,
+        beatIndex: Math.floor(obBeat / groupingBeatLength),
+        beamCount,
+        isDotted: Boolean(oNote.isDotted),
+        dashCount,
+        octaveDotsAbove: oNote.octave > 0 ? Math.min(oNote.octave, 3) : 0,
+        octaveDotsBelow: oNote.octave < 0 ? Math.min(Math.abs(oNote.octave), 3) : 0,
+        accidentalSymbol: formatAccidentalGlyph(oNote.accidental),
+        isRest,
+        isEmpty,
+        pitchDisplay,
+      });
+      obBeat += dur;
+    }
+    engravedObbligatoNotes = rawOb.map((raw, idx) => {
+      const prev = idx > 0 ? rawOb[idx - 1] : null;
+      const next = idx < rawOb.length - 1 ? rawOb[idx + 1] : null;
+      const prevC1 = Boolean(prev && prev.beatIndex === raw.beatIndex && prev.beamCount >= 1 && raw.beamCount >= 1);
+      const nextC1 = Boolean(next && next.beatIndex === raw.beatIndex && next.beamCount >= 1 && raw.beamCount >= 1);
+      const prevC2 = Boolean(prev && prev.beatIndex === raw.beatIndex && prev.beamCount >= 2 && raw.beamCount >= 2);
+      const nextC2 = Boolean(next && next.beatIndex === raw.beatIndex && next.beamCount >= 2 && raw.beamCount >= 2);
+      return {
+        ...raw,
+        beam1: {
+          hasBeam: raw.beamCount >= 1,
+          connectsToPrev: prevC1,
+          connectsToNext: nextC1,
+          isSubGroupStart: !prevC1 && nextC1,
+          isSubGroupEnd: prevC1 && !nextC1,
+        },
+        beam2: {
+          hasBeam: raw.beamCount >= 2,
+          connectsToPrev: prevC2,
+          connectsToNext: nextC2,
+          isSubGroupStart: !prevC2 && nextC2,
+          isSubGroupEnd: prevC2 && !nextC2,
+        },
+      };
+    });
+  }
+
   const totalBeats = Math.round(currentBeat * 1000) / 1000;
   const isFull = Math.abs(totalBeats - expectedBeats) < 0.01;
   const isUnder = totalBeats < expectedBeats - 0.01;
@@ -242,6 +302,8 @@ export function engraveMeasure(
     measureIndex,
     measureNumber: measure.measureNumber || measureIndex + 1,
     notes: engravedNotes,
+    obbligatoNotes: engravedObbligatoNotes,
+    obbligatoText: measure.obbligatoText,
     totalBeats,
     expectedBeats,
     isFull,

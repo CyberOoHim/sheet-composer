@@ -1,104 +1,130 @@
-# UI Refactor Proposal Plan: Real-Sheet Score Creation & Editing (擬真簡譜樂譜編輯重構計畫)
+# UI Refactor Proposal Plan: Real-Sheet Score Creation & Editing
 
-| 欄位 | 規格說明 |
+| Field | Specification |
 | --- | --- |
-| **文件名稱** | Real-Sheet Score Creation & Editing UI Refactor Proposal Plan |
-| **專案名稱** | Taigi Composer (`taigi-composer`) |
-| **參考基準** | 經典簡譜排版原件（如附件《望春風》簡譜 `IMG_0171.png`，JP-Word / 人民音樂出版社簡譜出版規範） |
-| **目標範疇** | 將現有基於卡片網格（Card-Deck/DAW-style）的編輯介面，重構為**直接在實體紙張樂譜上創建與編輯（What You See Is What You Compose）**的擬真互動樂譜 |
-| **適用對象** | 產品經理、前端/音樂軟體架構師、樂譜排版工程師 |
-| **狀態** | 提案審閱（Proposal Plan Ready for Engineering Review） |
+| **Document Name** | Real-Sheet Score Creation & Editing UI Refactor Proposal Plan |
+| **Project Name** | Taigi Composer (`taigi-composer`) |
+| **Reference Standard** | Classic numbered musical notation print edition (e.g., the referenced sheet for "Bang Chhun-Hong / 望春風" `IMG_0171.png`, JP-Word / People's Music Publishing House engraving standards) |
+| **Target Scope** | Refactor the existing card-grid / DAW-style editor into a **direct on-paper creation and editing experience (What You See Is What You Compose)** on an interactive, true-to-life sheet score |
+| **Language Policy** | **All application UI texts, labels, buttons, navigation, dialogs, and controls MUST be in English (strictly no Chinese UI text). Songs themselves (titles, lyrics, Han-Lo characters, and Pe̍h-ōe-jī / POJ romanization) are preserved as they are in their original language.** |
+| **Target Audience** | Product Managers, Frontend / Audio Architects, Music Engraving Engineers |
+| **Status** | Proposal Plan Ready for Engineering Review |
 
 ---
 
-## 1. 核心願景與設計哲學 (Core Vision & Philosophy)
+## 1. Core Vision & Philosophy
 
-### 1.1 從「音軌卡片網格」轉向「活體紙質樂譜」(From Audio Cards to Living Sheet Paper)
-目前多數音樂創作軟體容易落入「音訊工程 DAW」或「資料表卡片（Card Deck）」的巢狀框架：按鈕重疊、多層 Chrome、小節被框在圓角方塊中，每個音符像是獨立的按鈕晶片。
+### 1.1 From "Audio Cards Deck" to a "Living Sheet Paper"
+Most computer-aided music authoring tools inadvertently fall into the nested paradigms of "Digital Audio Workstation (DAW)" or "Card Decks": stacked buttons, multi-tiered chrome, measures enclosed in rounded boxes, and each musical note rendered like an isolated button chip.
 
-然而，傳統民間音樂人、台語歌謠愛好者、合唱團成員與音樂學習者最熟悉的互動心智模型，是**一張乾淨、典雅的實體紙本簡譜（如附圖《望春風》）**：
-- **視覺直觀**：潔白的紙面、書法宋體標題、標準調號 `1 = E`、拍號 `4/4`、速度記號 `♩ = 88`。
-- **連續連音線（Beams）**：八分音符與十六分音符在拍子內以水平減時線自然連貫，而非斷裂的底線。
-- **多段歌詞垂直疊放（Stacked Verses）**：第一段、第二段歌詞整齊排在音符正下方，字距與音符嚴密垂直對齊。
-- **即看即編（WYSIWYG Inline Editing）**：在紙面上看見什麼，點擊就能直接修改；就像拿著鉛筆在樂譜紙上即時擦寫填詞。
+However, the natural mental model most familiar to traditional musicians, folk song enthusiasts, choir members, and music learners is **a clean, elegant physical paper sheet score (such as the reference sheet "Bang Chhun-Hong / 望春風")**:
+- **Visual Intuitiveness**: A crisp paper surface, standard key signature `1 = E`, time signature `4/4`, and tempo marking `♩ = 88`.
+- **Continuous Beams**: Eighth and sixteenth notes connected naturally within beats with continuous horizontal beam lines rather than broken individual underlines.
+- **Stacked Multi-Verse Lyrics**: Verse 1, Verse 2, etc., neatly arranged in vertical rows directly below the notes, with typography strictly aligned to note centers.
+- **WYSIWYG Inline Editing**: Direct on-sheet editing where clicking on any note, lyric, or title allows immediate typing and modification—just like writing directly on manuscript paper with a pencil.
 
-### 1.2 三大重構核心原則 (The Three Pillars)
-1. **紙面本位 (Sheet-First Canvas)**：以擬真 A4 / 樂譜紙張為畫布核心，移除 6 層冗餘的 DAW 外框與巢狀卡片，讓樂譜佔據螢幕 80% 以上的主視域。
-2. **原位游標與即時鍵打 (Direct On-Sheet Caret & Typing)**：引入「樂譜插入游標（Music Caret）」，點擊任一音符、休止符、歌詞或小節線，直接在紙面上進行輸入與修改。支援標準數字鍵（`1-7` 音符、`0` 休止符、`-` 延音線、`.` 附點、`/` 減時線）。
-3. **無干擾浮動調色盤 (Unobtrusive Floating Ribbon)**：將原本佔據大量版面的底層/卡片內 HUD 收斂為現代化的輕量浮動工具列（Floating HUD），支援 iPad 觸控點選，但不遮蔽紙張樂譜本體。
+### 1.2 The Three Core Pillars
+1. **Sheet-First Canvas**: Make the authentic A4 / manuscript score paper the visual core of the application. Eliminate redundant nested DAW card frames and toolbars so the score occupies over 80–90% of the primary viewport.
+2. **Direct On-Sheet Caret & Typing**: Introduce a musical insertion cursor ("Music Caret"). Clicking any note, rest, lyric, or barline enables instant on-sheet typing via standard number keys (`1-7` for pitch, `0` for rest, `-` for extension dash, `.` for dot, `/` for duration halving).
+3. **Unobtrusive Floating Ribbon / HUD**: Consolidate secondary toolbars into a modern, lightweight floating context palette (Floating HUD) that supports iPad touch input while never obscuring the score canvas itself.
+4. **Strict English UI Localization**: All system interfaces, settings, status indicators, tooltips, buttons, and HUD controls are rendered in English. Song content (song names, lyrics, romanizations) remains in its original authentic form.
 
 ---
 
-## 2. 參考樂譜視覺解構分析 (Visual Anatomy of Reference Sheet: 《望春風》)
+## 2. Visual Anatomy & Transcription Blueprint of Reference Sheet ("Bang Chhun-Hong / 望春風")
 
-以使用者提供的經典《望春風》簡譜（`IMG_0171.png`）為基準，解構出標準擬真簡譜必備的排版要素：
+Based on the classic numbered musical notation benchmark from `IMG_0171.png`, the comprehensive visual and structural elements of an authentic, real-world paper score are deconstructed below:
 
 ```
-+-----------------------------------------------------------------------------------------------+
-| LPDC—JCR1341                                                                                  |
-|                                        望   春   風                                           |
-|                               (根據韓寶儀閩南語演唱音頻記譜)                 鄧雨賢 曲                |
-|  1 = E  4/4                                                                 李臨秋 詞         |
-|  ♩ = 88                                                                   嶺南印象 製譜        |
-|                                                                                               |
-|  ( 5·  5 6  5 3 | 3  2 1 6 - | 5·  3 3  2 3 2 | 1 - - - )                                    |
-|         _   _ _      _ _ _         _ _  =====                                                 |
-|                                                                                               |
-|     5·  5 6  1 | 2 3 2 1 2  3 - | 5·  3 3 2 1 | 2 - - - |                                     |
-|     .   _ _      ===== _ _        .   _ _ _ _                                                 |
-|  1.3.獨 夜無 伴   守   燈 下 ，    清  風對面 吹 ，                                            |
-|    2.想 要郎 君   做   恁 婿 ，    意  愛在心 內 ，                                            |
-|                                                                                               |
-|    3·  5 5  3 5 | 1·  2 2 - | 5·  3 3  2 3 2 | 1 - - - |                                      |
-|    .   _ _  _ _   .   _ _     .   _ _  =====                                                  |
-|    十  七八 歲未   出   嫁 ，   見  著少  年 家 。                                             |
-|    等  待何 時君   來   採 ，   青  春花  當 開 。                                             |
-|                                                                                               |
-|    2·  2 3  2 1 | 6·  5 6 1 - | 6· 1 2 3 | 5 - - - | 5· 5 6  5 3 |                           |
-|  ----------------- 1. 2. -----------------------------  ---------- 3. ---------------------- |
-|  | 3  2 1 6 - | 5·  3 3  2 3 2 | 1 - - - :||           | 5·  3 3  2 3 2 | 1 - - - ||          |
-|  |    _ _ _         _ _  =====            ||           |     _ _  =====           ||          |
-|  | 驚  歹 勢 ， 心  內彈  琵   琶 。      ||           | 心  內彈  琵   琶 。     ||          |
-|                                                                                               |
-|                                         — 1/1 —                                               |
-+-----------------------------------------------------------------------------------------------+
++-------------------------------------------------------------------------------------------------------------------+
+| LPDC—JCR1341                                                                                                      |
+|                                                  望   春   風                                                     |
+|                                       (根據韓寶儀閩南語演唱音頻記譜)                            鄧雨賢 詞          |
+|  1 = E  4/4                                                                                 李臨秋 曲          |
+|  ♩ = 88                                                                                   嶺南印象 制譜        |
+|                                                                                                                   |
+|  System 1 (Prelude & Obbligato Counterpoint):                                                                     |
+|                                                                                0 56 53 21 6 5                     |
+|                                                                                . __ __ __ . .                     |
+|  ( 5·   5 6   5 3  |  3   2 1 6  -  |  5·   3 3   2 3 2  |  1   -   -   -   ) |                                  |
+|         _ _   _ _         _ _ .             _ _   =====                                                           |
+|                                                                                                                   |
+|  System 2 (Theme Entry & Staggered Verses):                                                                       |
+|     5·  5 6   1    |  2 3 2 1 2 3 - |  5·   3 3   2 1    |  2   -   -   -   |                                     |
+|     .   _ _   .       ===== _ _ .      .    _ _   _ _                                                             |
+|  1.3.獨 夜無  伴      守  燈  下，     清   風對  面 吹 ，                                                        |
+|    2.想 要郎  君      做  恁  婿，     意   愛在  心 內 ，                                                        |
+|                                                                                                                   |
+|  System 3 (Bridge & Climax):                                                                                      |
+|     3·  5 5   3 5  |  1·  2 2 -     |  5·   3 3   2 3 2  |  1   -   -   -   |                                     |
+|     .   _ _   _ _     .   _ _          .    _ _   =====                                                           |
+|     十  七八  歲未    出  嫁，         見   著少  年 家 。                                                        |
+|     等  待何  時君    來  採，         青   春花  當 開 。                                                        |
+|                                                                                                                   |
+|  System 4 (Development):                                                                                          |
+|     2·  2 3   2 1  |  6·  5 6 1 -   |  6·   1 2   3      |  5   -   -   -   |  5·   5 6   5 3  |                  |
+|     .   _ _   _ _     .   _ _          .    _ _                                 .   _ _   _ _                     |
+|     果  然標  致面    肉  白，         誰   家人  子 弟，   想  要  問  伊                                         |
+|     聽  見外  面有    人  來，         開   門甲  看 見，   月  娘  笑  阮                                         |
+|                                                                                                                   |
+|  System 5 (Volta Endings 1 & 2 vs. Volta Ending 3):                                                               |
+|  ┌ 1. 2. ────────────────────────────────────────────────────────┐ ┌ 3. ──────────────────────────────────────┐  |
+|  |  3   2 1 6  -   |  5·   3 3   2 3 2  |  1   -   -   -   :||   |  5·   3 3   2 3 2  |  1   -   -   -   ||   |  |
+|  |      _ _ .              _ _   =====                      ||   |       _ _   =====                      ||   |  |
+|  |  驚  歹  勢 ，  心   內彈  琵   琶 。                     ||   |  心   內彈  琵   琶 。                    ||   |  |
+|  |  憨  大  呆 ，  予   風騙  不   知 。                     ||   |                                           ||   |  |
+|                                                                                                                   |
+|  Footnote & Engraver Attributions:                                                                                |
+|  本曲譜使用JP-Word簡譜編輯軟件製作  JPW簡譜軟件交流群：332718458                                                  |
+|  歡迎光臨嶺南印象製譜園地：http://www.qupu123.com/space/336279   QQ：54334643                                     |
+|  本人所記曲譜只發布在“中國曲譜網”本人個人園地上，轉載本人所記曲譜時凡抹去和篡改本人記製譜信息者均為盜版           |
+|                                                                                                                   |
+|                                                   — 1/1 —                                                         |
++-------------------------------------------------------------------------------------------------------------------+
 ```
 
-### 2.1 樂譜版面結構剖析 (Structural Breakdown)
+### 2.1 Complete Architectural Engraving Anatomy
 
-| 區塊 | 排版特色與排版細節 | 數位互動需求 |
+| Element | Visual Specification (From `IMG_0171.png`) | Paper Layout & Interactive Digital Implementation |
 | --- | --- | --- |
-| **樂譜曲頭 (Header)** | 1. 左上方：樂譜編號或版本標記（如 `LPDC—JCR1341`）<br>2. 正中央：大字號傳統宋體/楷體歌名，字距寬闊典雅<br>3. 標題下方：居中副標題或音訊來源版本註記<br>4. 右側署名：詞、曲、記譜製作者靠右梯形排版<br>5. 左側樂理參數：調號 `1 = E`、分數垂直排版拍號 `4/4`、標準四分音符速度 `♩ = 88` | **直接點擊編輯**：<br>• 點擊歌名可就地輸入文字<br>• 點擊 `1 = E` 彈出 12 調快速選擇盤<br>• 點擊拍號彈出 `2/4`, `3/4`, `4/4`, `6/8` 選擇<br>• 點擊速度可滾輪或直接打字調整 BPM |
-| **前奏/間奏括號 (Prelude Bracket)** | 樂器演奏的前奏或過門樂段，整段以半形圓括號 `( 5· 5 6 ... )` 包裹，不附帶歌詞 | 支援小節或音符群組一鍵切換「前奏/間奏包裹標記」，自動在音符上下維持排版間距 |
-| **音符主體 (Notation Glyph)** | 1. 簡譜數字 `1 2 3 4 5 6 7` 採用專用無襯線等寬或標準簡譜字體<br>2. 高音點（如 `1̇`）垂直精準居於數字正上方；低音點（如 `6̣`）垂直居於減時線下方<br>3. 附點（如 `5·`）緊隨數字右側，垂直居中<br>4. 延音線（`-`）佔用標準等寬拍位，與音符等高對齊<br>5. 休止符 `0` 依時值亦可享有減時線（如 `0 5 6` 帶八分減時線） | **直接鍵打與游標**：<br>• 數字鍵 `1-7` 即時寫入並前進<br>• `0` 鍵寫入休止符<br>• `-` 鍵寫入延音拍<br>• `.` 鍵切換附點<br>• `+`/`-` 或 `Ctrl+↑/↓` 調整八度點 |
-| **連續減時線 (Continuous Beams)** | 傳統簡譜中的八分音符（單底線）與十六分音符（雙底線）並非各自獨立的短線，而是**在同一拍或節奏組內以連續的水平實線貫穿**（例如 `5 6` 連成一條底線，`2 3 2` 為十六分雙底線貫穿） | **自動節拍群組排版引擎 (Auto-Beaming Engine)**：<br>根據拍號（如 4/4 拍每 1 拍為一 Beam 組），自動計算相鄰音符並渲染連續 SVG/CSS 水平樑線 |
-| **圓滑線與連音線 (Slurs & Ties)** | 弧形貝茲曲線（Bézier Curve）優雅跨越相鄰或多個音符（如 `2 3 2` 上方的圓滑弧線），標示滑音、轉音或一字多音 | 在選取音符範圍上一鍵按 `S` 添加圓滑線，SVG 自動計算起點與終點音符上方弧度 |
-| **多段歌詞堆疊 (Multi-Verse Lyrics)** | 1. 多段歌詞在同一行旋律下**垂直分行疊放**（Verse 1, Verse 2, Verse 3）<br>2. 行首帶有段落編號（如 `1.3. 獨夜無伴...`、`2. 想要郎君...`）<br>3. 歌詞中文字嚴格與正上方的音符中心對齊<br>4. 標點符號（`，`、`。`）自然佔位並帶有微距間隔 | **就地多段填詞 (Inline Multi-Row Lyric Input)**：<br>點擊音符下方任一段落列，直接輸入歌詞，按 `Space` 或 `Tab` 自動跳至下一個音符 |
-| **反覆記號與跳躍房子 (Voltas / Endings)** | 1. 反覆小節線 `|:` 與 `:|`、終止雙小節線 `||`<br>2. 第一、第二反覆跳躍門號 `┌ 1. 2. ─────┐` 與第三反覆門號 `┌ 3. ─────┐`，水平橫跨小節上方 | 支援小節上方設定 Volta Ending（1st, 2nd, 3rd），自動渲染上方橫向折線與序號標籤 |
-| **樂譜頁尾 (Footer)** | 1. 居中頁碼格式 `— 1/1 —`<br>2. 底部版權與排版備註文字 | 自動計算紙張分頁（Page Breaks），支援 PDF / 圖片列印時自動輸出頁碼 |
+| **Catalog ID (Top-Left)** | `LPDC—JCR1341` in subtle italicized font at top-left corner | Non-intrusive score code / edition identifier, editable inline. |
+| **Score Title (Centered)** | `望 春 風` in large traditional serif typography with wide tracking (`0.25em` letter spacing) | Double-click or caret to edit; auto-centered across page margins. |
+| **Subtitle / Version Note** | `(根據韓寶儀閩南語演唱音頻記譜)` centered directly under title in medium serif | Version or audio source annotation; preserved in authentic wording. |
+| **Credits Block (Top-Right)** | 3-line right-aligned stepped hierarchy:<br>• `鄧雨賢 詞` (Lyricist)<br>• `李臨秋 曲` (Composer)<br>• `嶺南印象 制譜` (Engraver/Transcriber) | Right-aligned metadata grid; clicking any line allows instant updates. |
+| **Theory Header (Top-Left)** | `1 = E` (Key Signature), `4/4` (Fractional Time Signature), `♩ = 88` (Tempo Marking with musical note glyph) | Standard musical theory header; clicking any item opens a quick-pick modal (all in English UI). |
+| **Parenthesized Prelude / Interlude** | `( 5· 5 6 5 3 | ... | 1 - - - )` spanning full measures with enclosing parentheses | Instrumental passage toggle: wraps measures in curved score parentheses and suppresses lyric rows. |
+| **Upper Obbligato / Counterpoint Layer** | Measure 4 top layer: small notes `0 5 6 5 3 2 1 6̣ 5̣` above the sustain note `1 - - -` | Multi-voice rendering layer: displays auxiliary vocal ornaments or counter-melody above the primary melodic staff. |
+| **Continuous Beams Engine** | Eighth notes (`_`), sixteenth notes (`=`), and dotted eighths connected via unified horizontal beam lines | Auto-beamer groups notes strictly by beats (e.g. 1 beat per beam group in 4/4) with clean SVG horizontal bands. |
+| **Pitch & Octave Typography** | High octave dots centered precisely above digits (`5̇`, `1̇`, `2̇`); low octave dots placed below duration beams (`6̣`, `5̣`) | Dedicated musical monospace font with exact vertical bounding boxes to prevent overlapping dots and beams. |
+| **Slurs & Arcs (Bézier Curves)** | Smooth arching curves over melismatic notes (e.g. over `2 3 2`, over `2 1`, over `1̇ 2̇`) | Dynamic SVG cubic Bézier curves computed automatically from start note head to end note head with clearance. |
+| **Multi-Verse Lyric Rows** | Staggered vertical rows below each melodic line:<br>• Row 1: `1.3.` (Verse 1 & Verse 3 combination)<br>• Row 2: `2.` (Verse 2)<br>• Strict vertical center-alignment of syllables with notes | Multi-verse lyric engine: displays Verse 1, Verse 2, Verse 3 directly on the paper canvas with `Space`/`Tab` auto-advance. |
+| **Volta Repeat Endings** | `┌ 1. 2. ────────────────┐` over first ending, followed by `:||`<br>`┌ 3. ────────────────────┐` over second ending, followed by `||` | Standard overhead Volta brackets with repeat playback engine supporting 1st/2nd cycle loop and 3rd ending jump. |
+| **Footnote / Publisher Notice** | Multi-line engraving credits, community group references, and copyright protection notice at paper bottom | Formatted footnote block positioned before page footer divider. |
+| **Pagination Footer** | Centered page indicator format: `— 1/1 —` | Dynamic page calculation supporting single-page and multi-page print layouts. |
 
 ---
 
-## 3. 現況痛點與差距分析 (Gap Analysis: Current vs. Target)
+## 3. Gap Analysis: Current vs. Target Architecture
 
-| 評估維度 | 當前 Taigi Composer 介面現況 | 目標擬真簡譜介面 (Target Real Sheet) |
+| Dimension | Current State | Target Real Sheet |
 | --- | --- | --- |
-| **主要視覺介面** | **卡片網格與控制列堆疊**：小節由圓角卡片包覆，音符包覆在 `rounded-xl min-w-[46px] border` 之中，充斥按鈕陰影、背景色塊與邊界線。 | **擬真純淨紙張 (Paper Canvas)**：仿照實體樂譜紙張（A4 比例、米白/白底、細緻紙張陰影、出版級黑白排印），音符直接浮現於紙面。 |
-| **版面佔用 (Chrome Overhead)** | 進入畫面有 6 層橫條（頂部導航 + 歌曲中繼標題 + 分軌條 + 模式切換器 + 時值工具條 + 區段軌），真正樂譜被擠到下半螢幕。 | **零干擾樂譜居中**：頂部僅保留極簡半透明狀態條，90% 畫面均為紙本樂譜本身，控制項整合至浮動調色盤。 |
-| **減時線與排版真實度** | 減時線為每個音符獨立的 `h-[2px] bg-current`，多個八分/十六分音符之間彼此斷開，無法形成標準簡譜的「連續樑線（Continuous Beams）」。 | **自動群組樑線引擎 (Engraver Auto-Beaming)**：同一拍內的八分音符與十六分音符共用平滑連續水平線，視覺完全等同專業排版軟件。 |
-| **創作與編輯互動心智** | 使用者必須「點選音符卡片 → 移至下方 HUD 尋找按鈕 → 點擊音高 → 再點擊時值 → 點擊下一格」，流程阻滯。 | **樂譜原位輸入游標 (Direct Sheet Caret)**：游標直接閃爍在樂譜紙上，雙手在鍵盤敲擊 `5 - 3 2 1 |` 即可如同打字般流暢出譜。 |
-| **歌詞編寫體驗** | 歌詞被拆解在單獨的卡片輸入框、或需開啟全螢幕 Aligner 模態視窗處理。 | **多段疊加樂譜填詞**：旋律下方直接呈現 Verse 1 / Verse 2 / POJ / 漢羅文字行，在譜上直接選字與修改。 |
-| **跳躍反覆與多房子 (Voltas)** | 僅支援單純的小節屬性標記，缺乏標準樂譜頂部的跳躍房子折線（`┌ 1. 2. ──┐`）。 | **標準跳躍房子渲染與解析**：提供可視覺拖曳或點選設定的 Voltas 標籤，播放時能依 1/2/3 房子正確跳轉。 |
+| **Primary Visual Interface** | **Card-Grid & Control Stack**: Measures wrapped inside rounded cards; notes wrapped in `rounded-xl min-w-[46px] border` with heavy shadows and colored background chips. | **Authentic Paper Canvas**: Genuine sheet manuscript look (A4 ratio, clean white/ivory paper, subtle depth shadow, publication-grade monochrome engraving). |
+| **Chrome Overhead** | 6 horizontal bars upon entry (Top Nav + Song Metadata + Track Bar + Mode Switcher + Duration Bar + Section Rail), pushing actual score to the lower screen. | **Zero-Distraction Centered Score**: Minimalist top floating status bar; 90% of screen dedicated to sheet music, with controls consolidated into a floating dock. |
+| **Beam Accuracy** | Underlines rendered as isolated `h-[2px] bg-current` per note, breaking eighth/sixteenth notes instead of forming continuous musical beams. | **Engraver Auto-Beaming Engine**: Smooth continuous horizontal beams shared across notes within the same beat group, matching published sheet standards. |
+| **Editing Mental Model** | User must "Click note card → Move to bottom HUD → Select pitch → Select duration → Click next cell", resulting in high friction. | **Direct Sheet Caret**: Blinking cursor on the paper score; typing `5 - 3 2 1 |` outputs notation smoothly like a music typewriter. |
+| **Lyric Input Experience** | Lyrics separated into individual card input boxes or requiring full-screen modal aligners. | **Stacked Multi-Verse Lyrics**: Direct on-sheet multi-row lyrics (Verse 1 / Verse 2 / POJ / Han-Lo), selectable and editable in place. |
+| **Voltas & Repeat Endings** | Only basic measure tags; missing standard overhead Volta brackets (`┌ 1. 2. ──┐`). | **Standard Volta Bracket Rendering**: Visual bracket lines with repeat playback engine support jumping between 1st, 2nd, and 3rd endings. |
+| **UI Language Consistency** | Mixed Chinese/English terms in control buttons and labels. | **100% English UI Text**: All interface controls, labels, modals, tooltips, and actions strictly in English. Song titles and lyrics preserved in original language. |
 
 ---
 
-## 4. 擬真樂譜重構技術架構 (Target System Architecture)
+## 4. Target System Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                          Taigi Composer Workspace                           │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│  [Top Floating Utility Bar]  Song Name  •  Key  •  Time  •  BPM  •  [Play] │
+│  [Top Floating Utility Bar]  Song Title  •  Key  •  Time  •  BPM  •  [Play] │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │    ┌───────────────────────────────────────────────────────────────────┐    │
@@ -128,157 +154,164 @@
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 4.1 核心模組職責劃分
+### 4.1 Core Module Responsibilities
 
-1. **`SheetCanvas`（紙本樂譜視圖容器）**
-   - 模擬真實紙張比例（支援標準 A4 直式、橫式與自適應寬度）。
-   - 提供印刷等級的紙張色彩（米白 `#FCFCF9` 或高對比純白 `#FFFFFF`，外帶柔和景深陰影 `shadow-xl border border-zinc-200`）。
-   - 支援無級縮放（Zoom Engine: 50% - 200%）與手勢雙指縮放。
+1. **`SheetCanvas` (Sheet Score Viewport Container)**
+   - Simulates physical paper dimensions (A4 portrait, landscape, and adaptive responsive width).
+   - High-contrast publication-grade paper surface (`#FFFFFF` pure white or `#FAF9F5` warm ivory with subtle `shadow-xl border border-zinc-200`).
+   - Smooth zoom engine (50% to 200%) and pinch-to-zoom gesture handling.
 
-2. **`JianpuEngraver`（簡譜排版與連音樑線引擎）**
-   - **節拍對齊計算**：依據小節拍號（如 4/4 拍），將音符依時值精確分配水平空間（四分音符佔 1X，八分音符佔 0.5X，全音符佔 4X）。
-   - **連續樑線（Auto-Beamer）**：跨音符計算連續水平線段，精準處理單底線（八分音符）、雙底線（十六分音符）、三底線（三十二分音符）及附點樑線。
-   - **裝飾符號排版**：高低音點、升降記號、休止符、延音線、琶音與前置/後置裝飾音。
-   - **SVG 弧線層**：以 SVG 向量渲染圓滑線（Slurs）、延音連音線（Ties）與跳躍房子（Voltas）。
+2. **`JianpuEngraver` (Notation Engraving & Auto-Beaming Engine)**
+   - **Beat Alignment Engine**: Proportional horizontal space allocation based on time signature and note duration (e.g., quarter note = 1X, eighth note = 0.5X, whole note = 4X).
+   - **Continuous Beamer**: Spans adjacent eighth, sixteenth, and thirty-second notes within beat groups into smooth continuous horizontal beams.
+   - **Accidental & Articulation Layout**: Octave dots, accidentals (sharp/flat), rests, extension dashes, and grace notes.
+   - **SVG Arc Layer**: Renders smooth Bézier curves for slurs, ties, and Volta ending brackets.
 
-3. **`SheetCaretManager`（樂譜游標與即時鍵打控制器）**
-   - 管理目前編輯錨點：`{ measureIndex, noteIndex, lyricRowIndex, field: 'pitch' | 'lyric' | 'chord' }`。
-   - 捕捉全域鍵盤事件（Numpad、數字鍵、方向鍵、快捷鍵），實現 0 阻力的鍵盤即時輸入。
-   - 提供直覺的鼠標點選碰撞偵測（點選音符上方切換音高，點選音符下方切換歌詞）。
+3. **`SheetCaretManager` (Direct On-Sheet Caret & Typing Controller)**
+   - Manages active editing target: `{ measureIndex, noteIndex, lyricRowIndex, field: 'pitch' | 'lyric' | 'chord' }`.
+   - Captures global keyboard events (number keys, numpad, arrow keys, shortcut keys) for zero-friction typing.
+   - Spatial hit testing for click-to-edit (clicking above note selects pitch, clicking below selects lyrics).
 
-4. **`FloatingScoreHud`（無干擾浮動調色盤）**
-   - 輕量、半透明毛玻璃或微邊框浮動於樂譜邊緣或底部中央。
-   - 專為觸控設備（iPad/平板）設計，提供音高、八度、時值、圓滑線、歌詞列切換之輔助點選。
-   - 支援「自動避讓（Auto-Avoidance）」：當游標移動至螢幕下方時，浮動調色盤自動淡化或上浮，絕不遮擋目前編輯中的小節。
+4. **`FloatingScoreHud` (Unobtrusive Floating Context Palette)**
+   - Lightweight, translucent floating dock anchored at the bottom center or edge.
+   - Designed for touch devices (iPad/tablets) to provide one-tap access to pitch, octave, duration, slurs, and verse switching.
+   - **Auto-Avoidance**: Dims or shifts upward when the caret enters the lower viewport so it never covers the active measure.
+
+5. **UI Language Standards Enforcement**
+   - All HUD buttons, menus, dialogs, settings, and helper text are strictly in English.
+   - Song titles, lyrics, and metadata fields render the authentic song data (Traditional Chinese / Taiwanese Han-Lo / POJ romanization) exactly as composed.
 
 ---
 
-## 5. 詳細互動模型與鍵盤輸入矩陣 (Direct Interaction Matrix)
+## 5. Direct Interaction & Keyboard Mapping Matrix
 
-為了達到「如同在紙上寫譜」的流暢體驗，鍵盤與滑鼠/觸控操作必須符合直覺且零干擾：
+To deliver a frictionless "typing on paper" experience, interaction mapping is structured as follows:
 
-### 5.1 樂譜原位輸入快捷矩陣 (Keyboard Mapping)
+### 5.1 Keyboard Shortcuts & Caret Actions
 
-| 鍵位 | 行為說明 | 樂譜視覺反饋 |
+| Key | Action | Visual Feedback on Sheet |
 | --- | --- | --- |
-| **`1` ~ `7`** | 輸入對應音符簡譜音高 (Do, Re, Mi, Fa, Sol, La, Ti) | 游標所在位置立即呈現數字，並播放該音高即時反饋音 |
-| **`0`** | 輸入休止符 | 呈現 `0`，依當前選定时值附加底線 |
-| **`-` (減號/破折號)** | 輸入延音線（增時線） | 自動增加 1 拍延音線 `-`，游標後移一拍 |
-| **`.` (句點)** | 切換當前音符之附點 (Dotted Note) | 音符右側即時出現附點 `·`，自動重新計算剩餘小節時值 |
-| **`/` 或 `_`** | 時值減半 (Quarter -> 8th -> 16th -> 32nd) | 音符下方即時增加一條連續樑線 |
-| **`*` 或 `Shift + +`** | 時值加倍 (8th -> Quarter -> Half -> Whole) | 音符下方減少一條樑線，或自動轉為增時線 `-` |
-| **`+` / `-`** 或 **`Ctrl + ↑ / ↓`** | 向上 / 向下八度轉換 | 數字上方或下方增加/減少高低音圓點 (`1̇` 或 `1̣`) |
-| **`#` / `b`** | 升半音 / 降半音臨時記號 | 數字左上方呈現升降記號 `♯` / `♭` |
-| **`S`** | 建立或解除圓滑線 (Slur) 至下一個音符 | 音符上方即時繪製平滑拱形 SVG 曲線 |
-| **`T`** | 建立或解除延音同音連線 (Tie) | 音符上方繪製延音弧線 |
-| **`Backspace` / `Delete`** | 刪除當前音符或清空為休止符 | 游標前移或音符變為休止符 |
-| **`←` / `→`** | 在小節與音符間橫向移動游標 | 游標依序在紙張上的音符間跳轉 |
-| **`↑` / `↓`** | 在「音符行」與「多段歌詞行」之間垂直切換 | 游標由音符切換至 Verse 1 歌詞輸入，再切至 Verse 2 |
-| **`Space` 或 `Tab`** | 在歌詞行打字時，自動跳至下一個音符字位 | 實現連續流暢的繁體台語/白話字填詞 |
+| **`1` ~ `7`** | Input numbered pitch (Do, Re, Mi, Fa, Sol, La, Ti) | Number appears instantly at caret; audio tone plays immediately |
+| **`0`** | Input musical rest | Inserts `0` with duration beams matching active duration |
+| **`-` (Minus / Dash)** | Input extension dash (sustain beat) | Appends extension dash `-` and advances caret by 1 beat |
+| **`.` (Period)** | Toggle dotted note duration | Dot `·` appears to the right of note; measure timing updates |
+| **`/` or `_`** | Halve duration (Quarter -> 8th -> 16th -> 32nd) | Adds a continuous beam underline |
+| **`*` or `Shift + +`** | Double duration (8th -> Quarter -> Half -> Whole) | Removes a beam or turns note into dash extension `-` |
+| **`+` / `-`** or **`Ctrl + ↑ / ↓`** | Shift octave Up / Down | Adds or removes high/low octave dots (`1̇` or `1̣`) |
+| **`#` / `b`** | Accidental sharp `♯` / flat `♭` | Renders accidental glyph to the top-left of the digit |
+| **`S`** | Toggle slur to the next note | Draws smooth arched SVG slur over selected notes |
+| **`T`** | Toggle tie to identical pitch note | Draws tie arc connecting notes |
+| **`Backspace` / `Delete`** | Delete note or reset to rest | Advances/clears current slot |
+| **`←` / `→`** | Move caret horizontally between notes | Caret hops between notes across barlines |
+| **`↑` / `↓`** | Move caret vertically between notes and lyrics | Caret transitions from pitch to Verse 1 lyrics, then Verse 2 |
+| **`Space` or `Tab`** | In lyric mode, advance to next note syllable | Enables continuous smooth typing for lyrics |
 
 ---
 
-## 6. 排版美學與出版級視覺規範 (Visual & Typographic Specifications)
+## 6. Visual & Typographic Specifications
 
-為徹底消除「AI 卡片軟體感（AI Slop）」並重現出版品般的質感，排版需遵循以下設計規範：
+To eliminate generic AI-generated card aesthetics and deliver genuine publication quality:
 
-### 6.1 紙張質感與調色盤 (Canvas & Paper Colorimetry)
-- **樂譜紙張底色 (Sheet Paper Surface)**：`#FFFFFF`（印刷純白）或 `#FAF9F5`（復古米黃象牙紙），嚴禁使用刺眼的漸層紫色或科技感暗黑面板。
-- **工作區背景 (Workspace Backdrop)**：低對比柔和中性灰 `#F1F3F5`（淺色模式）或 `#121316`（夜間紙張護眼模式）。
-- **印刷級墨水黑 (Printer Ink Tone)**：音符主色採用 `#18181B`（95% 暖碳墨黑），小節線採用 `#27272A`，確保線條銳利且符合印刷對比度。
-- **編輯中強調色 (Caret & Active Ring)**：選取游標與高亮採用經典琥珀金 `#D97706`（溫潤且不破壞樂譜原貌）或知更鳥藍 `#0284C7`。
+### 6.1 Colorimetry & Paper Texture
+- **Sheet Paper Surface**: `#FFFFFF` (pure print white) or `#FAF9F5` (warm ivory manuscript paper); no saturated purple gradients or dark-mode glow effects.
+- **Workspace Backdrop**: Subtle neutral gray `#F1F3F5` (light mode) or `#121316` (eye-comfort dark mode).
+- **Engraved Ink Tone**: Primary notation in `#18181B` (95% carbon ink black), barlines in `#27272A`, ensuring sharp, print-ready contrast.
+- **Active Caret & Highlight**: Refined amber `#D97706` or cobalt `#0284C7` for high visibility without compromising score legibility.
 
-### 6.2 字體系統階層 (Typographic Hierarchy)
-- **歌名與標題 (Song Title Display)**：
-  - 首選字體：`Noto Serif TC`, `Songti SC`, `SimSun`, `STSong`, `serif`
-  - 樣式：字重 700，字距 `tracking-[0.25em]`，居中排版，營造典雅的民謠歌譜氛圍。
-- **簡譜音符數字 (Musical Digits)**：
-  - 專用等寬襯線/無襯線數字，具備清晰的 x-height 與對稱開口（避免 `3` 與 `5` 在縮小時辨識不清）。
-- **歌詞字體 (Lyric Typography)**：
-  - 漢羅/漢字：`Noto Sans TC` 或 `PingFang SC`，字重 500，字型端正不傾斜。
-  - 白話字 (POJ) / 羅馬拼音：帶有完整調號的經典字體 `Charis SIL` 或 `Times New Roman`，斜體字重 600，精準排版聲調符號。
+### 6.2 Typographic Hierarchy
+- **Song Title Display**:
+  - Fonts: `Noto Serif TC`, `Songti SC`, `SimSun`, `serif`
+  - Style: Font-weight 700, letter-spacing `tracking-[0.25em]`, centered.
+- **Musical Digits**:
+  - Dedicated monospace musical font with clean x-height and distinct apertures (preventing `3` and `5` confusion at small sizes).
+- **Lyric Typography**:
+  - Han-Lo / Chinese characters: `Noto Sans TC`, `PingFang SC`, font-weight 500, upright.
+  - Pe̍h-ōe-jī (POJ) / Romanization: `Charis SIL`, `Times New Roman`, italic font-weight 600, supporting full diacritical tone markings.
+- **Application Interface UI**:
+  - Clean English system font stack (`system-ui`, `Inter`, `sans-serif`) across all toolbars, buttons, dialogs, and panels.
 
-### 6.3 垂直韻律與間距標準 (Vertical Rhythm & Geometry)
-每行樂譜系統（System）由上至下嚴格依循數學網格排列：
+### 6.3 Vertical Rhythm & System Geometry
+Each score system is arranged on a strict vertical grid:
 
 ```
 [System Top Margin]           12px
-[Measure Numbers & Voltas]    16px (如 ┌ 1. 2. ─────┐ 折線層)
-[Chords & Annotations]        14px (和弦代號如 F, Dm, C7)
-[Slurs Layer]                 10px (圓滑線頂部空間)
-[Notation Line]               28px (數字音符 1-7、高音點、低音點)
-[Beam Lines Underneath]        8px (單底線 2px / 雙底線 2px + 2px 間隔)
-[Lyric Line 1 (Verse 1)]      22px (首段歌詞，行首標記 1.)
-[Lyric Line 2 (Verse 2)]      22px (次段歌詞，行首標記 2.)
-[System Bottom Divider]       24px (空白紙張緩衝區)
+[Measure Numbers & Voltas]    16px (e.g. ┌ 1. 2. ─────┐ bracket layer)
+[Chords & Annotations]        14px (Chords such as F, Dm, C7)
+[Slurs Layer]                 10px (Clearance for slur arcs)
+[Notation Line]               28px (Numbered digits 1-7, octave dots)
+[Beam Lines Underneath]        8px (Single beam 2px / Double beam 2px + 2px gap)
+[Lyric Line 1 (Verse 1)]      22px (First verse, prefixed with 1.)
+[Lyric Line 2 (Verse 2)]      22px (Second verse, prefixed with 2.)
+[System Bottom Divider]       24px (Blank paper buffer)
 ```
 
 ---
 
-## 7. 分階段實施路線圖 (Phased Implementation Roadmap)
+## 7. Phased Implementation Roadmap
 
-為確保現有功能（如卡拉OK播放、歷史紀錄、MIDI匯出、音訊引擎）不受影響，採 5 階段漸進式重構：
+To ensure existing features (audio playback, history undo/redo, MIDI export, synthesis) remain fully intact, a 5-phase rollout is defined:
 
 ```
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
 │   Phase 1   │ ──> │   Phase 2   │ ──> │   Phase 3   │ ──> │   Phase 4   │ ──> │   Phase 5   │
-│  擬真紙本畫布  │     │  連續樑線引擎  │     │  樂譜原位游標  │     │  多段歌詞排版  │     │  列印與向量匯出│
-│  & 框架精簡  │     │  & SVG弧線   │     │  & 鍵盤打字機  │     │  & 房子反覆   │     │  出版級 WYSIWYG│
+│ Sheet Canvas│     │ Auto-Beams  │     │ Direct Caret│     │ Multi-Verse │     │ Vector Print│
+│ & Chrome Red│     │ & SVG Slurs │     │ & Typewriter│     │ & Voltas    │     │ & PDF Export│
 └─────────────┘     └─────────────┘     └─────────────┘     └─────────────┘     └─────────────┘
 ```
 
-### Phase 1: 擬真紙本畫布構建與介面減法 (Virtual Sheet Canvas & Chrome Reduction)
-- **交付目標**：建立 `RealSheetCanvas` 元件，移除上方 6 層冗餘的 DAW 卡片外框。
-- **具體實作**：
-  1. 建立具有真實紙張長寬比（A4 比例、紙張邊界線、高雅陰影）的主舞台容器。
-  2. 整合歌曲標題、詞曲作者、`1 = E` 調號、`4/4` 拍號與速度為**紙張原生表頭**，點擊即可就地編輯。
-  3. 保留純粹的樂譜換行規則（預設每行 4 小節，支援手動強制換行 `isLineBreak`）。
+### Phase 1: Virtual Sheet Canvas & Chrome Reduction
+- **Objective**: Introduce `RealSheetCanvas` component, replacing 6 stacked DAW-style card layers with a centered sheet paper canvas.
+- **Implementation**:
+  1. Build a paper container matching A4 proportions with crisp margins and subtle drop shadows.
+  2. Integrate song title, attributions, `1 = E` key, `4/4` time signature, and tempo directly into the score header with inline click-to-edit.
+  3. Enforce English labels across all remaining navigation and action buttons.
 
-### Phase 2: 連續樑線排版引擎與 SVG 曲線層 (Continuous Beams & SVG Slurs Engine)
-- **交付目標**：實現如同印刷樂譜的連續水平減時線與流暢圓滑線。
-- **具體實作**：
-  1. 撰寫 `calculateSystemBeams(measures, timeSignature)` 演算法，將相鄰的八分/十六分音符組在拍子內合併為一條完整的水平 SVG 樑線。
-  2. 構建 `ScoreSvgOverlay`，依據音符坐標渲染跨音符的圓滑線（Slurs）、延音線（Ties）與前奏括號 `( ... )`。
+### Phase 2: Continuous Beams & SVG Slurs Engine
+- **Objective**: Render publication-grade continuous horizontal beams and smooth Bézier curve slurs.
+- **Implementation**:
+  1. Implement `calculateSystemBeams(measures, timeSignature)` to merge eighth and sixteenth notes within beats into continuous SVG beams.
+  2. Implement `ScoreSvgOverlay` for slurs, ties, and prelude parentheses `( ... )`.
 
-### Phase 3: 樂譜原位游標與全鍵盤即時輸入 (Direct Sheet Caret & Music Typewriter)
-- **交付目標**：使用者可在樂譜紙上直接點選並以鍵盤流暢打字出譜。
-- **具體實作**：
-  1. 實現 `ScoreCaret` 視覺游標，支援點選與方向鍵導航。
-  2. 建立 `MusicKeyEngine`：
-     - 按 `1-7` 即時填入音高並發出預聽音。
-     - 按 `0` 填入休止符、`-` 填入延音線、`.` 切換附點、`/` 切換時值底線。
-     - 自動在小節拍數填滿時跳轉至下一小節；最後一小節填滿時自動新增小節。
-  3. 將繁重的底部 HUD 重塑為輕量半透明的 `FloatingScoreHud`，兼顧 iPad 觸控需求。
+### Phase 3: Direct Sheet Caret & Music Typewriter
+- **Objective**: Allow users to click directly on the sheet and type notes fluently with the keyboard.
+- **Implementation**:
+  1. Build `ScoreCaret` with keyboard and touch navigation.
+  2. Implement `MusicKeyEngine`:
+     - Keys `1-7` input pitch with immediate audio feedback.
+     - `0` for rest, `-` for extension dash, `.` for dot, `/` for duration underline.
+     - Automatic advance across measures when filled.
+  3. Replace heavy bottom panels with the lightweight, English-labeled `FloatingScoreHud`.
 
-### Phase 4: 多段歌詞垂直疊加與反覆跳躍門 (Multi-Verse Stacking & Voltas)
-- **交付目標**：重現《望春風》同旋律下多段歌詞對齊與反覆跳躍房子。
-- **具體實作**：
-  1. 擴充資料結構與渲染層：支援單一曲譜同時渲染 Verse 1、Verse 2、Verse 3，各段歌詞平行垂直排列於音符正下方。
-  2. 支援在樂譜上按 `↓` 切入不同歌詞行，按 `Space` 自動跳字。
-  3. 實作 Voltas 渲染與跳躍播放邏輯（第一、第二反覆門號 `┌ 1. 2. ──┐` 與第三反覆門號 `┌ 3. ──┐`）。
+### Phase 4: Multi-Verse Stacking & Voltas
+- **Objective**: Support stacked verses (Verse 1, Verse 2, Verse 3) and repeat Volta ending brackets.
+- **Implementation**:
+  1. Expand data structure and renderer to display parallel vertical verse rows aligned under notes.
+  2. Support vertical navigation between verse rows and note lines with `↑`/`↓` and `Space` word advance.
+  3. Implement Volta repeat brackets (`┌ 1. 2. ──┐` and `┌ 3. ──┐`) with repeat playback loop integration.
 
-### Phase 5: 出版級向量 SVG 列印與 PDF 匯出 (Print & Publication WYSIWYG Guarantee)
-- **交付目標**：達成「螢幕所編即列印所得（WYSIWYG）」，一鍵輸出無損向量樂譜。
-- **具體實作**：
-  1. 提供標準 `@media print` 樣式表，列印時自動隱藏所有輔助線與浮動工具列，完美對齊實體 A4 紙張邊界。
-  2. 支援高解析度 SVG / PDF 檔案匯出，包含標準頁尾 `— 1/1 —` 與字型子集內嵌。
-
----
-
-## 8. 資料相容性與無痛升級方案 (Data Compatibility & Migration)
-
-本重構方案在資料結構層面**100% 向後相容**現有的 `Song`, `Measure`, `NumberedNotationNote`：
-1. **無破壞性變更**：所有現有的預設歌曲（如《雨夜花》、《望春風》）與使用者在 `localStorage` / `IndexedDB` 保存的歌曲檔案，均可直接在新擬真樂譜中渲染。
-2. **漸進式功能擴充**：
-   - 擴充 `Measure.voltaEnding?: number[]`（標註當前小節屬於第幾反覆房子，如 `[1, 2]` 或 `[3]`）。
-   - 擴充 `NumberedNotationNote.lyricsByVerse?: { [verseIndex: number]: LyricSyllable }`，以支援多段歌詞並存。在未設定時，自動回退現有的單段 `note.lyric`。
-3. **雙向視圖切換保障**：在重構過渡期，保留切換回傳統檢視之安全開關，確保團隊與使用者隨時具備無風險的驗證體驗。
+### Phase 5: Vector Print & PDF Export
+- **Objective**: Guarantee true WYSIWYG parity between on-screen editing and physical print / PDF output.
+- **Implementation**:
+  1. Configure `@media print` styles to automatically hide editing aids and floating HUDs, scaling cleanly to standard A4 paper.
+  2. High-resolution SVG / PDF export with embedded font subsets and standard footer pagination `— 1/1 —`.
 
 ---
 
-## 9. 總結與效益評估 (Conclusion & Expected Impact)
+## 8. Data Compatibility & Migration Strategy
 
-本提案將 Taigi Composer 從「功能齊全但認知負擔沉重」的半成品狀態，昇華為**市場上首個以真正實體簡譜為編輯本位（Real-Sheet First）的專業級民謠創作系統**：
-- **學習曲線歸零**：任何看過實體歌本的音樂人，一打開畫面就能直覺理解調號、拍號、音符位置，無需學習複雜的 DAW 音軌邏輯。
-- **編輯效率翻倍**：藉助樂譜原位游標與流暢的鍵盤打字輸入，原本需要點擊多次的小節編排可於數秒內透過數字鍵與減時線敲擊完成。
-- **視覺與出版價值**：所編寫出的樂譜無論在 iPad 螢幕、桌面瀏覽器或實體印表機列印，皆能重現如同《望春風》經典簡譜般典雅、尊貴且合乎出版規範的純粹之美。
+The refactoring is **100% backward-compatible** with existing `Song`, `Measure`, and `NumberedNotationNote` data models:
+1. **Zero Breaking Changes**: All existing preset songs (e.g., "Bang Chhun-Hong / 望春風", "Hō-Iā-Hoe / 雨夜花") and user-saved songs in local storage continue to render seamlessly.
+2. **Incremental Extensions**:
+   - `Measure.voltaEnding?: number[]` (identifies which repeat cycle the measure belongs to, e.g., `[1, 2]` or `[3]`).
+   - `NumberedNotationNote.lyricsByVerse?: { [verseIndex: number]: LyricSyllable }` (enables multi-verse rows while falling back cleanly to `note.lyric` if undefined).
+3. **UI Language Uniformity**: All controls, dialogs, buttons, tooltips, and status messages throughout the application are strictly presented in English, while song data preserves original Han-Lo, Taiwanese lyrics, and POJ romanization intact.
+
+---
+
+## 9. Conclusion & Expected Impact
+
+This proposal establishes a **Real-Sheet First** music authoring experience:
+- **Zero Learning Curve**: Anyone familiar with physical songbooks can immediately understand key signatures, time signatures, and note positions without learning complex DAW track paradigms.
+- **Doubled Authoring Speed**: With the direct score caret and keyboard typing engine, notation entry is fast and fluid.
+- **Publication Grade Presentation**: The resulting sheet music achieves publication-level elegance on desktop screens, iPad tablets, and physical printouts.
+- **Clear International UI with Preserved Cultural Repertoire**: A fully standardized English UI provides clean, intuitive accessibility, while song titles and lyrics remain authentically preserved in their native language.

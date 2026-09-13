@@ -657,14 +657,28 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
           transform: `scale(${zoomScale})`,
           transformOrigin: 'top center',
         }}
-        className="w-full max-w-5xl bg-white text-zinc-900 shadow-2xl rounded-xs border border-zinc-200/90 p-8 sm:p-14 md:p-20 transition-transform duration-150 print:shadow-none print:border-none print:p-0 print:max-w-none print:w-full print:rounded-none"
+        className="relative w-full max-w-5xl bg-[#FCFAF6] text-zinc-900 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.18),0_0_0_1px_rgba(0,0,0,0.06)] rounded-xs border border-[#E7E2D8] p-8 sm:p-14 md:p-20 transition-transform duration-150 print:shadow-none print:border-none print:p-0 print:max-w-none print:w-full print:rounded-none select-none"
       >
+        {/* Subtle physical paper watermark / registration corner marks */}
+        <div className="absolute top-3 left-3 text-zinc-300 font-mono text-[10px] select-none pointer-events-none print:hidden">
+          ┌
+        </div>
+        <div className="absolute top-3 right-3 text-zinc-300 font-mono text-[10px] select-none pointer-events-none print:hidden">
+          ┐
+        </div>
+        <div className="absolute bottom-3 left-3 text-zinc-300 font-mono text-[10px] select-none pointer-events-none print:hidden">
+          └
+        </div>
+        <div className="absolute bottom-3 right-3 text-zinc-300 font-mono text-[10px] select-none pointer-events-none print:hidden">
+          ┘
+        </div>
+
         {/* Paper Header: Catalog ID, Title, Credits, Key & Meter */}
         <header id="real-sheet-header" className="relative pb-6 mb-8 border-b border-zinc-200/80">
           {/* Top Row: Catalog ID (Left) & Controls (Right) */}
           <div className="flex items-center justify-between text-xs text-zinc-500 font-mono mb-3">
             <div
-              className="cursor-pointer hover:text-amber-700 transition-colors py-0.5 px-1 rounded hover:bg-amber-50"
+              className="cursor-pointer hover:text-amber-700 transition-colors py-0.5 px-1 rounded hover:bg-amber-50 font-serif italic"
               onClick={() => startHeaderEdit('catalogNumber', song.catalogNumber || 'LPDC—JCR1341')}
               title="Click to edit score catalog ID"
             >
@@ -892,7 +906,7 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
                       {engravedM.voltaEnding && engravedM.voltaEnding.length > 0 && (
                         <div className="absolute left-0 right-0 -top-3 flex items-center text-[11px] font-mono font-bold text-zinc-800">
                           <span className="text-zinc-600">┌</span>
-                          <span className="px-1 bg-white">{engravedM.voltaEnding.join('. ')}.</span>
+                          <span className="px-1 bg-[#FCFAF6] font-serif">{engravedM.voltaEnding.join('. ')}.</span>
                           <div className="flex-1 h-px bg-zinc-800" />
                           <span className="text-zinc-600">┐</span>
                         </div>
@@ -910,6 +924,38 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
                         </span>
                       )}
                     </div>
+
+                    {/* Upper Obbligato / Counterpoint Layer if present */}
+                    {engravedM.obbligatoNotes && engravedM.obbligatoNotes.length > 0 && (
+                      <div className="w-full flex flex-col items-center justify-center py-0.5 mb-1 border-b border-dashed border-zinc-300">
+                        <div className="flex items-center justify-between w-full text-[9px] font-mono text-zinc-500 font-bold px-1">
+                          <span>{engravedM.obbligatoText || 'Obbligato (和音)'}</span>
+                        </div>
+                        <div className="flex items-center justify-around w-full">
+                          {engravedM.obbligatoNotes.map((obNote, obIdx) => (
+                            <div key={`ob-${obIdx}`} className="flex flex-col items-center justify-center text-xs sm:text-sm font-mono font-bold text-zinc-700">
+                              {obNote.octaveDotsAbove > 0 && (
+                                <div className="flex gap-0.5 text-[8px] leading-none">
+                                  {Array.from({ length: obNote.octaveDotsAbove }).map((_, i) => (
+                                    <span key={`ob-dot-${i}`}>•</span>
+                                  ))}
+                                </div>
+                              )}
+                              <span>{obNote.pitchDisplay}</span>
+                              {obNote.beam1.hasBeam && <div className="h-[1.5px] w-full bg-zinc-700 mt-0.5" />}
+                              {obNote.beam2.hasBeam && <div className="h-[1.5px] w-full bg-zinc-700 mt-0.5" />}
+                              {obNote.octaveDotsBelow > 0 && (
+                                <div className="flex gap-0.5 text-[8px] leading-none">
+                                  {Array.from({ length: obNote.octaveDotsBelow }).map((_, i) => (
+                                    <span key={`ob-bdot-${i}`}>•</span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     {/* Notation Line & Continuous Beams */}
                     <div className="relative flex items-center justify-between w-full min-h-[56px] py-1">
@@ -1060,7 +1106,7 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
                       {/* Verse 1 Line */}
                       <div className="flex items-center justify-around w-full text-xs sm:text-sm font-sans font-medium text-zinc-900">
                         {isFirstInSystem && (
-                          <span className="text-[10px] font-mono text-zinc-400 -ml-1 mr-1 select-none">
+                          <span className="text-[10px] font-mono text-zinc-400 -ml-1 mr-1 select-none font-bold">
                             1.
                           </span>
                         )}
@@ -1116,7 +1162,7 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
                       {/* Verse 2 Line (if present or in multi-verse mode) */}
                       <div className="flex items-center justify-around w-full text-xs sm:text-sm font-sans font-medium text-zinc-700">
                         {isFirstInSystem && (
-                          <span className="text-[10px] font-mono text-zinc-400 -ml-1 mr-1 select-none">
+                          <span className="text-[10px] font-mono text-zinc-400 -ml-1 mr-1 select-none font-bold">
                             2.
                           </span>
                         )}
@@ -1171,14 +1217,32 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
                     {/* Barline at right edge */}
                     <div className="absolute right-0 top-0 bottom-0 flex items-center pointer-events-none">
                       {engravedM.barlineType === 'double' ? (
-                        <div className="flex gap-[3px] h-full py-2">
+                        <div className="flex gap-[3px] h-full py-2 pr-0.5">
                           <div className="w-[1.5px] bg-zinc-800 h-full" />
                           <div className="w-[1.5px] bg-zinc-800 h-full" />
                         </div>
                       ) : engravedM.barlineType === 'end' ? (
-                        <div className="flex gap-[3px] h-full py-2">
-                          <div className="w-[1px] bg-zinc-800 h-full" />
-                          <div className="w-[3px] bg-zinc-950 h-full" />
+                        <div className="flex gap-[3px] h-full py-2 pr-0.5">
+                          <div className="w-[1.5px] bg-zinc-800 h-full" />
+                          <div className="w-[3.5px] bg-zinc-950 h-full" />
+                        </div>
+                      ) : engravedM.barlineType === 'repeat_end' ? (
+                        <div className="flex items-center gap-[2px] h-full py-2 pr-0.5">
+                          <div className="flex flex-col justify-center gap-1.5 h-full text-[9px] font-black text-zinc-900 leading-none mr-0.5 select-none">
+                            <span>•</span>
+                            <span>•</span>
+                          </div>
+                          <div className="w-[1.5px] bg-zinc-800 h-full" />
+                          <div className="w-[3.5px] bg-zinc-950 h-full" />
+                        </div>
+                      ) : engravedM.barlineType === 'repeat_start' ? (
+                        <div className="flex items-center gap-[2px] h-full py-2 pr-0.5">
+                          <div className="w-[3.5px] bg-zinc-950 h-full" />
+                          <div className="w-[1.5px] bg-zinc-800 h-full" />
+                          <div className="flex flex-col justify-center gap-1.5 h-full text-[9px] font-black text-zinc-900 leading-none ml-0.5 select-none">
+                            <span>•</span>
+                            <span>•</span>
+                          </div>
                         </div>
                       ) : (
                         <div className="w-[1px] bg-zinc-800 h-full py-2" />
@@ -1191,10 +1255,17 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
           ))}
         </main>
 
+        {/* Paper Footnote / Attribution Notice (if available) */}
+        {song.footnote && (
+          <div id="sheet-footnote-block" className="mt-10 pt-4 border-t border-zinc-200 text-[11px] font-serif text-zinc-500 leading-relaxed space-y-1">
+            <p>{song.footnote}</p>
+          </div>
+        )}
+
         {/* Paper Footer with page numbers and standard sheet music footer */}
-        <footer className="mt-14 pt-6 border-t border-zinc-200/80 flex items-center justify-between text-xs text-zinc-400 font-serif">
+        <footer className="mt-8 pt-4 border-t border-zinc-200/80 flex items-center justify-between text-xs text-zinc-400 font-serif">
           <span>{song.title}</span>
-          <span className="font-mono">— 1 / 1 —</span>
+          <span className="font-mono text-zinc-600 font-bold">— 1 / 1 —</span>
           <span>Numbered Musical Notation</span>
         </footer>
       </div>

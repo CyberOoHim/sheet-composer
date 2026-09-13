@@ -57,6 +57,8 @@ export interface Measure {
   timeSignature?: TimeSignature; // If measure changes time signature
   section?: string;         // e.g. "Intro", "Verse 1", "Chorus", "Bridge"
   notes: NumberedNotationNote[];
+  obbligato?: NumberedNotationNote[]; // Upper secondary voice / counter-melody layer above sustain notes
+  obbligatoText?: string;   // Quick text representation of counterpoint layer e.g. "0 56 53 21 6 5"
   barlineType?: BarlineType; // Custom barline style at end of measure ('single' | 'double' | 'end' | 'repeat_start' | 'repeat_end')
   isLineBreak?: boolean;    // True if this measure marks the end of a line / forces a system break
   voltaEnding?: number[];   // Volta repeat bracket numbers e.g. [1, 2] for 1st/2nd ending, [3] for 3rd ending
@@ -77,6 +79,7 @@ export interface Song {
   measures: Measure[];
   notesPerLine?: number;    // Measures per line display (default 4)
   description?: string;
+  footnote?: string;        // Publication footnote / copyright / community attribution text
   updatedAt?: number;       // Last modified timestamp
   isPresetModified?: boolean; // True if this song is an edited version of a built-in preset
   originalPresetId?: string;  // ID of the original preset if modified
