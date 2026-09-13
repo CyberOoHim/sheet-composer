@@ -1,0 +1,648 @@
+'use client';
+
+import React, { useState, useMemo, useCallback } from 'react';
+import { NumberedNotationNote, KeySignature, PitchNumber, InstrumentType } from '@/types/song';
+import { AudioEngine } from '@/lib/audioEngine';
+import { KEY_SEMITONES, SCALE_DEGREE_SEMITONES, INSTRUMENT_OPTIONS } from '@/lib/taigiUtils';
+import { getStoredInstrument, setStoredInstrument } from '@/lib/storage';
+import { Music, Sparkles, Keyboard } from 'lucide-react';
+
+interface PianoKeyboardProps {
+  keySignature: KeySignature;
+  currentNote: NumberedNotationNote | null;
+  onSelectPitch: (pitch: PitchNumber, octave: number, accidental: '' | '#' | 'b') => void;
+  audioEngine: AudioEngine;
+  className?: string;
+  onOpenKeyboardToScore?: () => void;
+  instrument?: InstrumentType;
+  onSetInstrument?: (inst: InstrumentType) => void;
+}
+
+// 12 chromatic note names
+const CHROMATIC_NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+interface KeyDefinition {
+  isBlack: boolean;
+  pitch: PitchNumber;
+  accidental: '' | '#' | 'b';
+  octave: number;
+  numberedNotationLabel: string;
+  accidentalLabel?: string;
+  solfege: string;
+  noteName: string;
+  leftPercent?: number; // for black keys positioning
+}
+
+export const PianoKeyboard: React.FC<PianoKeyboardProps> = React.memo(({
+  keySignature,
+  currentNote,
+  onSelectPitch,
+  audioEngine,
+  className = '',
+  onOpenKeyboardToScore,
+  instrument: propInstrument,
+  onSetInstrument,
+}) => {
+  // Octave display range view: 'low_mid' (-1, 0), 'mid_high' (0, 1), 'all' (-1, 0, 1), 'mid' (0)
+  const [octaveView, setOctaveView] = useState<'low_mid' | 'mid_high' | 'all' | 'mid'>('low_mid');
+  // Label mode: 'both' | 'numberedNotations' | 'note'
+  const [labelMode, setLabelMode] = useState<'both' | 'numberedNotations' | 'note'>('both');
+
+  // Active instrument
+  const [localInstrument, setLocalInstrument] = useState<InstrumentType>(() => {
+    if (propInstrument) return propInstrument;
+    if (typeof window !== 'undefined') return getStoredInstrument();
+    return 'piano';
+  });
+
+  const activeInstrument = propInstrument || localInstrument;
+
+  const handleInstrumentChange = useCallback((newInst: InstrumentType) => {
+    setLocalInstrument(newInst);
+    setStoredInstrument(newInst);
+    audioEngine.setOptions({ instrument: newInst });
+    audioEngine.previewInstrumentTone(keySignature, newInst);
+    if (onSetInstrument) {
+      onSetInstrument(newInst);
+    }
+  }, [audioEngine, keySignature, onSetInstrument]);
+
+  // Base key semitone relative to C4 (0 = C)
+  const baseKeySemitone = KEY_SEMITONES[keySignature] ?? 0;
+
+  // Helper to compute absolute note name and octave from Numbered Notation scale degree + key
+  const getNoteDetails = useMemo(() => {
+    return (pitch: PitchNumber, octave: number, accidental: '' | '#' | 'b') => {
+      if (pitch === 'empty' || pitch === 0) {
+        return { noteName: '', solfege: '', midiNote: 0 };
+      }
+
+      const degreeOffset = SCALE_DEGREE_SEMITONES[pitch] || 0;
+      let accOffset = 0;
+      if (accidental === '#') accOffset = 1;
+      if (accidental === 'b') accOffset = -1;
+
+      const totalSemitones = baseKeySemitone + degreeOffset + octave * 12 + accOffset;
+      const midiNote = 60 + totalSemitones; // 60 = C4
+
+      const noteIndex = ((midiNote % 12) + 12) % 12;
+      const calcOctave = Math.floor(midiNote / 12) - 1;
+      const rawName = CHROMATIC_NOTE_NAMES[noteIndex];
+
+      const solfegeMap: Record<string, string> = {
+        '1': 'Do',
+        '1#': 'Di',
+        '2b': 'Ra',
+        '2': 'Re',
+        '2#': 'Ri',
+        '3b': 'Me',
+        '3': 'Mi',
+        '4': 'Fa',
+        '4#': 'Fi',
+        '5b': 'Se',
+        '5': 'Sol',
+        '5#': 'Si',
+        '6b': 'Le',
+        '6': 'La',
+        '6#': 'Li',
+        '7b': 'Te',
+        '7': 'Ti',
+      };
+
+      const keyTag = `${pitch}${accidental || ''}`;
+      const solfege = solfegeMap[keyTag] || `${pitch}`;
+
+      return {
+        noteName: `${rawName}${calcOctave}`,
+        solfege,
+        midiNote,
+      };
+    };
+  }, [baseKeySemitone]);
+
+  // Generate keys for a single octave
+  const generateOctaveKeys = useCallback((octaveNum: number) => {
+    // 7 White keys (1, 2, 3, 4, 5, 6, 7)
+    const whiteKeys: KeyDefinition[] = [1, 2, 3, 4, 5, 6, 7].map(p => {
+      const pitch = p as PitchNumber;
+      const { noteName, solfege } = getNoteDetails(pitch, octaveNum, '');
+      return {
+        isBlack: false,
+        pitch,
+        accidental: '',
+        octave: octaveNum,
+        numberedNotationLabel: `${pitch}`,
+        solfege,
+        noteName,
+      };
+    });
+
+    const blackKeys: KeyDefinition[] = [
+      {
+        pitch: 1 as PitchNumber,
+        accidental: '#' as const,
+        leftPercent: 9.7,
+        numberedNotationLabel: '♯1',
+        accidentalLabel: '♭2',
+      },
+      {
+        pitch: 2 as PitchNumber,
+        accidental: '#' as const,
+        leftPercent: 24.0,
+        numberedNotationLabel: '♯2',
+        accidentalLabel: '♭3',
+      },
+      {
+        pitch: 4 as PitchNumber,
+        accidental: '#' as const,
+        leftPercent: 52.5,
+        numberedNotationLabel: '♯4',
+        accidentalLabel: '♭5',
+      },
+      {
+        pitch: 5 as PitchNumber,
+        accidental: '#' as const,
+        leftPercent: 66.8,
+        numberedNotationLabel: '♯5',
+        accidentalLabel: '♭6',
+      },
+      {
+        pitch: 6 as PitchNumber,
+        accidental: '#' as const,
+        leftPercent: 81.1,
+        numberedNotationLabel: '♯6',
+        accidentalLabel: '♭7',
+      },
+    ].map(bk => {
+      const { noteName, solfege } = getNoteDetails(bk.pitch, octaveNum, bk.accidental);
+      return {
+        isBlack: true,
+        pitch: bk.pitch,
+        accidental: bk.accidental,
+        octave: octaveNum,
+        numberedNotationLabel: bk.numberedNotationLabel,
+        accidentalLabel: bk.accidentalLabel,
+        solfege,
+        noteName,
+        leftPercent: bk.leftPercent,
+      };
+    });
+
+    return { whiteKeys, blackKeys, octaveNum };
+  }, [getNoteDetails]);
+
+  // Determine active octaves to show
+  const activeOctaves = useMemo(() => {
+    switch (octaveView) {
+      case 'mid':
+        return [0];
+      case 'low_mid':
+        return [-1, 0];
+      case 'mid_high':
+        return [0, 1];
+      case 'all':
+      default:
+        return [-1, 0, 1];
+    }
+  }, [octaveView]);
+
+  const octavesData = useMemo(() => {
+    return activeOctaves.map(oct => generateOctaveKeys(oct));
+  }, [activeOctaves, generateOctaveKeys]);
+
+  // Check if a key is currently selected
+  const isKeyActive = (keyDef: KeyDefinition) => {
+    if (!currentNote) return false;
+    if (currentNote.pitch === 'empty' || currentNote.pitch === 0) return false;
+
+    const curPitch = currentNote.pitch;
+    const curOct = currentNote.octave ?? 0;
+    const curAcc = currentNote.accidental || '';
+
+    // Direct match
+    if (curPitch === keyDef.pitch && curOct === keyDef.octave && curAcc === keyDef.accidental) {
+      return true;
+    }
+
+    // Enharmonic equivalent check
+    if (keyDef.isBlack && curOct === keyDef.octave) {
+      if (keyDef.pitch === 1 && keyDef.accidental === '#' && curPitch === 2 && curAcc === 'b') return true;
+      if (keyDef.pitch === 2 && keyDef.accidental === '#' && curPitch === 3 && curAcc === 'b') return true;
+      if (keyDef.pitch === 4 && keyDef.accidental === '#' && curPitch === 5 && curAcc === 'b') return true;
+      if (keyDef.pitch === 5 && keyDef.accidental === '#' && curPitch === 6 && curAcc === 'b') return true;
+      if (keyDef.pitch === 6 && keyDef.accidental === '#' && curPitch === 7 && curAcc === 'b') return true;
+    }
+
+    return false;
+  };
+
+  // Handle key press
+  const handleKeyClick = (keyDef: KeyDefinition) => {
+    onSelectPitch(keyDef.pitch, keyDef.octave, keyDef.accidental);
+
+    // Audio preview with chosen instrument
+    const tempNote: NumberedNotationNote = {
+      id: 'preview',
+      pitch: keyDef.pitch,
+      octave: keyDef.octave,
+      accidental: keyDef.accidental,
+      duration: currentNote?.duration || 1,
+      lyric: {},
+      instrument: currentNote?.instrument || activeInstrument,
+    };
+    audioEngine.previewNote(keySignature, tempNote);
+  };
+
+  return (
+    <div
+      id="piano-keyboard-container"
+      className={`flex flex-col gap-2 p-3 bg-[#10121a]/95 text-zinc-100 rounded-2xl border border-zinc-800 shadow-xl select-none ${className}`}
+      style={{ touchAction: 'manipulation' }}
+    >
+      {/* Top Controls Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs border-b border-zinc-800/80 pb-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5 font-bold text-amber-400">
+            <Music className="w-4 h-4" />
+            <span>Piano Roll</span>
+          </div>
+
+          <span className="daw-lcd px-2.5 py-1 rounded-lg text-xs font-mono font-bold shadow-xs">
+            Key: <strong className="text-amber-400 font-black">1 = {keySignature}</strong>
+          </span>
+
+          {/* Instrument Selector Pill */}
+          <div className="flex items-center gap-1.5 bg-[#0a0c10] px-2 py-1 rounded-xl border border-zinc-800 text-xs shadow-xs">
+            <span className="text-zinc-400 font-semibold text-[11px]">音色:</span>
+            <select
+              id="piano-instrument-select"
+              value={activeInstrument}
+              onChange={e => handleInstrumentChange(e.target.value as InstrumentType)}
+              className="bg-transparent text-amber-400 font-bold focus:outline-none cursor-pointer text-xs"
+              title="切換音色 (鋼琴、竹笛、口笛、吉他、合成器、鐘琴、大提琴)"
+            >
+              {INSTRUMENT_OPTIONS.map(opt => (
+                <option key={opt.value} value={opt.value} className="bg-zinc-900 text-zinc-100">
+                  {opt.labelZh} ({opt.labelEn})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {onOpenKeyboardToScore && (
+            <button
+              id="piano-open-keyboard-to-score-btn"
+              type="button"
+              onClick={onOpenKeyboardToScore}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-zinc-950 font-black rounded-xl text-xs shadow-xs transition-all active:scale-95 cursor-pointer touch-manipulation min-h-[34px]"
+              title="開啟鍵盤彈奏即時轉譜 (Keyboard-to-Score)"
+            >
+              <Keyboard className="w-3.5 h-3.5" />
+              <span>彈奏入譜</span>
+            </button>
+          )}
+        </div>
+
+        {/* View Mode & Octave Selectors */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Label mode toggle */}
+          <div className="flex items-center bg-[#0a0c10] p-0.5 rounded-xl border border-zinc-800 text-[11px]">
+            <button
+              type="button"
+              onClick={() => setLabelMode('both')}
+              className={`px-3 py-1.5 rounded-lg font-medium transition-all min-h-[36px] cursor-pointer touch-manipulation ${
+                labelMode === 'both'
+                  ? 'bg-amber-500 text-zinc-950 font-bold shadow-xs'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              Numbered Notations + Pitch
+            </button>
+            <button
+              type="button"
+              onClick={() => setLabelMode('numberedNotations')}
+              className={`px-3 py-1.5 rounded-lg font-medium transition-all min-h-[36px] cursor-pointer touch-manipulation ${
+                labelMode === 'numberedNotations' || (labelMode as string) === 'numberedNotation'
+                  ? 'bg-amber-500 text-zinc-950 font-bold shadow-xs'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              Numbered Notations 1-7
+            </button>
+            <button
+              type="button"
+              onClick={() => setLabelMode('note')}
+              className={`px-3 py-1.5 rounded-lg font-medium transition-all min-h-[36px] cursor-pointer touch-manipulation ${
+                labelMode === 'note'
+                  ? 'bg-amber-500 text-zinc-950 font-bold shadow-xs'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              Pitch Name (C D E)
+            </button>
+          </div>
+
+          {/* Octave Range Tabs */}
+          <div className="flex items-center bg-[#0a0c10] p-0.5 rounded-xl border border-zinc-800 text-[11px]">
+            <button
+              type="button"
+              onClick={() => setOctaveView('low_mid')}
+              className={`px-3 py-1.5 rounded-lg font-medium transition-all min-h-[36px] cursor-pointer touch-manipulation ${
+                octaveView === 'low_mid'
+                  ? 'bg-amber-500 text-zinc-950 font-bold shadow-xs'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              Low + Mid
+            </button>
+            <button
+              type="button"
+              onClick={() => setOctaveView('mid_high')}
+              className={`px-3 py-1.5 rounded-lg font-medium transition-all min-h-[36px] cursor-pointer touch-manipulation ${
+                octaveView === 'mid_high'
+                  ? 'bg-amber-500 text-zinc-950 font-bold shadow-xs'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              Mid + High
+            </button>
+            <button
+              type="button"
+              onClick={() => setOctaveView('all')}
+              className={`px-3 py-1.5 rounded-lg font-medium transition-all min-h-[36px] cursor-pointer touch-manipulation ${
+                octaveView === 'all'
+                  ? 'bg-amber-500 text-zinc-950 font-bold shadow-xs'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              All 3 Octaves
+            </button>
+            <button
+              type="button"
+              onClick={() => setOctaveView('mid')}
+              className={`px-3 py-1.5 rounded-lg font-medium transition-all min-h-[36px] cursor-pointer touch-manipulation ${
+                octaveView === 'mid'
+                  ? 'bg-amber-500 text-zinc-950 font-bold shadow-xs'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              Mid Only
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Piano Bed Area */}
+      <div className="flex items-stretch gap-2 w-full overflow-x-auto pb-1 pt-1 select-none">
+        {/* Special Auxiliary Keys: Rest 0 & Blank ␣ */}
+        <div className="flex flex-col gap-2 shrink-0 justify-between w-14 sm:w-16">
+          <button
+            id="piano-key-rest"
+            type="button"
+            onClick={() => {
+              onSelectPitch(0, 0, '');
+            }}
+            className={`flex-1 flex flex-col items-center justify-center p-2 rounded-xl border transition-all active:scale-95 cursor-pointer touch-manipulation min-h-[48px] ${
+              currentNote?.pitch === 0
+                ? 'bg-amber-500 text-zinc-950 border-amber-400 font-black shadow-md ring-2 ring-amber-400'
+                : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border-zinc-700 shadow-xs'
+            }`}
+            title="Rest (0)"
+          >
+            <span className="font-mono text-lg font-black">0</span>
+            <span className="text-[10px] font-sans font-semibold">Rest</span>
+          </button>
+
+          <button
+            id="piano-key-empty"
+            type="button"
+            onClick={() => {
+              onSelectPitch('empty', 0, '');
+            }}
+            className={`flex-1 flex flex-col items-center justify-center p-2 rounded-xl border border-dashed transition-all active:scale-95 cursor-pointer touch-manipulation min-h-[48px] ${
+              currentNote?.pitch === 'empty'
+                ? 'bg-amber-500 text-zinc-950 border-amber-400 font-black shadow-md ring-2 ring-amber-400'
+                : 'bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 border-zinc-600 shadow-xs'
+            }`}
+            title="Empty spacer / punctuation (Empty)"
+          >
+            <span className="font-mono text-sm font-bold">␣ Empty</span>
+            <span className="text-[10px] font-sans">Spacer</span>
+          </button>
+        </div>
+
+        {/* Realistic Piano Keyboard Bed */}
+        <div
+          id="piano-keys-bed"
+          className="flex-1 flex items-stretch bg-zinc-950 p-1.5 rounded-xl border border-zinc-800 shadow-inner relative min-w-[340px]"
+        >
+          {octavesData.map((octData, octIdx) => {
+            const octLabel =
+              octData.octaveNum === -1
+                ? 'Low Octave (-1)'
+                : octData.octaveNum === 1
+                ? 'High Octave (+1)'
+                : 'Mid Octave (0)';
+
+            return (
+              <div
+                key={`piano-oct-${octData.octaveNum}`}
+                className="flex-1 relative flex flex-col min-w-[170px]"
+              >
+                {/* Octave Badge */}
+                <div className="absolute top-1 left-2 z-20 pointer-events-none">
+                  <span className="text-[9px] font-bold font-mono tracking-tight px-1.5 py-0.2 rounded bg-zinc-900/90 text-zinc-400 border border-zinc-700/60 backdrop-blur-xs">
+                    {octLabel}
+                  </span>
+                </div>
+
+                {/* Octave Container: White Keys Row + Overlayed Black Keys */}
+                <div className="relative flex w-full h-24 sm:h-28">
+                  {/* WHITE KEYS */}
+                  {octData.whiteKeys.map((wKey, wIdx) => {
+                    const active = isKeyActive(wKey);
+                    const isFirstInOctave = wIdx === 0;
+                    const isLastInOctave = wIdx === octData.whiteKeys.length - 1;
+
+                    return (
+                      <button
+                        key={`w-${octData.octaveNum}-${wKey.pitch}`}
+                        id={`piano-white-key-${octData.octaveNum}-${wKey.pitch}`}
+                        type="button"
+                        onClick={() => handleKeyClick(wKey)}
+                        className={`group relative flex-1 flex flex-col items-center justify-end pb-2 pt-6 transition-all border-r last:border-r-0 cursor-pointer active:translate-y-0.5 active:shadow-none touch-manipulation ${
+                          active
+                            ? '!bg-amber-400 !border-amber-500 !text-zinc-950 ring-2 ring-amber-500 z-10 shadow-lg font-black'
+                            : 'bg-linear-to-b from-zinc-100 via-white to-zinc-200 hover:from-amber-50 hover:to-amber-100 text-zinc-900 border-zinc-300 dark:border-zinc-400 shadow-[0_4px_3px_rgba(0,0,0,0.12)]'
+                        } ${isFirstInOctave && octIdx === 0 ? 'rounded-bl-lg' : ''} ${
+                          isLastInOctave && octIdx === octavesData.length - 1 ? 'rounded-br-lg' : ''
+                        } rounded-b-md border-b-4 ${
+                          active ? 'border-b-amber-600' : 'border-b-zinc-400'
+                        }`}
+                        title={`Pitch: ${wKey.numberedNotationLabel} (${wKey.noteName} - ${wKey.solfege})`}
+                      >
+                        {/* Active Dot Indicator */}
+                        {active && (
+                          <div className="absolute top-2 w-2 h-2 rounded-full bg-amber-600 animate-ping" />
+                        )}
+
+                        {/* Top Numbered Notation Octave Dot */}
+                        {wKey.octave > 0 && (
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full mb-0.5 ${
+                              active ? 'bg-zinc-950' : 'bg-zinc-900'
+                            }`}
+                          />
+                        )}
+
+                        {/* Numbered Notation Pitch Number */}
+                        {(labelMode === 'both' || labelMode === 'numberedNotations' || (labelMode as string) === 'numberedNotation') && (
+                          <span
+                            className={`font-mono text-base sm:text-lg font-black leading-none ${
+                              active ? 'text-zinc-950 scale-110' : 'text-zinc-900'
+                            }`}
+                          >
+                            {wKey.numberedNotationLabel}
+                          </span>
+                        )}
+
+                        {/* Bottom Numbered Notation Octave Dot */}
+                        {wKey.octave < 0 && (
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full mt-0.5 ${
+                              active ? 'bg-zinc-950' : 'bg-zinc-900'
+                            }`}
+                          />
+                        )}
+
+                        {/* Note Name & Solfege Subtitle */}
+                        {(labelMode === 'both' || labelMode === 'note') && (
+                          <span
+                            className={`text-[9px] sm:text-[10px] font-semibold mt-0.5 leading-tight ${
+                              active ? 'text-zinc-900 font-bold' : 'text-zinc-600'
+                            }`}
+                          >
+                            {wKey.noteName}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+
+                  {/* BLACK KEYS (OVERLAYED WITH EXACT PIANO SPACING) */}
+                  {octData.blackKeys.map((bKey) => {
+                    const active = isKeyActive(bKey);
+
+                    return (
+                      <button
+                        key={`b-${octData.octaveNum}-${bKey.pitch}-${bKey.accidental}`}
+                        id={`piano-black-key-${octData.octaveNum}-${bKey.pitch}`}
+                        type="button"
+                        onClick={() => handleKeyClick(bKey)}
+                        style={{
+                          left: `${bKey.leftPercent}%`,
+                          width: '9.2%',
+                        }}
+                        className={`absolute top-0 h-14 sm:h-16 z-20 flex flex-col items-center justify-end pb-1.5 rounded-b-sm border transition-all cursor-pointer shadow-md active:translate-y-0.5 touch-manipulation ${
+                          active
+                            ? '!bg-amber-400 !border-amber-500 !text-zinc-950 ring-2 ring-amber-400 font-black shadow-lg border-b-4 border-b-amber-600'
+                            : 'bg-linear-to-b from-zinc-800 via-zinc-900 to-black hover:from-zinc-700 hover:to-zinc-900 text-zinc-100 border-zinc-950 border-b-4 border-b-black shadow-[0_4px_6px_rgba(0,0,0,0.6)]'
+                        }`}
+                        title={`Black Key: ${bKey.numberedNotationLabel} / ${bKey.accidentalLabel} (${bKey.noteName} - ${bKey.solfege})`}
+                      >
+                        {/* Top Active Indicator */}
+                        {active && (
+                          <div className="absolute top-1.5 w-1.5 h-1.5 rounded-full bg-zinc-950 animate-pulse" />
+                        )}
+
+                        {/* Octave Top Dot */}
+                        {bKey.octave > 0 && (
+                          <span
+                            className={`w-1 h-1 rounded-full mb-0.5 ${
+                              active ? 'bg-zinc-950' : 'bg-amber-400'
+                            }`}
+                          />
+                        )}
+
+                        {/* Numbered Notation Accidental Pitch */}
+                        {(labelMode === 'both' || labelMode === 'numberedNotations' || (labelMode as string) === 'numberedNotation') && (
+                          <span
+                            className={`font-mono text-[10px] sm:text-xs font-black tracking-tighter leading-none ${
+                              active ? 'text-zinc-950' : 'text-amber-300'
+                            }`}
+                          >
+                            {bKey.numberedNotationLabel}
+                          </span>
+                        )}
+
+                        {/* Octave Bottom Dot */}
+                        {bKey.octave < 0 && (
+                          <span
+                            className={`w-1 h-1 rounded-full mt-0.5 ${
+                              active ? 'bg-zinc-950' : 'bg-amber-400'
+                            }`}
+                          />
+                        )}
+
+                        {/* Note Name */}
+                        {(labelMode === 'both' || labelMode === 'note') && (
+                          <span
+                            className={`text-[8px] font-mono leading-none mt-0.5 ${
+                              active ? 'text-zinc-900 font-bold' : 'text-zinc-400'
+                            }`}
+                          >
+                            {bKey.noteName.replace(/([0-9])/, '')}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Bottom helper tip */}
+      <div className="flex items-center justify-between text-[11px] text-zinc-400 pt-1 px-1 border-t border-zinc-800/80">
+        <div className="flex items-center gap-1.5">
+          <Sparkles className="w-3 h-3 text-amber-400" />
+          <span>
+            Selected Note:{' '}
+            {currentNote ? (
+              <span className="text-amber-300 font-bold font-mono">
+                {currentNote.pitch === 0
+                  ? '0 (Rest)'
+                  : currentNote.pitch === 'empty'
+                  ? '␣ (Empty / Punctuation)'
+                  : `${currentNote.accidental || ''}${currentNote.pitch}${
+                      currentNote.octave > 0
+                        ? ` (High ${currentNote.octave} dot)`
+                        : currentNote.octave < 0
+                        ? ` (Low ${Math.abs(currentNote.octave)} dot)`
+                        : ' (Mid)'
+                    }`}
+              </span>
+            ) : (
+              'No note selected'
+            )}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2 text-[10px] text-zinc-400 hidden sm:flex">
+          <span className="flex items-center gap-1">
+            <span className="inline-block w-2.5 h-2.5 rounded-sm bg-white border border-zinc-400" />
+            <span>White Keys (Diatonic 1-7)</span>
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="inline-block w-2.5 h-2.5 rounded-sm bg-black border border-zinc-600" />
+            <span>Black Keys (Accidentals ♯/♭)</span>
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+PianoKeyboard.displayName = 'PianoKeyboard';

@@ -1,0 +1,1299 @@
+'use client';
+
+import React, { useMemo, useRef, useState, useEffect } from 'react';
+import { LyricDisplayMode, NumberedNotationNote, VerseItem, VerseNoteRef } from '@/types/song';
+import { PlaybackState } from '@/lib/audioEngine';
+import { VerseTiming, KaraokeLeadInState } from '@/lib/karaokeSequencer';
+import { KaraokeSection } from './SectionJumpBar';
+import { KaraokeStageTheme, KaraokeLayoutMode, KaraokeLyricAlign } from '@/lib/storage';
+import { isNonNotationItem, isPunctuationOrSpacer } from '@/lib/taigiUtils';
+import { segmentDisplayNotesIntoLines, type DisplayNote, type VerseLineItem } from '@/lib/karaokeLineBreaker';
+import { CheckCircle2, Wind, Pencil, AlignCenter, AlignLeft, Rows } from 'lucide-react';
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
+
+export interface KaraokeStageProps {
+  currentVerse: VerseItem | null;
+  nextVerse: VerseItem | null;
+  activeVerseTiming?: VerseTiming | null;
+  nextVerseTiming?: VerseTiming | null;
+  activeVerseIndex?: number;
+  allVerses?: VerseItem[];
+  allVerseTimings?: VerseTiming[];
+  isAwaitingVocal?: boolean;
+  leadIn?: KaraokeLeadInState | null;
+  isVerseCompleted?: boolean;
+  activeSection: KaraokeSection | null;
+  playbackState: PlaybackState;
+  displayMode: LyricDisplayMode;
+  onJumpToSection?: (section: KaraokeSection) => void;
+  isEcoMode?: boolean;
+  zoomScale?: number;
+  stageTheme?: KaraokeStageTheme;
+  onToggleStageTheme?: () => void;
+  showNotation?: boolean;
+  onToggleShowNotation?: () => void;
+  layoutMode?: KaraokeLayoutMode;
+  onToggleLayoutMode?: () => void;
+  lyricAlign?: KaraokeLyricAlign;
+  onToggleLyricAlign?: () => void;
+  onEditCurrentLyric?: (measureIndex: number) => void;
+}
+
+// Helper to identify CJK characters for natural Chinese text spacing
+const isCJKChar = (char: string): boolean => {
+  if (!char) return false;
+  const code = char.charCodeAt(0);
+  return (
+    (code >= 0x4e00 && code <= 0x9fff) ||
+    (code >= 0x3400 && code <= 0x4dbf) ||
+    (code >= 0x20000 && code <= 0x2a6df)
+  );
+};
+
+/**
+ * Shared responsive font sizing for active lyric line syllables and upcoming cue
+ */
+export const getMainFontSizeClass = (zoomScale: number, showNotation: boolean): string => {
+  return !showNotation
+    ? zoomScale >= 1.75
+      ? 'text-4xl sm:text-6xl md:text-7xl lg:text-8xl min-h-[4.5rem] sm:min-h-[6.5rem]'
+      : zoomScale >= 1.5
+      ? 'text-3xl sm:text-5xl md:text-6xl lg:text-7xl min-h-[3.75rem] sm:min-h-[5.5rem]'
+      : zoomScale >= 1.25
+      ? 'text-2xl sm:text-4xl md:text-5xl lg:text-6xl min-h-[3.25rem] sm:min-h-[4.5rem]'
+      : 'text-2xl sm:text-4xl md:text-5xl lg:text-6xl min-h-[3rem] sm:min-h-[4rem]'
+    : zoomScale >= 1.75
+    ? 'text-3xl sm:text-5xl md:text-6xl lg:text-7xl min-h-[3.5rem] sm:min-h-[5rem]'
+    : zoomScale >= 1.5
+    ? 'text-2xl sm:text-4xl md:text-5xl lg:text-6xl min-h-[3rem] sm:min-h-[4.25rem]'
+    : zoomScale >= 1.25
+    ? 'text-xl sm:text-3xl md:text-4xl lg:text-5xl min-h-[2.5rem] sm:min-h-[3.75rem]'
+    : 'text-xl sm:text-3xl md:text-4xl lg:text-5xl min-h-[2.5rem] sm:min-h-[3.25rem]';
+};
+
+/**
+ * Individual Syllable Cell with continuous gradient wipe & 3-tier vertical grid
+ */
+interface SyllableCellProps {
+  item: VerseNoteRef;
+  noteIndex: number;
+  isActiveLine: boolean;
+  currentTime: number;
+  verseTiming?: VerseTiming | null;
+  effectiveMode: 'roman' | 'hanlo' | 'roman_major_hanlo' | 'hanlo_major_roman';
+  isFirstVocalNote: boolean;
+  showNotation: boolean;
+  stageTheme: KaraokeStageTheme;
+  zoomScale: number;
+  isEcoMode: boolean;
+  isComingLineAwaiting: boolean;
+  leadIn?: KaraokeLeadInState | null;
+  secPerBeat?: number;
+  effectiveTiming?: {
+    startTimeSec: number;
+    durationSec: number;
+    endTimeSec: number;
+  };
+  subNotes?: Array<{
+    item: VerseNoteRef;
+    globalIdx: number;
+    effectiveTiming: {
+      startTimeSec: number;
+      durationSec: number;
+      endTimeSec: number;
+    };
+  }>;
+}
+
+const SyllableCell: React.FC<SyllableCellProps> = React.memo(({
+  item,
+  noteIndex,
+  isActiveLine,
+  currentTime,
+  verseTiming,
+  effectiveMode,
+  isFirstVocalNote,
+  showNotation,
+  stageTheme,
+  zoomScale,
+  isEcoMode,
+  isComingLineAwaiting,
+  leadIn,
+  secPerBeat = 0.75,
+  effectiveTiming,
+  subNotes,
+}) => {
+  const reduceMotion = useReducedMotion();
+  const skipMotionFx = isEcoMode || Boolean(reduceMotion);
+  const note = item.note;
+  const displayNote = note;
+  const isNonNotation = isNonNotationItem(note);
+  const rawHanlo = note.lyric.hanlo ?? note.lyric.hanji ?? note.lyric.custom ?? '';
+  const rawRoman = note.lyric.poj ?? note.lyric.tl ?? '';
+
+  const hasHanlo = Boolean(rawHanlo && rawHanlo.trim());
+  const hasRoman = Boolean(rawRoman && rawRoman.trim());
+  const hasExplicitText = hasHanlo || hasRoman;
+  const isAnnotationOnly = !hasExplicitText && Boolean(note.annotation);
+
+  // Font sizing: Strictly invariant across all verses and line duration
+  const mainFontSizeClass = getMainFontSizeClass(zoomScale, showNotation);
+
+  const rubyFontSizeClass = !showNotation
+    ? zoomScale >= 1.5
+      ? 'text-xl sm:text-2xl md:text-3xl min-h-[2rem] sm:min-h-[2.5rem]'
+      : 'text-base sm:text-lg md:text-xl min-h-[1.5rem] sm:min-h-[2rem]'
+    : zoomScale >= 1.5
+    ? 'text-lg sm:text-xl md:text-2xl min-h-[1.75rem] sm:min-h-[2.25rem]'
+    : 'text-sm sm:text-base md:text-lg min-h-[1.25rem] sm:min-h-[1.75rem]';
+
+  // Render line breaks (omitted in single-line view so trailing breaks consume 0 width)
+  if (rawHanlo === '\n' || rawHanlo === '↵') {
+    return null;
+  }
+
+  // Render punctuation spacers
+  if (isPunctuationOrSpacer(rawHanlo)) {
+    return (
+      <div className="flex flex-col items-center justify-start px-0.5 sm:px-1 font-sans select-none opacity-60">
+        {!isAnnotationOnly && (effectiveMode === 'roman_major_hanlo' || effectiveMode === 'hanlo_major_roman') && (
+          <div className={`w-full ${rubyFontSizeClass} pt-1 pb-0.5 flex items-center justify-center`}>
+            <span>&nbsp;</span>
+          </div>
+        )}
+        <div className="w-full relative flex items-center justify-center">
+          <span
+            className={`${mainFontSizeClass} font-black tracking-wider flex items-center justify-center leading-none px-0.5`}
+          >
+            {rawHanlo}
+          </span>
+        </div>
+        {showNotation && (
+          <div className="mt-1.5 sm:mt-2 flex items-start justify-center min-h-[32px] w-full">
+            &nbsp;
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if ((note.pitch === 0 || note.pitch === 'empty') && !hasExplicitText && !note.annotation) {
+    return null;
+  }
+
+  // Calculate high-precision syllable wipe progress (with continuation note absorption support)
+  const noteTiming = verseTiming?.notesTimeline?.find(
+    t => t.measureIndex === item.measureIndex && t.noteIndex === item.noteIndex
+  );
+
+  const startSec = effectiveTiming?.startTimeSec ?? (noteTiming?.startTimeSec ?? 0);
+  const durationSec = effectiveTiming?.durationSec ?? (noteTiming?.durationSec ?? 0);
+  const endSec = effectiveTiming?.endTimeSec ?? (noteTiming?.endTimeSec ?? (startSec + durationSec));
+
+  const isNoteActive = currentTime >= startSec && currentTime < endSec;
+  const isPassed = currentTime >= endSec && endSec > 0;
+
+  // Dynamic progressive wipe percentage [0..100]
+  let wipePercent = 0;
+  if (isPassed) {
+    wipePercent = 100;
+  } else if (isNoteActive && durationSec > 0) {
+    wipePercent = Math.min(100, Math.max(0, ((currentTime - startSec) / durationSec) * 100));
+  }
+
+  // Dashes count for sustained held notes (suppressed in pure lyrics mode)
+  const dashesCount =
+    !isNonNotation && showNotation && typeof note.duration === 'number' && note.duration >= 2
+      ? Math.floor(note.duration) - 1
+      : 0;
+
+  // Mode text routing
+  let subRubyDisplay = '\u00A0';
+  let mainWordDisplay = '\u00A0';
+  if (effectiveMode === 'roman') {
+    mainWordDisplay = hasRoman ? rawRoman : (hasHanlo ? rawHanlo : '\u00A0');
+  } else if (effectiveMode === 'hanlo') {
+    mainWordDisplay = hasHanlo ? rawHanlo : (hasRoman ? rawRoman : '\u00A0');
+  } else if (effectiveMode === 'roman_major_hanlo') {
+    subRubyDisplay = hasHanlo ? rawHanlo : '\u00A0';
+    mainWordDisplay = hasRoman ? rawRoman : (hasHanlo ? rawHanlo : '\u00A0');
+  } else {
+    subRubyDisplay = hasRoman ? rawRoman : '\u00A0';
+    mainWordDisplay = hasHanlo ? rawHanlo : (hasRoman ? rawRoman : '\u00A0');
+  }
+
+  // Theme color palette
+  const isDark = stageTheme === 'dark';
+  const sungColorHex = isDark ? '#fbbf24' : '#2563eb'; // Gold in dark, Royal Blue in daylight
+  const unsungColorHex = isActiveLine
+    ? isDark
+      ? '#94a3b8'
+      : '#475569'
+    : isDark
+    ? '#64748b'
+    : '#64748b';
+
+  // Dynamic text style with continuous left-to-right gradient wipe.
+  // Eco / reduced-motion: solid sung vs unsung (Safari GPU hates clip-text wipes).
+  const textFillStyle: React.CSSProperties = skipMotionFx
+    ? {
+        color: isNoteActive || isPassed ? sungColorHex : unsungColorHex,
+      }
+    : isNoteActive
+    ? {
+        backgroundImage: `linear-gradient(90deg, ${sungColorHex} 0%, ${sungColorHex} ${wipePercent}%, ${unsungColorHex} ${wipePercent}%, ${unsungColorHex} 100%)`,
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent',
+        display: 'inline-block',
+      }
+    : isPassed
+    ? {
+        color: sungColorHex,
+      }
+    : {
+        color: unsungColorHex,
+      };
+
+  // Highlight first sung syllable of the line during entry / countdown or before sung
+  const isFirstTarget =
+    isFirstVocalNote &&
+    (isComingLineAwaiting ||
+      (!isPassed &&
+        !isNoteActive &&
+        (verseTiming?.firstVocalStartSec ? currentTime < verseTiming.firstVocalStartSec + 0.4 : true)));
+
+  // Musical attributes
+  const noteForNotation = displayNote;
+  const isPitched = typeof noteForNotation.pitch === 'number' && noteForNotation.pitch > 0;
+  const octaveTopDots = isPitched && noteForNotation.octave > 0 ? noteForNotation.octave : 0;
+  const octaveBottomDots = isPitched && noteForNotation.octave < 0 ? Math.abs(noteForNotation.octave) : 0;
+  const isThirtySecond = typeof noteForNotation.duration === 'number' && noteForNotation.duration <= 0.125;
+  const isSixteenth =
+    typeof noteForNotation.duration === 'number' && (noteForNotation.duration === 0.25 || noteForNotation.duration === 0.375);
+  const isEighth =
+    typeof noteForNotation.duration === 'number' && (noteForNotation.duration === 0.5 || noteForNotation.duration === 0.75);
+  const showDot =
+    noteForNotation.isDotted ||
+    noteForNotation.duration === 1.5 ||
+    noteForNotation.duration === 0.75 ||
+    noteForNotation.duration === 3 ||
+    noteForNotation.duration === 0.375 ||
+    noteForNotation.duration === 1.75;
+  const accidentalSymbol = noteForNotation.accidental === '#' ? '♯' : noteForNotation.accidental === 'b' ? '♭' : '';
+
+  const isRomanEndWord =
+    !showNotation &&
+    (effectiveMode === 'roman' || effectiveMode === 'roman_major_hanlo') &&
+    hasRoman &&
+    !rawRoman.endsWith('-') &&
+    !rawRoman.endsWith('~');
+
+  // Primary note timing (ends when first subNote begins, if any)
+  const pStart = effectiveTiming?.startTimeSec ?? startSec;
+  const pEnd =
+    subNotes && subNotes.length > 0 && subNotes[0].effectiveTiming
+      ? subNotes[0].effectiveTiming.startTimeSec
+      : effectiveTiming?.endTimeSec ?? endSec;
+  const primaryIndividualTiming = {
+    startTimeSec: pStart,
+    durationSec: Math.max(0.05, pEnd - pStart),
+    endTimeSec: pEnd,
+  };
+
+  // Render a single compact numbered notation badge with pitch, octave dots, underlines & extension dashes
+  const renderNoteBadge = (
+    targetNote: NumberedNotationNote,
+    timing: { startTimeSec: number; durationSec: number; endTimeSec: number },
+    badgeKey: string | number,
+    isPrimary: boolean = true
+  ) => {
+    const tStart = timing.startTimeSec;
+    const tEnd = timing.endTimeSec;
+    const isThisNoteActive = currentTime >= tStart && currentTime < tEnd;
+    const isThisPassed = currentTime >= tEnd && tEnd > 0;
+
+    const badgeDashes =
+      !isNonNotation && showNotation && typeof targetNote.duration === 'number' && targetNote.duration >= 2
+        ? Math.floor(targetNote.duration) - 1
+        : 0;
+
+    const targetIsPitched = typeof targetNote.pitch === 'number' && targetNote.pitch > 0;
+    const topDots = targetIsPitched && targetNote.octave > 0 ? targetNote.octave : 0;
+    const bottomDots = targetIsPitched && targetNote.octave < 0 ? Math.abs(targetNote.octave) : 0;
+    const isEighthNote = typeof targetNote.duration === 'number' && (targetNote.duration === 0.5 || targetNote.duration === 0.75);
+    const isSixteenthNote = typeof targetNote.duration === 'number' && (targetNote.duration === 0.25 || targetNote.duration === 0.375);
+    const isThirtySecondNote = typeof targetNote.duration === 'number' && targetNote.duration <= 0.125;
+    const targetShowDot =
+      targetNote.isDotted ||
+      targetNote.duration === 1.5 ||
+      targetNote.duration === 0.75 ||
+      targetNote.duration === 3 ||
+      targetNote.duration === 0.375 ||
+      targetNote.duration === 1.75;
+    const targetAccidental = targetNote.accidental === '#' ? '♯' : targetNote.accidental === 'b' ? '♭' : '';
+
+    const pitchVal = isNonNotation
+      ? targetNote.annotation
+        ? ''
+        : '␣'
+      : targetNote.pitch === 'empty'
+      ? '␣'
+      : targetNote.pitch === 0
+      ? '0'
+      : targetNote.pitch;
+
+    return (
+      <div
+        key={badgeKey}
+        className={`inline-flex flex-col items-center justify-center relative rounded-md transition-all duration-150 px-1.5 py-0.5 border ${
+          isThisNoteActive
+            ? isDark
+              ? 'bg-amber-400 text-zinc-950 font-black border-amber-300 shadow-[0_0_12px_rgba(251,191,36,0.8)]'
+              : 'bg-blue-600 text-white font-black border-blue-500 shadow-md'
+            : isThisPassed
+            ? isDark
+              ? 'bg-zinc-800/90 text-amber-300 font-bold border-zinc-700'
+              : 'bg-slate-200 text-blue-700 font-bold border-slate-300'
+            : isFirstTarget && isPrimary
+            ? isDark
+              ? 'bg-amber-950/70 text-amber-300 font-black border-amber-500/60 ring-1 ring-amber-400/40'
+              : 'bg-blue-50 text-blue-700 font-black border-blue-400 ring-1 ring-blue-300'
+            : isDark
+            ? 'bg-zinc-900/60 text-zinc-400 font-medium border-zinc-800'
+            : 'bg-white text-slate-600 font-medium border-slate-300'
+        }`}
+      >
+        {/* Top octave dots */}
+        {topDots > 0 && (
+          <span className="flex items-center justify-center gap-0.5 leading-none mb-0.5">
+            {Array.from({ length: topDots }).map((_, i) => (
+              <span
+                key={i}
+                className={`w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full inline-block ${
+                  isThisNoteActive
+                    ? isDark ? 'bg-zinc-950' : 'bg-white'
+                    : isDark ? 'bg-zinc-300' : 'bg-slate-700'
+                }`}
+              />
+            ))}
+          </span>
+        )}
+
+        {/* Numeral, accidental, dot, and extension dashes */}
+        <span className="inline-flex items-baseline justify-center leading-none">
+          {targetAccidental && (
+            <span
+              className={`text-[9px] sm:text-[10px] mr-0.5 font-bold ${
+                isThisNoteActive ? (isDark ? 'text-zinc-950' : 'text-white') : isDark ? 'text-amber-400' : 'text-blue-600'
+              }`}
+            >
+              {targetAccidental}
+            </span>
+          )}
+          <span className="font-mono text-xs sm:text-base font-black">
+            {pitchVal}
+          </span>
+          {targetShowDot && (
+            <span
+              className={`text-xs sm:text-sm font-black ml-0.5 ${
+                isThisNoteActive ? (isDark ? 'text-zinc-950' : 'text-white') : isDark ? 'text-amber-400' : 'text-blue-600'
+              }`}
+            >
+              ·
+            </span>
+          )}
+          {badgeDashes > 0 && (
+            <span
+              className={`font-mono text-xs sm:text-base font-black ml-1 tracking-wider whitespace-nowrap ${
+                isThisNoteActive
+                  ? isDark ? 'text-zinc-950' : 'text-white'
+                  : isDark ? 'text-amber-400/90' : 'text-blue-600'
+              }`}
+            >
+              {' —'.repeat(badgeDashes)}
+            </span>
+          )}
+        </span>
+
+        {/* Bottom octave dots */}
+        {bottomDots > 0 && (
+          <span className="flex items-center justify-center gap-0.5 leading-none mt-0.5">
+            {Array.from({ length: bottomDots }).map((_, i) => (
+              <span
+                key={i}
+                className={`w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full inline-block ${
+                  isThisNoteActive
+                    ? isDark ? 'bg-zinc-950' : 'bg-white'
+                    : isDark ? 'bg-zinc-300' : 'bg-slate-700'
+                }`}
+              />
+            ))}
+          </span>
+        )}
+
+        {/* Duration underlines */}
+        {isEighthNote && (
+          <span
+            className={`block w-full h-[1.5px] rounded-full mt-0.5 ${
+              isThisNoteActive ? (isDark ? 'bg-zinc-950' : 'bg-white') : isDark ? 'bg-zinc-400' : 'bg-slate-500'
+            }`}
+          />
+        )}
+        {isSixteenthNote && (
+          <span className="flex flex-col gap-[1px] w-full mt-0.5">
+            <span
+              className={`block w-full h-[1.5px] rounded-full ${
+                isThisNoteActive ? (isDark ? 'bg-zinc-950' : 'bg-white') : isDark ? 'bg-zinc-400' : 'bg-slate-500'
+              }`}
+            />
+            <span
+              className={`block w-full h-[1.5px] rounded-full ${
+                isThisNoteActive ? (isDark ? 'bg-zinc-950' : 'bg-white') : isDark ? 'bg-zinc-400' : 'bg-slate-500'
+              }`}
+            />
+          </span>
+        )}
+        {isThirtySecondNote && (
+          <span className="flex flex-col gap-[1px] w-full mt-0.5">
+            <span
+              className={`block w-full h-[1px] rounded-full ${
+                isThisNoteActive ? (isDark ? 'bg-zinc-950' : 'bg-white') : isDark ? 'bg-zinc-400' : 'bg-slate-500'
+              }`}
+            />
+            <span
+              className={`block w-full h-[1px] rounded-full ${
+                isThisNoteActive ? (isDark ? 'bg-zinc-950' : 'bg-white') : isDark ? 'bg-zinc-400' : 'bg-slate-500'
+              }`}
+            />
+            <span
+              className={`block w-full h-[1px] rounded-full ${
+                isThisNoteActive ? (isDark ? 'bg-zinc-950' : 'bg-white') : isDark ? 'bg-zinc-400' : 'bg-slate-500'
+              }`}
+            />
+          </span>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div
+      className={`relative flex flex-col items-center justify-start select-none transition-opacity duration-150 ${
+        showNotation
+          ? dashesCount >= 3
+            ? 'min-w-[68px] sm:min-w-[84px] px-1 sm:px-1.5'
+            : dashesCount > 0
+            ? 'min-w-[46px] sm:min-w-[58px] px-1 sm:px-1.5'
+            : subNotes && subNotes.length > 0
+            ? 'min-w-[60px] sm:min-w-[76px] px-1 sm:px-1.5'
+            : 'min-w-[28px] sm:min-w-[36px] px-0.5 sm:px-1'
+          : isAnnotationOnly
+          ? 'min-w-0 px-1 self-center'
+          : `min-w-0 px-0.5 ${isRomanEndWord ? 'mr-1.5 sm:mr-2' : ''}`
+      }`}
+    >
+      {/* Visual Attack / Entry Cue Badge & Bouncing Ball on First Sung Syllable */}
+      {isFirstTarget && (
+        <div className="absolute -top-7 sm:-top-8.5 left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none z-20">
+          {/* Rhythmic Bouncing Ball (during last 2 beats of lead-in / attack cue) */}
+          {leadIn && leadIn.isLeadIn && leadIn.beatsRemaining <= 2 && !skipMotionFx && (
+            <motion.div
+              key="inline-bouncing-ball"
+              initial={{ y: -16, scale: 0.8 }}
+              animate={{
+                y: [-16, 0, -8, 0],
+                scale: [0.9, 1.2, 0.95, 1],
+              }}
+              transition={{
+                duration: Math.max(0.3, Math.min(1.2, secPerBeat || 0.75)),
+                ease: 'easeInOut',
+                repeat: Infinity,
+              }}
+              className={`w-3.5 h-3.5 sm:w-4 sm:h-4 mb-1 rounded-full shadow-lg pointer-events-none ${
+                isDark
+                  ? 'bg-gradient-to-b from-amber-300 via-amber-400 to-amber-500 shadow-[0_0_14px_rgba(251,191,36,0.95)] ring-2 ring-amber-300/80'
+                  : 'bg-gradient-to-b from-blue-400 via-blue-500 to-blue-600 shadow-[0_0_12px_rgba(37,99,235,0.7)] ring-2 ring-blue-400/80'
+              }`}
+              title="起唱彈跳球"
+            />
+          )}
+
+          {leadIn?.isBreathCue ? (
+            <span
+              className={`inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-black px-2 py-0.5 rounded-full border shadow-md whitespace-nowrap animate-pulse ${
+                isDark
+                  ? 'bg-cyan-950/90 text-cyan-300 border-cyan-400/80 ring-2 ring-cyan-400/30'
+                  : 'bg-cyan-100 text-cyan-900 border-cyan-400 ring-2 ring-cyan-200'
+              }`}
+            >
+              <Wind className="w-2.5 h-2.5 text-cyan-400 animate-spin" />
+              <span>吸氣</span>
+            </span>
+          ) : leadIn && leadIn.isLeadIn ? (
+            <span
+              className={`text-[9px] sm:text-[10px] font-black px-2 py-0.5 rounded-full border shadow-md whitespace-nowrap animate-pulse ${
+                isDark
+                  ? 'bg-amber-500/20 text-amber-300 border-amber-400/80 ring-2 ring-amber-400/40'
+                  : 'bg-blue-100 text-blue-800 border-blue-400 ring-2 ring-blue-300'
+              }`}
+            >
+              起唱 · {leadIn.beatsRemaining}拍
+            </span>
+          ) : (
+            <span
+              className={`text-[9px] sm:text-[10px] font-black px-2 py-0.5 rounded-full border shadow-md whitespace-nowrap animate-bounce ${
+                isDark
+                  ? 'bg-amber-500/20 text-amber-300 border-amber-400/80 ring-2 ring-amber-400/40'
+                  : 'bg-blue-100 text-blue-800 border-blue-400 ring-2 ring-blue-300'
+              }`}
+            >
+              起唱 · 1st
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Optional Musical Annotation (e.g. 漸慢, rit., V) - Positioned absolutely so it does not shift lyric baseline */}
+      {note.annotation && (
+        <span
+          className={`absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-bold px-1.5 py-0.2 rounded-full border whitespace-nowrap z-10 ${
+            isDark
+              ? 'text-indigo-300 bg-indigo-950/80 border-indigo-700/60'
+              : 'text-indigo-800 bg-indigo-100 border-indigo-300'
+          }`}
+        >
+          {note.annotation}
+        </span>
+      )}
+
+      {/* TIER 1: RUBY PRONUNCIATION (Uniform height & alignment so POJ/TL tone marks never crop or fluctuate) */}
+      {!isAnnotationOnly && (effectiveMode === 'roman_major_hanlo' || effectiveMode === 'hanlo_major_roman') && (
+        <div
+          className={`w-full ${rubyFontSizeClass} pt-1 pb-0.5 flex items-center justify-center font-sans tracking-wide leading-normal overflow-visible ${
+            effectiveMode === 'hanlo_major_roman' ? 'italic font-serif' : 'font-medium'
+          } ${
+            isNoteActive
+              ? isDark
+                ? 'text-amber-300 font-bold drop-shadow-[0_0_8px_rgba(251,191,36,0.7)]'
+                : 'text-blue-600 font-bold'
+              : isPassed
+              ? isDark
+                ? 'text-amber-400/80'
+                : 'text-blue-500/80'
+              : isFirstTarget
+              ? isDark
+                ? 'text-amber-300'
+                : 'text-blue-700 font-semibold'
+              : isDark
+              ? 'text-zinc-400'
+              : 'text-slate-500'
+          }`}
+          style={{ overflowWrap: 'normal' }}
+        >
+          <span>{subRubyDisplay}</span>
+        </div>
+      )}
+
+      {/* TIER 2: MAIN DISPLAY LYRIC (with Continuous Syllable Wipe & Invariant Fixed Baseline) */}
+      {!isAnnotationOnly ? (
+        <div className="w-full relative flex items-center justify-center">
+          <span
+            className={`${mainFontSizeClass} font-black tracking-wider flex items-center justify-center leading-none px-0.5 transition-all duration-100 ${
+              effectiveMode === 'roman' || effectiveMode === 'roman_major_hanlo'
+                ? 'font-serif italic font-extrabold'
+                : 'font-sans'
+            } ${
+              isNoteActive && !isEcoMode
+                ? isDark
+                  ? 'drop-shadow-[0_0_14px_rgba(245,158,11,0.85)]'
+                  : 'drop-shadow-[0_0_8px_rgba(37,99,235,0.4)]'
+                : ''
+            } ${
+              isFirstTarget
+                ? isDark
+                  ? 'ring-1 ring-amber-400/60 rounded px-1'
+                  : 'ring-1 ring-blue-500/60 rounded px-1'
+                : ''
+            }`}
+            style={textFillStyle}
+          >
+            {mainWordDisplay}
+          </span>
+        </div>
+      ) : null}
+
+      {/* TIER 3: NUMBERED NOTATION (Compactly grouped under character & word, expanding downwards without disturbing lyric baseline) */}
+      {showNotation && (
+        <div className="mt-1.5 sm:mt-2 flex items-start justify-center gap-1 min-h-[32px] w-full">
+          {renderNoteBadge(displayNote, primaryIndividualTiming, 'primary-badge', true)}
+          {subNotes &&
+            subNotes.map((sn, snIdx) =>
+              renderNoteBadge(
+                sn.item.note,
+                sn.effectiveTiming,
+                `sub-badge-${snIdx}`,
+                false
+              )
+            )}
+        </div>
+      )}
+    </div>
+  );
+});
+
+SyllableCell.displayName = 'SyllableCell';
+
+export type { VerseLineItem } from '@/lib/karaokeLineBreaker';
+
+export const KaraokeStage: React.FC<KaraokeStageProps> = React.memo(({
+  currentVerse,
+  nextVerse,
+  activeVerseTiming,
+  nextVerseTiming,
+  activeVerseIndex = 0,
+  allVerses = [],
+  allVerseTimings = [],
+  isAwaitingVocal = false,
+  leadIn = null,
+  isVerseCompleted = false,
+  activeSection,
+  playbackState,
+  displayMode,
+  isEcoMode = false,
+  zoomScale = 1.0,
+  stageTheme = 'dark',
+  onToggleStageTheme,
+  showNotation = true,
+  onToggleShowNotation,
+  layoutMode = 'single_line',
+  onToggleLayoutMode,
+  lyricAlign = 'center',
+  onToggleLyricAlign,
+  onEditCurrentLyric,
+}) => {
+  const isDark = stageTheme === 'dark';
+  const reduceMotion = useReducedMotion();
+  const skipMotionFx = isEcoMode || Boolean(reduceMotion);
+
+  // Determine effective display mode for text routing
+  const effectiveMode: 'roman' | 'hanlo' | 'roman_major_hanlo' | 'hanlo_major_roman' = useMemo(() => {
+    if (displayMode === 'hanlo_major_roman' || displayMode === 'hanji_poj') return 'hanlo_major_roman';
+    if (displayMode === 'hanlo' || displayMode === 'hanji_only' || displayMode === 'custom_only') return 'hanlo';
+    if (displayMode === 'roman' || displayMode === 'poj_only') return 'roman';
+    return 'roman_major_hanlo';
+  }, [displayMode]);
+
+  // Helper to find first vocal note index in a verse
+  const getFirstVocalIndex = (verse: VerseItem | null) => {
+    if (!verse) return -1;
+    return verse.notes.findIndex(item => {
+      const n = item.note;
+      const isNonNotation =
+        isNonNotationItem(n) || n.pitch === 'empty' || (typeof n.duration === 'number' && n.duration <= 0);
+      const rawHanlo = n.lyric.hanlo ?? n.lyric.hanji ?? n.lyric.custom ?? '';
+      const rawRoman = n.lyric.poj ?? n.lyric.tl ?? '';
+      const hasLyric =
+        (rawHanlo && !isPunctuationOrSpacer(rawHanlo) && rawHanlo !== '\n' && rawHanlo !== '↵') ||
+        (rawRoman && !isPunctuationOrSpacer(rawRoman) && rawRoman !== '\n' && rawRoman !== '↵');
+      const isPitched = !isNonNotation && typeof n.pitch === 'number' && n.pitch > 0;
+      return !isNonNotation && (hasLyric || isPitched) && n.duration > 0;
+    });
+  };
+
+  const currentFirstVocal = useMemo(() => getFirstVocalIndex(currentVerse), [currentVerse]);
+
+  // Helper to find second vocal note index in current verse
+  const currentSecondVocal = useMemo(() => {
+    if (!currentVerse || currentFirstVocal === -1) return -1;
+    return currentVerse.notes.findIndex((item, idx) => {
+      if (idx <= currentFirstVocal) return false;
+      const n = item.note;
+      const isNonNotation =
+        isNonNotationItem(n) || n.pitch === 'empty' || (typeof n.duration === 'number' && n.duration <= 0);
+      const rawHanlo = n.lyric.hanlo ?? n.lyric.hanji ?? n.lyric.custom ?? '';
+      const rawRoman = n.lyric.poj ?? n.lyric.tl ?? '';
+      const hasLyric =
+        (rawHanlo && !isPunctuationOrSpacer(rawHanlo) && rawHanlo !== '\n' && rawHanlo !== '↵') ||
+        (rawRoman && !isPunctuationOrSpacer(rawRoman) && rawRoman !== '\n' && rawRoman !== '↵');
+      const isPitched = !isNonNotation && typeof n.pitch === 'number' && n.pitch > 0;
+      return !isNonNotation && (hasLyric || isPitched) && n.duration > 0;
+    });
+  }, [currentVerse, currentFirstVocal]);
+
+  // Group active verse notes into lines based on measure boundaries.
+  // Multi-measure verses (e.g. Measure 13 & 14 in 雨夜花) split into natural, balanced lines.
+  // A maximum of 2 active lines are displayed simultaneously to keep the window height fixed and stable.
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const lineRowRef = useRef<HTMLDivElement>(null);
+
+  const [containerWidth, setContainerWidth] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      return Math.min(1024, Math.max(320, window.innerWidth - 64));
+    }
+    return 900;
+  });
+
+  useEffect(() => {
+    const el = lineRowRef.current || canvasRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        const w = entry.contentRect.width;
+        if (w > 0) {
+          setContainerWidth(w);
+        }
+      }
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  // Derive clean next-line preview string (joins Hanji naturally without spaces, Roman with spaces)
+  const nextLinePreview = useMemo(() => {
+    if (!nextVerse || !nextVerse.notes || nextVerse.notes.length === 0) {
+      return null;
+    }
+
+    const words: string[] = [];
+    for (const item of nextVerse.notes) {
+      const n = item.note;
+      if (isNonNotationItem(n)) continue;
+      const rawHanlo = n.lyric.hanlo ?? n.lyric.hanji ?? n.lyric.custom ?? '';
+      const rawRoman = n.lyric.poj ?? n.lyric.tl ?? '';
+      if (rawHanlo === '\n' || rawHanlo === '↵') continue;
+
+      let word = '';
+      if (effectiveMode === 'roman') {
+        word = rawRoman || rawHanlo;
+      } else if (effectiveMode === 'hanlo') {
+        word = rawHanlo || rawRoman;
+      } else if (effectiveMode === 'roman_major_hanlo') {
+        word = rawRoman || rawHanlo;
+      } else {
+        word = rawHanlo || rawRoman;
+      }
+
+      if (word && word.trim() && !isPunctuationOrSpacer(word)) {
+        words.push(word.trim());
+      }
+    }
+
+    let result = '';
+    for (let i = 0; i < words.length; i++) {
+      const curr = words[i];
+      if (i === 0) {
+        result = curr;
+      } else {
+        const prev = words[i - 1];
+        const isPrevCJK = isCJKChar(prev[prev.length - 1]);
+        const isCurrCJK = isCJKChar(curr[0]);
+        if (isPrevCJK && isCurrCJK) {
+          result += curr;
+        } else if (prev.endsWith('-')) {
+          result += curr;
+        } else {
+          result += ' ' + curr;
+        }
+      }
+    }
+
+    return result;
+  }, [nextVerse, effectiveMode]);
+
+  // Derive seconds per beat for precise rhythmic triggers
+  const secPerBeat = useMemo(() => {
+    // 1. Check note duration ratio in active verse
+    if (activeVerseTiming && activeVerseTiming.notesTimeline.length > 0 && currentVerse?.notes) {
+      for (let i = 0; i < currentVerse.notes.length; i++) {
+        const item = currentVerse.notes[i];
+        const noteDur = item.note.duration;
+        const timing = activeVerseTiming.notesTimeline[i];
+        if (typeof noteDur === 'number' && noteDur > 0 && timing && timing.durationSec > 0) {
+          const spb = timing.durationSec / noteDur;
+          if (spb > 0.15 && spb < 3.0) return spb;
+        }
+      }
+    }
+    // 2. Check leadIn state
+    if (leadIn && leadIn.totalBeats > 0 && leadIn.totalLeadInSec > 0) {
+      const spb = leadIn.totalLeadInSec / leadIn.totalBeats;
+      if (spb > 0.15 && spb < 3.0) return spb;
+    }
+    // 3. Fallback standard: 80 BPM = 0.75s per beat
+    return 0.75;
+  }, [activeVerseTiming, currentVerse, leadIn]);
+
+  // Smart lyric line wrapping engine (Zoom-Aware & Width-Aware, no short lines)
+  const verseLines = useMemo<VerseLineItem[]>(() => {
+    if (!currentVerse || !currentVerse.notes || currentVerse.notes.length === 0) return [];
+
+    const rawTimeline = activeVerseTiming?.notesTimeline || [];
+
+    // Step 1: Preprocess notes into display note references
+    const displayNotes: DisplayNote[] = [];
+
+    currentVerse.notes.forEach((item, globalIdx) => {
+      const timing =
+        rawTimeline.find(
+          t => t.measureIndex === item.measureIndex && t.noteIndex === item.noteIndex
+        ) || rawTimeline[globalIdx];
+      const startSec = timing?.startTimeSec ?? 0;
+      const durationSec = timing?.durationSec ?? 0;
+      const endSec = timing?.endTimeSec ?? (startSec + durationSec);
+
+      const note = item.note;
+      const rawHanlo = (note.lyric.hanlo ?? note.lyric.hanji ?? note.lyric.custom ?? '').trim();
+      const rawRoman = (note.lyric.poj ?? note.lyric.tl ?? '').trim();
+      const isLineBreak = rawHanlo === '\n' || rawHanlo === '↵' || rawRoman === '\n' || rawRoman === '↵';
+      const isPunct = isPunctuationOrSpacer(rawHanlo) || isPunctuationOrSpacer(rawRoman);
+      const hasText = (Boolean(rawHanlo) || Boolean(rawRoman)) && !isLineBreak;
+      const hasAnnotation = Boolean(note.annotation);
+      const isPitched = typeof note.pitch === 'number' && note.pitch > 0;
+
+      if (isLineBreak) return;
+
+      // Handle melisma / continuation notes (notes without explicit lyrics or annotations)
+      if (!hasText && !hasAnnotation && !isPunct) {
+        if (displayNotes.length > 0) {
+          const prev = displayNotes[displayNotes.length - 1];
+          // Extend previous syllable timing to cover the sustained vocal
+          if (endSec > prev.effectiveTiming.endTimeSec) {
+            prev.effectiveTiming.endTimeSec = endSec;
+            prev.effectiveTiming.durationSec = prev.effectiveTiming.endTimeSec - prev.effectiveTiming.startTimeSec;
+          }
+          if (showNotation && isPitched) {
+            // Group continuation note into previous syllable cell
+            if (!prev.subNotes) prev.subNotes = [];
+            prev.subNotes.push({
+              item,
+              globalIdx,
+              effectiveTiming: {
+                startTimeSec: startSec,
+                durationSec,
+                endTimeSec: endSec,
+              },
+            });
+          }
+          return;
+        } else if (!isPitched) {
+          // Unpitched rest with no lyrics before vocal
+          return;
+        }
+      }
+
+      if (hasText || isPitched || hasAnnotation || isPunct) {
+        displayNotes.push({
+          item,
+          globalIdx,
+          effectiveTiming: {
+            startTimeSec: startSec,
+            durationSec,
+            endTimeSec: endSec,
+          },
+          subNotes: [],
+        });
+      }
+    });
+
+    if (displayNotes.length === 0) {
+      return [
+        {
+          id: `line-default-${currentVerse.id || currentVerse.verseIndex}`,
+          measureNumber: currentVerse.notes[0]?.measureNumber ?? 1,
+          notes: currentVerse.notes.map((item, globalIdx) => ({
+            item,
+            globalIdx,
+            effectiveTiming: { startTimeSec: 0, durationSec: 1, endTimeSec: 1 },
+          })),
+        },
+      ];
+    }
+
+    return segmentDisplayNotesIntoLines(displayNotes, {
+      containerWidth,
+      zoomScale,
+      showNotation,
+      effectiveMode,
+      layoutMode,
+      verseId: currentVerse.id || currentVerse.verseIndex,
+    });
+  }, [currentVerse, activeVerseTiming, showNotation, zoomScale, effectiveMode, containerWidth, layoutMode]);
+
+  // If a verse has more than 2 lines, determine which line is currently active
+  const activeLineIndex = useMemo(() => {
+    if (!activeVerseTiming || verseLines.length <= 1) return 0;
+    for (let lIdx = 0; lIdx < verseLines.length; lIdx++) {
+      const line = verseLines[lIdx];
+      const isLineActive = line.notes.some(n => {
+        const startSec = n.effectiveTiming?.startTimeSec ?? 0;
+        const endSec = n.effectiveTiming?.endTimeSec ?? 0;
+        return playbackState.currentTime >= startSec && playbackState.currentTime < endSec;
+      });
+      if (isLineActive) return lIdx;
+    }
+    return 0;
+  }, [activeVerseTiming, verseLines, playbackState.currentTime]);
+
+  const visibleLines = useMemo(() => {
+    if (verseLines.length <= 2) return verseLines;
+    const startIndex = Math.floor(activeLineIndex / 2) * 2;
+    return verseLines.slice(startIndex, startIndex + 2);
+  }, [verseLines, activeLineIndex]);
+
+  return (
+    <div
+      id="ktv-stage-container"
+      className={`relative flex-1 flex flex-col items-center justify-between p-1 sm:p-2 md:p-2.5 min-h-[480px] sm:min-h-[540px] md:min-h-[620px] select-none overflow-hidden transition-all duration-300 border-b ${
+        isDark
+          ? 'bg-gradient-to-b from-[#0b0e17] via-[#06070a] to-[#0b0e17] border-zinc-800/80 text-white'
+          : 'bg-gradient-to-b from-[#f8fafc] via-[#f1f5f9] to-[#e2e8f0] border-slate-300 text-slate-900'
+      }`}
+    >
+      {/* Background Ambience (Dark mode only, skipped in Eco mode) */}
+      {isDark && !isEcoMode && (
+        <>
+          <div className="eco-hide-ambient absolute -top-24 -left-24 w-80 h-80 rounded-full bg-amber-500/10 blur-3xl pointer-events-none" />
+          <div className="eco-hide-ambient absolute -bottom-24 -right-24 w-80 h-80 rounded-full bg-rose-500/10 blur-3xl pointer-events-none" />
+        </>
+      )}
+
+
+      {/* Phrase Completed Celebration Floating Pill */}
+      <AnimatePresence>
+        {isVerseCompleted && (
+          <motion.div
+            initial={{ opacity: 0, y: -8, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.9 }}
+            className="absolute top-4 left-1/2 -translate-x-1/2 z-30 pointer-events-none"
+          >
+            <span
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold shadow-lg backdrop-blur-md border ${
+                isDark
+                  ? 'bg-emerald-950/90 border-emerald-500/60 text-emerald-300'
+                  : 'bg-emerald-50 border-emerald-400 text-emerald-800'
+              }`}
+            >
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+              <span>本句完成 · Complete</span>
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* MAIN STAGE ARENA: DEDICATED UNIFIED SINGLE LYRIC WINDOW (Minimized outer margins, flex-1 height) */}
+      <div className="w-full max-w-6xl z-10 flex-1 flex flex-col items-center justify-center min-h-0 my-0">
+        <div
+          id="ktv-active-lyric-window"
+          className={`relative w-full flex-1 flex flex-col justify-between rounded-2xl transition-all duration-300 shadow-2xl min-h-[460px] sm:min-h-[520px] md:min-h-[600px] overflow-hidden ${
+            isDark
+              ? 'bg-zinc-900/85 border border-amber-500/40 shadow-amber-950/20'
+              : 'bg-white border-2 border-blue-500/70 shadow-lg shadow-blue-100'
+          }`}
+        >
+          {/* 1. Integrated Stage Header: Breath, Countdown & Status Indicator */}
+          <div
+            id="ktv-stage-window-header"
+            className={`w-full flex items-center justify-between px-3.5 sm:px-5 py-2.5 border-b select-none transition-colors ${
+              isDark
+                ? 'bg-zinc-900/90 border-zinc-800/80 text-zinc-300'
+                : 'bg-slate-50/90 border-slate-200 text-slate-700'
+            }`}
+          >
+            {/* Left: Active verse indicator & section & edit button & align button */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span
+                className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-bold text-[10px] sm:text-xs border ${
+                  isDark
+                    ? 'bg-amber-500/20 text-amber-300 border-amber-400/60 shadow-xs'
+                    : 'bg-blue-100 text-blue-800 border-blue-300 shadow-xs'
+                }`}
+              >
+                <span
+                  className={`w-2 h-2 rounded-full ${
+                    isDark ? 'bg-amber-400 animate-pulse' : 'bg-blue-600 animate-pulse'
+                  }`}
+                />
+                <span>現唱 (Active)</span>
+              </span>
+
+              {(currentVerse?.section || activeSection?.name) && (
+                <span
+                  className={`text-[10px] sm:text-xs font-semibold px-2 py-0.5 rounded-md border ${
+                    isDark
+                      ? 'bg-zinc-800/80 text-zinc-300 border-zinc-700/60'
+                      : 'bg-white text-slate-700 border-slate-300 shadow-xs'
+                  }`}
+                >
+                  {currentVerse?.section || activeSection?.name}
+                </span>
+              )}
+
+              {onEditCurrentLyric && currentVerse && (
+                <button
+                  id="ktv-edit-current-lyric-btn"
+                  type="button"
+                  onClick={() => {
+                    const mIdx = playbackState.currentMeasureIndex !== undefined &&
+                      currentVerse.notes.some(n => n.measureIndex === playbackState.currentMeasureIndex)
+                        ? playbackState.currentMeasureIndex
+                        : currentVerse.notes[0]?.measureIndex ?? 0;
+                    onEditCurrentLyric(mIdx);
+                  }}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-bold text-[11px] sm:text-xs border transition-all cursor-pointer active:scale-95 touch-manipulation shadow-xs ${
+                    isDark
+                      ? 'bg-zinc-800/90 hover:bg-amber-500/20 text-zinc-200 hover:text-amber-300 border-zinc-700 hover:border-amber-400/60'
+                      : 'bg-white hover:bg-blue-50 text-slate-700 hover:text-blue-700 border-slate-300 hover:border-blue-400'
+                  }`}
+                  title="編輯當前歌詞與音符 (Edit Current Lyric & Notes)"
+                >
+                  <Pencil className="w-3 h-3 text-amber-400" />
+                  <span>編輯歌詞</span>
+                </button>
+              )}
+
+              {onToggleLyricAlign && (
+                <button
+                  id="ktv-stage-lyric-align-btn"
+                  type="button"
+                  onClick={onToggleLyricAlign}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-bold text-[11px] sm:text-xs border transition-all cursor-pointer active:scale-95 touch-manipulation shadow-xs ${
+                    isDark
+                      ? lyricAlign === 'left'
+                        ? 'bg-amber-500/20 text-amber-300 border-amber-400/60'
+                        : 'bg-zinc-800/90 hover:bg-zinc-700 text-zinc-300 border-zinc-700'
+                      : lyricAlign === 'left'
+                        ? 'bg-blue-100 text-blue-800 border-blue-400'
+                        : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-300'
+                  }`}
+                  title={lyricAlign === 'left' ? '歌詞靠左（點擊切換為置中）' : '歌詞置中（點擊切換為靠左）'}
+                >
+                  {lyricAlign === 'left' ? (
+                    <>
+                      <AlignLeft className="w-3 h-3 text-amber-400" />
+                      <span>靠左</span>
+                    </>
+                  ) : (
+                    <>
+                      <AlignCenter className="w-3 h-3 text-zinc-400" />
+                      <span>置中</span>
+                    </>
+                  )}
+                </button>
+              )}
+
+              {onToggleLayoutMode && (
+                <button
+                  id="ktv-stage-layout-mode-btn"
+                  type="button"
+                  onClick={onToggleLayoutMode}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-bold text-[11px] sm:text-xs border transition-all cursor-pointer active:scale-95 touch-manipulation shadow-xs ${
+                    isDark
+                      ? layoutMode === 'single_line'
+                        ? 'bg-amber-500/20 text-amber-300 border-amber-400/60'
+                        : 'bg-zinc-800/90 hover:bg-zinc-700 text-zinc-300 border-zinc-700'
+                      : layoutMode === 'single_line'
+                        ? 'bg-blue-100 text-blue-800 border-blue-400'
+                        : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-300'
+                  }`}
+                  title={layoutMode === 'single_line' ? '單行排版（點擊切換為雙行）' : '雙行排版（點擊切換為單行）'}
+                >
+                  <Rows className="w-3 h-3 text-amber-400" />
+                  <span>{layoutMode === 'single_line' ? '單行' : '雙行'}</span>
+                </button>
+              )}
+            </div>
+
+            {/* Right: Integrated Breath & Countdown Indicator */}
+            <div className="flex items-center gap-2 sm:gap-3">
+              {/* Beat countdown dots: 4 • 3 • 2 • 1 */}
+              {leadIn && leadIn.isLeadIn && (
+                <div className="flex items-center gap-1" title="拍子倒數">
+                  {Array.from({ length: Math.min(6, leadIn.beatsPerBar || 4) }).map((_, bIdx) => {
+                    const beatNum = bIdx + 1;
+                    const isCurrent = leadIn.currentBeatIndex === beatNum;
+                    const isPassedBeat = leadIn.currentBeatIndex > beatNum;
+                    return (
+                      <div
+                        key={bIdx}
+                        className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full transition-all duration-150 ${
+                          isCurrent
+                            ? isDark
+                              ? 'bg-amber-400 ring-2 ring-amber-300 scale-125'
+                              : 'bg-blue-600 ring-2 ring-blue-300 scale-125'
+                            : isPassedBeat
+                            ? isDark
+                              ? 'bg-amber-500/70'
+                              : 'bg-blue-400'
+                            : isDark
+                            ? 'bg-zinc-700'
+                            : 'bg-slate-300'
+                        }`}
+                      />
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Breath cue badge or time-to-entry countdown */}
+              {leadIn?.isBreathCue ? (
+                <span
+                  className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-black border animate-pulse ${
+                    isDark
+                      ? 'bg-cyan-950/90 text-cyan-300 border-cyan-400/80 ring-2 ring-cyan-400/30'
+                      : 'bg-cyan-100 text-cyan-900 border-cyan-400 ring-2 ring-cyan-200'
+                  }`}
+                >
+                  <Wind className="w-3 h-3 text-cyan-400 animate-spin" />
+                  <span>🫁 準備吸氣 · Breathe In</span>
+                </span>
+              ) : leadIn && leadIn.isLeadIn ? (
+                <span
+                  className={`text-[10px] sm:text-xs font-mono font-bold px-2 py-0.5 rounded-md border ${
+                    isDark
+                      ? 'bg-zinc-800/80 text-amber-300 border-amber-500/40'
+                      : 'bg-blue-50 text-blue-700 border-blue-300'
+                  }`}
+                >
+                  進歌倒數: {leadIn.timeUntilVocalSec.toFixed(1)}s ({leadIn.beatsRemaining} 拍)
+                </span>
+              ) : isAwaitingVocal ? (
+                <span
+                  className={`text-[10px] sm:text-xs font-mono font-medium px-2 py-0.5 rounded-md ${
+                    isDark ? 'text-zinc-400 bg-zinc-800/50' : 'text-slate-500 bg-slate-100'
+                  }`}
+                >
+                  準備進歌...
+                </span>
+              ) : null}
+            </div>
+          </div>
+
+          {/* 2. Open Canvas with Maximized Typography & Vertical Space */}
+          <div
+            ref={canvasRef}
+            className="relative w-full flex-1 flex flex-col justify-between py-2 sm:py-3.5 px-3 sm:px-6 min-h-[360px] sm:min-h-[440px] md:min-h-[500px] overflow-visible"
+          >
+            {/* Active Lyric Display Area: anchored at 22.5% height from top for complete visual stability */}
+            <div className="w-full flex-1 flex flex-col justify-start relative">
+              {/* 22.5% Top Height Anchor Spacer: All new lines flow downwards from here without moving the starting anchor */}
+              <div
+                className="w-full shrink-0 h-[22.5%] min-h-[30px] pointer-events-none"
+                aria-hidden="true"
+              />
+
+              {currentVerse && currentVerse.notes.length > 0 ? (
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.div
+                    key={`active-verse-${activeVerseIndex}-${currentVerse.verseIndex ?? 0}`}
+                    initial={skipMotionFx ? false : { opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={skipMotionFx ? undefined : { opacity: 0, y: -8 }}
+                    transition={{ duration: 0.2, ease: 'easeOut' }}
+                    className={`w-full flex flex-col overflow-visible ${
+                      lyricAlign === 'left' ? 'items-start' : 'items-center'
+                    }`}
+                  >
+                    <div
+                      ref={lineRowRef}
+                      className={`w-full max-w-5xl mx-auto px-4 sm:px-8 md:px-12 flex flex-col gap-y-2 sm:gap-y-3.5 md:gap-y-4 ${
+                        lyricAlign === 'left' ? 'items-start text-left' : 'items-center text-center'
+                      }`}
+                    >
+                      {visibleLines.map((line, lineIdx) => {
+                        const isSucceedingLine = lineIdx > 0;
+                        return (
+                          <div
+                            key={line.id}
+                            className={`w-full flex flex-wrap items-start ${
+                              showNotation
+                                ? 'gap-x-1.5 sm:gap-x-2.5 md:gap-x-3.5 gap-y-2'
+                                : 'gap-x-0.5 sm:gap-x-1 gap-y-1.5'
+                            } transition-all duration-200 ${
+                              lyricAlign === 'left' ? 'justify-start' : 'justify-center'
+                            } ${
+                              isSucceedingLine
+                                ? lyricAlign === 'left'
+                                  ? 'pl-8 sm:pl-12 md:pl-16'
+                                  : 'pl-6 sm:pl-10 md:pl-12'
+                                : ''
+                            }`}
+                          >
+                            {line.notes.map(({ item, globalIdx, effectiveTiming, subNotes }) => {
+                              return (
+                                <SyllableCell
+                                  key={`${item.measureIndex}-${item.noteIndex}-${globalIdx}`}
+                                  item={item}
+                                  noteIndex={globalIdx}
+                                  isActiveLine={true}
+                                  currentTime={playbackState.currentTime}
+                                  verseTiming={activeVerseTiming}
+                                  effectiveMode={effectiveMode}
+                                  isFirstVocalNote={globalIdx === currentFirstVocal}
+                                  showNotation={showNotation}
+                                  stageTheme={stageTheme}
+                                  zoomScale={zoomScale}
+                                  isEcoMode={isEcoMode}
+                                  isComingLineAwaiting={isAwaitingVocal || Boolean(leadIn && leadIn.isLeadIn)}
+                                  leadIn={leadIn}
+                                  secPerBeat={secPerBeat}
+                                  effectiveTiming={effectiveTiming}
+                                  subNotes={subNotes}
+                                />
+                              );
+                            })}
+                          </div>
+                        );
+                      })}
+
+                      {/* IN-LINE Upcoming Next Line Preview (directly in singer's focal zone) */}
+                      {nextLinePreview && (
+                        <div
+                          className={`w-full flex items-center gap-2 pt-2 sm:pt-3 border-t border-dashed mt-1.5 sm:mt-2.5 transition-opacity select-none ${
+                            isDark ? 'border-zinc-800/80 text-zinc-400' : 'border-slate-200 text-slate-500'
+                          } ${lyricAlign === 'left' ? 'justify-start' : 'justify-center'}`}
+                        >
+                          <span
+                            className={`text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full shrink-0 border ${
+                              isDark
+                                ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                                : 'bg-blue-50 text-blue-700 border-blue-200'
+                            }`}
+                          >
+                            接唱
+                          </span>
+                          <span className="text-xs sm:text-sm md:text-base font-medium tracking-wide truncate max-w-[80vw] opacity-75">
+                            {nextLinePreview}
+                          </span>
+                          {nextVerseTiming && nextVerseTiming.firstVocalStartSec > playbackState.currentTime && (
+                            <span className="text-[10px] sm:text-xs font-mono opacity-50 shrink-0 hidden sm:inline-block">
+                              ({Math.max(1, Math.ceil((nextVerseTiming.firstVocalStartSec - playbackState.currentTime) / (secPerBeat || 0.75)))} 拍後)
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                </AnimatePresence>
+              ) : (
+                <div
+                  className={`w-full flex items-center justify-center p-6 rounded-xl border border-dashed transition-all duration-300 ${
+                    isDark
+                      ? 'bg-zinc-900/30 border-zinc-800/60 text-zinc-600'
+                      : 'bg-slate-100/60 border-slate-300 text-slate-400'
+                  }`}
+                >
+                  <span className="text-xs sm:text-sm font-medium italic select-none">
+                    (全曲結束 · Finale / Rest)
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+KaraokeStage.displayName = 'KaraokeStage';
