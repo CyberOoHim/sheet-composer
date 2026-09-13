@@ -22,7 +22,6 @@ import { NoteDuration, PitchNumber, ArticulationType } from '@/types/song';
 import {
   Keyboard,
   SlidersHorizontal,
-  Layers,
   MessageSquareQuote,
   Check,
   X,
@@ -73,11 +72,10 @@ export interface FloatingScoreHudProps {
   chordSuggestions?: string[];
   onAutoHarmonize?: () => void;
 
-  // Piano Bed & Keyboard Transcription & Organizer
+  // Piano Bed & Keyboard Transcription
   onTogglePianoBed?: () => void;
   showPianoBed?: boolean;
   onOpenKeyboardModal?: () => void;
-  onOpenOrganizer?: () => void;
 
   // Measure operations
   onAddMeasure: () => void;
@@ -146,7 +144,6 @@ export const FloatingScoreHud: React.FC<FloatingScoreHudProps> = ({
   onTogglePianoBed,
   showPianoBed,
   onOpenKeyboardModal,
-  onOpenOrganizer,
   onAddMeasure,
   onDeleteSelectedMeasure,
   onToggleLineBreak,
@@ -756,20 +753,6 @@ export const FloatingScoreHud: React.FC<FloatingScoreHudProps> = ({
               >
                 <Disc className="w-3.5 h-3.5 text-rose-500" />
                 <span className="hidden xl:inline">Record</span>
-              </button>
-            )}
-
-            {/* Measure Organizer Modal Trigger */}
-            {onOpenOrganizer && (
-              <button
-                id="floating-hud-organizer-btn"
-                type="button"
-                onClick={onOpenOrganizer}
-                className="flex items-center gap-1 px-2 h-7 sm:h-8 rounded-lg text-xs font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all cursor-pointer"
-                title="Open Measure Organizer (Reorder, Batch autofill, Voltas)"
-              >
-                <Layers className="w-3.5 h-3.5 text-amber-500" />
-                <span className="hidden xl:inline">Organizer</span>
               </button>
             )}
           </div>

@@ -9,28 +9,23 @@ import {
   NoteDuration,
   PitchNumber,
   Song,
-  VerseItem,
-  VerseNoteRef,
   ArticulationType,
 } from '@/types/song';
 import { AudioEngine } from '@/lib/audioEngine';
 import {
-  groupSongIntoVerses,
   normalizeSongDurations,
   getMeasureRhythmReport,
   getRestDurationsForDeficit,
   getNoteBeatDuration,
   getMeasureChords,
-  isVerseBreakNote,
   halveNoteDuration,
   doubleNoteDuration,
   setUniformNoteDuration,
   determineTargetQuarterEighthDuration,
-  splitVerseTextTokens,
   isPunctuationOrSpacer,
   isNonNotationItem,
 } from '@/lib/taigiUtils';
-import { autoArrangeSongChords, autoArrangeVerseChords } from '@/lib/chordArranger';
+import { autoArrangeSongChords } from '@/lib/chordArranger';
 import { scrollToCardElement } from '@/lib/utils';
 import {
   getStoredAutoStepAdvance,
@@ -39,7 +34,6 @@ import {
 import { SongMetadataHeader } from './composer/SongMetadataHeader';
 import { SectionRail } from './composer/SectionRail';
 import { RealSheetCanvas } from './composer/RealSheetCanvas';
-import { MeasureOrganizerModal } from './composer/MeasureOrganizerModal';
 import { KeyboardToScoreModal, InsertionMode } from './composer/KeyboardToScoreModal';
 import { InSongSearchBar } from './composer/InSongSearchBar';
 import { InSongMatchLocation } from '@/lib/lyricSearch';
@@ -48,7 +42,6 @@ import {
   Undo2,
   Redo2,
   AlignLeft,
-  Layers,
   Sparkles,
   Wand2,
   Keyboard,
@@ -138,13 +131,9 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
 
   const [notification, setNotification] = useState<string | null>(null);
   const [playingMeasureIdx, setPlayingMeasureIdx] = useState<number | null>(null);
-  const [playingVerseIdx, setPlayingVerseIdx] = useState<number | null>(null);
   const [playingSystemIdx, setPlayingSystemIdx] = useState<number | null>(null);
   const [isPlayingSheet, setIsPlayingSheet] = useState<boolean>(false);
   const [activePlaybackNoteId, setActivePlaybackNoteId] = useState<string | null>(null);
-  const [measureBatchTexts, setMeasureBatchTexts] = useState<{ [mIdx: number]: string }>({});
-  const [verseBatchTexts, setVerseBatchTexts] = useState<{ [vIdx: number]: string }>({});
-  const [isOrganizerOpen, setIsOrganizerOpen] = useState<boolean>(false);
   const [isInSongSearchOpen, setIsInSongSearchOpen] = useState<boolean>(false);
   const [showRhythmTools, setShowRhythmTools] = useState<boolean>(false);
   const [inSongActiveMatch, setInSongActiveMatch] = useState<InSongMatchLocation | null>(null);
@@ -178,9 +167,6 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
       setNotification(prev => (prev === msg ? null : prev));
     }, 3500);
   }, [safeTimeout]);
-
-  // Compute segmented verses based on punctuation or whitespace/rest pause
-  const verses = useMemo(() => groupSongIntoVerses(song), [song]);
 
   const handleSearchJumpToMeasure = useCallback(
     (mIdx: number) => {
@@ -236,7 +222,6 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
       setActivePlaybackNoteId(state.isPlaying ? state.currentNoteId : null);
       if (!state.isPlaying) {
         setPlayingMeasureIdx(null);
-        setPlayingVerseIdx(null);
         setPlayingSystemIdx(null);
         setIsPlayingSheet(false);
       }
@@ -320,28 +305,11 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
       audioEngine.stop();
       setPlayingMeasureIdx(null);
     } else {
-      setPlayingVerseIdx(null);
       setPlayingSystemIdx(null);
       setIsPlayingSheet(false);
       setPlayingMeasureIdx(mIdx);
       audioEngine.playMeasure(song, mIdx, () => {
         setPlayingMeasureIdx(null);
-      });
-    }
-  };
-
-  // Dedicated Play/Stop Verse verification (Verse Mode)
-  const handleTogglePlayVerse = (vIdx: number, verseNotes: VerseNoteRef[]) => {
-    if (playingVerseIdx === vIdx && audioEngine.getIsPlaying()) {
-      audioEngine.stop();
-      setPlayingVerseIdx(null);
-    } else {
-      setPlayingMeasureIdx(null);
-      setPlayingSystemIdx(null);
-      setIsPlayingSheet(false);
-      setPlayingVerseIdx(vIdx);
-      audioEngine.playVerse(song, verseNotes, () => {
-        setPlayingVerseIdx(null);
       });
     }
   };
@@ -353,7 +321,6 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
       setPlayingSystemIdx(null);
     } else {
       setPlayingMeasureIdx(null);
-      setPlayingVerseIdx(null);
       setIsPlayingSheet(false);
       setPlayingSystemIdx(systemIdx);
       audioEngine.playSystem(song, measureIndices, () => {
@@ -368,7 +335,6 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
       if (audioEngine.getIsPlaying()) {
         audioEngine.stop();
         setPlayingMeasureIdx(null);
-        setPlayingVerseIdx(null);
         setPlayingSystemIdx(null);
         setIsPlayingSheet(false);
         return;
@@ -387,7 +353,6 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
 
       const startSec = audioEngine.getNoteStartTime(song, safeMIdx, safeNIdx);
       setPlayingMeasureIdx(null);
-      setPlayingVerseIdx(null);
       setPlayingSystemIdx(null);
       setIsPlayingSheet(true);
 
@@ -919,247 +884,6 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
     }
   };
 
-  // Quick whole-measure lyric distributor
-  const handleDistributeMeasureLyrics = (mIdx: number) => {
-    const text = (measureBatchTexts[mIdx] || '').trim();
-    if (!text) return;
-
-    const tokens = splitVerseTextTokens(text);
-    if (tokens.length === 0) return;
-
-    let appendedCount = 0;
-    const newMeasures = song.measures.map((m, idx) => {
-      if (idx !== mIdx) return m;
-
-      const newNotes: NumberedNotationNote[] = [];
-      let tokenIdx = 0;
-
-      for (let nIdx = 0; nIdx < m.notes.length; nIdx++) {
-        const note = { ...m.notes[nIdx], lyric: { ...m.notes[nIdx].lyric } };
-        if (tokenIdx >= tokens.length) {
-          newNotes.push(note);
-          continue;
-        }
-
-        const tok = tokens[tokenIdx];
-        const tokStr = tok.text;
-        const isPunct = tok.isPunct || isPunctuationOrSpacer(tokStr) || tokStr === '\n' || tokStr === '↵';
-        const isTargetNonNotation = isNonNotationItem(note);
-
-        // If target note on score is already a non-notation delimiter/spacer and incoming token is a sung syllable,
-        // skip it so the syllable aligns to a pitched note
-        if (isTargetNonNotation && !isPunct) {
-          newNotes.push(note);
-          continue;
-        }
-
-        const isHan = /[\u4e00-\u9fa5]/.test(tokStr);
-        note.pitch = isPunct ? 'empty' : note.pitch;
-        note.duration = isPunct ? (0 as NoteDuration) : note.duration;
-        note.lyric = {
-          ...note.lyric,
-          poj: !isHan && !isPunct ? tokStr : note.lyric.poj || '',
-          hanlo: isHan || isPunct ? tokStr : (note.lyric.hanlo || tokStr),
-          hanji: isHan || isPunct ? tokStr : (note.lyric.hanji || tokStr),
-          custom: tokStr,
-        };
-        newNotes.push(note);
-        tokenIdx++;
-      }
-
-      // If input is longer than existing notes in measure, append empty notes
-      if (tokenIdx < tokens.length) {
-        // Find if measure ends with trailing verse break note(s) (e.g. ↵)
-        let insertIdx = newNotes.length;
-        while (insertIdx > 0 && isVerseBreakNote(newNotes[insertIdx - 1])) {
-          insertIdx--;
-        }
-
-        const extraNotes: NumberedNotationNote[] = [];
-        while (tokenIdx < tokens.length) {
-          const tok = tokens[tokenIdx];
-          const tokStr = tok.text;
-          const isPunct = tok.isPunct || isPunctuationOrSpacer(tokStr) || tokStr === '\n' || tokStr === '↵';
-          const isHan = /[\u4e00-\u9fa5]/.test(tokStr);
-
-          extraNotes.push({
-            id: generateId('n'),
-            pitch: 'empty',
-            duration: 0 as NoteDuration,
-            octave: 0,
-            lyric: {
-              poj: !isHan && !isPunct ? tokStr : '',
-              hanlo: tokStr,
-              hanji: isHan || isPunct ? tokStr : '',
-              custom: tokStr,
-            },
-          });
-          tokenIdx++;
-        }
-        appendedCount = extraNotes.length;
-        newNotes.splice(insertIdx, 0, ...extraNotes);
-      }
-
-      return { ...m, notes: newNotes };
-    });
-
-    onUpdateSong(normalizeSongDurations({ ...song, measures: newMeasures }));
-    if (appendedCount > 0) {
-      showNotice(`Distributed "${text}" across Measure ${mIdx + 1} (appended ${appendedCount} empty note${appendedCount > 1 ? 's' : ''})!`);
-    } else {
-      showNotice(`Distributed "${text}" across notes in Measure ${mIdx + 1}!`);
-    }
-    setMeasureBatchTexts(prev => ({ ...prev, [mIdx]: '' }));
-  };
-
-  // Quick whole-verse lyric distributor (Verse Mode & Verse Organizer)
-  const handleDistributeVerseLyrics = (verse: VerseItem, vIdx: number, overrideText?: string) => {
-    const text = (overrideText !== undefined ? overrideText : (verseBatchTexts[vIdx] || '')).trim();
-    if (!text) return;
-
-    const tokens = splitVerseTextTokens(text);
-    if (tokens.length === 0) return;
-
-    const newMeasures = song.measures.map(m => ({
-      ...m,
-      notes: m.notes.map(n => ({ ...n, lyric: { ...n.lyric } })),
-    }));
-
-    let tokenIdx = 0;
-    verse.notes.forEach(ref => {
-      if (tokenIdx >= tokens.length) return;
-      const tok = tokens[tokenIdx];
-      const tokStr = tok.text;
-      const targetNote = newMeasures[ref.measureIndex]?.notes[ref.noteIndex];
-      if (!targetNote) return;
-
-      const isPunct = tok.isPunct || isPunctuationOrSpacer(tokStr) || tokStr === '\n' || tokStr === '↵';
-
-      // If target note on score is already a non-notation delimiter/spacer (e.g. comma, newline)
-      // and incoming token is a sung syllable, skip it so the syllable aligns to a pitched note
-      const isTargetNonNotation = isNonNotationItem(targetNote);
-      if (isTargetNonNotation && !isPunct) {
-        return;
-      }
-
-      const isHan = /[\u4e00-\u9fa5]/.test(tokStr);
-
-      targetNote.lyric = {
-        ...targetNote.lyric,
-        poj: !isHan && !isPunct ? tokStr : targetNote.lyric.poj || '',
-        hanlo: isHan || isPunct ? tokStr : (targetNote.lyric.hanlo || tokStr),
-        hanji: isHan || isPunct ? tokStr : (targetNote.lyric.hanji || tokStr),
-        custom: tokStr,
-      };
-      if (isPunct) {
-        targetNote.pitch = 'empty';
-        targetNote.duration = 0;
-      }
-      tokenIdx++;
-    });
-
-    let appendedCount = 0;
-    // If input is longer than existing notes in verse, append empty notes instead of truncating
-    if (tokenIdx < tokens.length) {
-      let targetMeasureIdx = 0;
-      let targetInsertIdx = 0;
-
-      if (verse.notes.length === 0) {
-        if (newMeasures.length === 0) {
-          newMeasures.push({
-            id: generateId('m'),
-            measureNumber: 1,
-            notes: [],
-          });
-        }
-        targetMeasureIdx = newMeasures.length - 1;
-        targetInsertIdx = newMeasures[targetMeasureIdx].notes.length;
-      } else {
-        // Find the first trailing verse break note in verse.notes, if any
-        let firstTrailingBreakIdx = verse.notes.length;
-        while (
-          firstTrailingBreakIdx > 0 &&
-          isVerseBreakNote(verse.notes[firstTrailingBreakIdx - 1].note)
-        ) {
-          firstTrailingBreakIdx--;
-        }
-
-        if (firstTrailingBreakIdx < verse.notes.length) {
-          // Insert right BEFORE the first trailing verse break note
-          const breakRef = verse.notes[firstTrailingBreakIdx];
-          targetMeasureIdx = breakRef.measureIndex;
-          const foundIdx = newMeasures[targetMeasureIdx].notes.findIndex(n => n.id === breakRef.note.id);
-          targetInsertIdx = foundIdx !== -1 ? foundIdx : breakRef.noteIndex;
-        } else {
-          // No trailing verse break note; insert right after the last note of this verse
-          const lastRef = verse.notes[verse.notes.length - 1];
-          targetMeasureIdx = lastRef.measureIndex;
-          const foundIdx = newMeasures[targetMeasureIdx].notes.findIndex(n => n.id === lastRef.note.id);
-          targetInsertIdx = (foundIdx !== -1 ? foundIdx : lastRef.noteIndex) + 1;
-        }
-      }
-
-      const extraNotes: NumberedNotationNote[] = [];
-      while (tokenIdx < tokens.length) {
-        const tok = tokens[tokenIdx];
-        const tokStr = tok.text;
-        const isPunct = tok.isPunct || isPunctuationOrSpacer(tokStr) || tokStr === '\n' || tokStr === '↵';
-        const isHan = /[\u4e00-\u9fa5]/.test(tokStr);
-
-        extraNotes.push({
-          id: generateId('n'),
-          pitch: 'empty',
-          duration: 0 as NoteDuration,
-          octave: 0,
-          lyric: {
-            poj: !isHan && !isPunct ? tokStr : '',
-            hanlo: tokStr,
-            hanji: isHan || isPunct ? tokStr : '',
-            custom: tokStr,
-          },
-        });
-        tokenIdx++;
-      }
-
-      appendedCount = extraNotes.length;
-      newMeasures[targetMeasureIdx].notes.splice(targetInsertIdx, 0, ...extraNotes);
-    }
-
-    onUpdateSong(normalizeSongDurations({ ...song, measures: newMeasures }));
-    if (appendedCount > 0) {
-      showNotice(`Distributed "${text}" across Verse ${vIdx + 1} (appended ${appendedCount} empty note${appendedCount > 1 ? 's' : ''})!`);
-    } else {
-      showNotice(`Distributed "${text}" across notes in Verse ${vIdx + 1}!`);
-    }
-    if (overrideText === undefined) {
-      setVerseBatchTexts(prev => ({ ...prev, [vIdx]: '' }));
-    }
-  };
-
-  // Add note to the end of a verse
-  const handleAddNoteToVerseEnd = (verse: VerseItem) => {
-    if (verse.notes.length === 0) {
-      handleAddMeasure();
-      return;
-    }
-    // If verse ends with verse break note(s), insert before the first trailing break note
-    let firstTrailingBreakIdx = verse.notes.length;
-    while (
-      firstTrailingBreakIdx > 0 &&
-      isVerseBreakNote(verse.notes[firstTrailingBreakIdx - 1].note)
-    ) {
-      firstTrailingBreakIdx--;
-    }
-
-    if (firstTrailingBreakIdx < verse.notes.length) {
-      const breakRef = verse.notes[firstTrailingBreakIdx];
-      handleInsertNoteAt(breakRef.measureIndex, breakRef.noteIndex - 1);
-    } else {
-      const lastNoteRef = verse.notes[verse.notes.length - 1];
-      handleInsertNoteAt(lastNoteRef.measureIndex, lastNoteRef.noteIndex);
-    }
-  };
-
   // Note management: Insert Note after specific note
   const handleInsertNoteAt = (mIdx: number, nIdx: number) => {
     const newNote: NumberedNotationNote = {
@@ -1311,34 +1035,6 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
     [song, selectedMeasureIndex, onUpdateSong, showNotice]
   );
 
-  // Measure Management: Duplicate Measure
-  const handleDuplicateMeasure = (mIdx: number) => {
-    const targetM = song.measures[mIdx];
-    if (!targetM) return;
-
-    const dupMeasure: Measure = {
-      ...targetM,
-      id: generateId('m'),
-      measureNumber: song.measures.length + 1,
-      notes: targetM.notes.map((n) => ({
-        ...n,
-        id: generateId('n'),
-        lyric: { ...n.lyric },
-      })),
-    };
-
-    const newMeasures = [...song.measures];
-    newMeasures.splice(mIdx + 1, 0, dupMeasure);
-    const renumbered = renumberMeasures(newMeasures);
-
-    onUpdateSong({ ...song, measures: renumbered });
-    setSelectedCoord([mIdx + 1, 0]);
-    showNotice(`Duplicated Measure #${mIdx + 1}`);
-    safeTimeout(() => {
-      scrollToCardElement(`measure-card-${mIdx + 1}`, { align: 'top' });
-    }, 100);
-  };
-
   // Measure Management: Delete Measure
   const handleDeleteMeasure = (mIdx: number) => {
     if (song.measures.length <= 1) {
@@ -1373,15 +1069,6 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
     onUpdateSong({ ...song, measures: newMeasures });
   };
 
-  // Auto-harmonize Verse chords
-  const handleAutoHarmonizeVerse = useCallback(
-    (vIdx: number) => {
-      const updated = autoArrangeVerseChords(song, vIdx, verses);
-      onUpdateSong(updated);
-      showNotice(`🪄 Auto-harmonized chords for Verse #${vIdx + 1}!`);
-    },
-    [song, verses, onUpdateSong, showNotice]
-  );
 
   // Auto-harmonize entire Song chords
   const handleAutoHarmonizeSong = useCallback(() => {
@@ -1718,26 +1405,6 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
     }
   }, [selectedMeasureIndex, selectedNoteIndex, song, onUpdateSong, showNotice, audioEngine, safeTimeout]);
 
-  // Move measure order (reordering relative location)
-  const handleMoveMeasureOrder = useCallback(
-    (fromIdx: number, toIdx: number) => {
-      if (fromIdx < 0 || fromIdx >= song.measures.length || toIdx < 0 || toIdx >= song.measures.length || fromIdx === toIdx) return;
-
-      const newMeasures = [...song.measures];
-      const [moved] = newMeasures.splice(fromIdx, 1);
-      newMeasures.splice(toIdx, 0, moved);
-
-      const renumbered = renumberMeasures(newMeasures);
-
-      onUpdateSong({ ...song, measures: renumbered });
-      setSelectedCoord([toIdx, 0]);
-      showNotice(`Moved Measure ${fromIdx + 1} to position ${toIdx + 1}`);
-      safeTimeout(() => {
-        scrollToCardElement(`measure-card-${toIdx}`, { align: 'top' });
-      }, 100);
-    },
-    [song, onUpdateSong, showNotice, safeTimeout]
-  );
 
   // Toggle measure line break
   const handleToggleMeasureLineBreak = useCallback(
@@ -1852,232 +1519,6 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
     showNotice(`Automatically padded ${fixedCount} incomplete measure(s) with rests!`);
   }, [song, onUpdateSong, showNotice]);
 
-  // Move verse order (reorder entire block of measures for a verse)
-  const handleMoveVerseOrder = useCallback(
-    (fromVerseIdx: number, toVerseIdx: number) => {
-      if (
-        fromVerseIdx < 0 ||
-        fromVerseIdx >= verses.length ||
-        toVerseIdx < 0 ||
-        toVerseIdx >= verses.length ||
-        fromVerseIdx === toVerseIdx
-      )
-        return;
-
-      const fromVerse = verses[fromVerseIdx];
-      const toVerse = verses[toVerseIdx];
-
-      const fromIndices = Array.from(new Set(fromVerse.notes.map(n => n.measureIndex))).sort((a, b) => a - b);
-      const toIndices = Array.from(new Set(toVerse.notes.map(n => n.measureIndex))).sort((a, b) => a - b);
-
-      if (fromIndices.length === 0 || toIndices.length === 0) return;
-
-      // Check for measure overlap
-      const hasOverlap = fromIndices.some(idx => toIndices.includes(idx));
-      if (hasOverlap) {
-        showNotice('Cannot reorder verses that share the same measure. Please split the measure first.');
-        return;
-      }
-
-      const minFrom = fromIndices[0];
-      const maxFrom = fromIndices[fromIndices.length - 1];
-      const minTo = toIndices[0];
-      const maxTo = toIndices[toIndices.length - 1];
-
-      const currentMeasures = song.measures;
-      let newMeasures: Measure[] = [];
-      let newSelectedMIdx = minTo;
-      if (fromVerseIdx > toVerseIdx) {
-        // Moving up: from block placed before to block
-        const beforeTo = currentMeasures.slice(0, minTo);
-        const fromBlock = currentMeasures.slice(minFrom, maxFrom + 1);
-        const betweenToAndFrom = currentMeasures.slice(minTo, minFrom);
-        const afterFrom = currentMeasures.slice(maxFrom + 1);
-        newMeasures = [...beforeTo, ...fromBlock, ...betweenToAndFrom, ...afterFrom];
-        newSelectedMIdx = minTo;
-      } else {
-        // Moving down: from block placed after to block
-        const beforeFrom = currentMeasures.slice(0, minFrom);
-        const betweenFromAndTo = currentMeasures.slice(maxFrom + 1, maxTo + 1);
-        const fromBlock = currentMeasures.slice(minFrom, maxFrom + 1);
-        const afterTo = currentMeasures.slice(maxTo + 1);
-        newMeasures = [...beforeFrom, ...betweenFromAndTo, ...fromBlock, ...afterTo];
-        newSelectedMIdx = minFrom + (maxTo - maxFrom);
-      }
-
-      const renumbered = renumberMeasures(newMeasures);
-      onUpdateSong({ ...song, measures: renumbered });
-      setSelectedCoord([newSelectedMIdx, 0]);
-      showNotice(`Moved Verse #${fromVerseIdx + 1} to position #${toVerseIdx + 1}`);
-      safeTimeout(() => {
-        scrollToCardElement(`verse-card-${toVerseIdx}`, { align: 'top' });
-      }, 100);
-    },
-    [verses, song, onUpdateSong, showNotice, safeTimeout]
-  );
-
-  // Jump to edit verse in score editor
-  const handleJumpToVerse = useCallback(
-    (verse: VerseItem) => {
-      if (verse.notes.length === 0) return;
-      const firstNote =
-        verse.notes.find(
-          n =>
-            !isNonNotationItem(n.note) &&
-            ((typeof n.note.pitch === 'number' && n.note.pitch > 0) ||
-              Boolean(
-                (n.note.lyric.hanlo || n.note.lyric.hanji || n.note.lyric.custom) &&
-                  !isPunctuationOrSpacer(n.note.lyric.hanlo || n.note.lyric.hanji || n.note.lyric.custom)
-              ))
-        ) || verse.notes[0];
-
-      handleSelectNote(firstNote.measureIndex, firstNote.noteIndex);
-      safeTimeout(() => {
-        const noteEl = document.getElementById(`sheet-note-${firstNote.note.id}`);
-        if (noteEl) {
-          noteEl.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-        } else {
-          const mEl = document.getElementById(`sheet-measure-${firstNote.measureIndex}`);
-          if (mEl) mEl.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-        }
-      }, 100);
-    },
-    [handleSelectNote, safeTimeout]
-  );
-
-  // Toggle verse line break (sets isLineBreak on the last measure of the verse)
-  const handleToggleVerseLineBreak = useCallback(
-    (verse: VerseItem) => {
-      const mIndices = Array.from(new Set(verse.notes.map(n => n.measureIndex))).sort((a, b) => a - b);
-      if (mIndices.length === 0) return;
-      const lastMIdx = mIndices[mIndices.length - 1];
-      handleToggleMeasureLineBreak(lastMIdx);
-    },
-    [handleToggleMeasureLineBreak]
-  );
-
-  // Update verse section name on its starting measure
-  const handleUpdateVerseSection = useCallback(
-    (verse: VerseItem, section: string) => {
-      const mIndices = Array.from(new Set(verse.notes.map(n => n.measureIndex))).sort((a, b) => a - b);
-      if (mIndices.length === 0) return;
-      const firstMIdx = mIndices[0];
-      handleUpdateMeasureSection(firstMIdx, section);
-    },
-    [handleUpdateMeasureSection]
-  );
-
-  // Auto-fill missing rests in all under-beat measures of a verse
-  const handleAutoFillVerseRests = useCallback(
-    (verse: VerseItem) => {
-      const mIndices = Array.from(new Set(verse.notes.map(n => n.measureIndex))).sort((a, b) => a - b);
-      if (mIndices.length === 0) return;
-
-      let paddedCount = 0;
-      const updatedMeasures = song.measures.map((m, idx) => {
-        if (!mIndices.includes(idx)) return m;
-        const report = getMeasureRhythmReport(m, song.timeSignature || '4/4');
-        if (!report.isUnder || report.absDiff <= 0) return m;
-
-        paddedCount++;
-        const restDurations = getRestDurationsForDeficit(report.absDiff);
-        const newRestNotes: NumberedNotationNote[] = restDurations.map(dur => ({
-          id: generateId('n'),
-          pitch: 0,
-          octave: 0,
-          duration: dur,
-          lyric: {},
-        }));
-        return {
-          ...m,
-          notes: [...m.notes, ...newRestNotes],
-        };
-      });
-
-      if (paddedCount > 0) {
-        onUpdateSong({ ...song, measures: updatedMeasures });
-        showNotice(`Auto-padded ${paddedCount} measure(s) in Verse #${verse.verseIndex + 1}`);
-      } else {
-        showNotice(`All measures in Verse #${verse.verseIndex + 1} already have full beats.`);
-      }
-    },
-    [song, onUpdateSong, showNotice]
-  );
-
-  // Duplicate entire verse
-  const handleDuplicateVerse = useCallback(
-    (verse: VerseItem) => {
-      const mIndices = Array.from(new Set(verse.notes.map(n => n.measureIndex))).sort((a, b) => a - b);
-      if (mIndices.length === 0) return;
-
-      const maxMIdx = mIndices[mIndices.length - 1];
-      const targetMeasures = mIndices.map(idx => song.measures[idx]).filter(Boolean);
-
-      const clonedMeasures: Measure[] = targetMeasures.map((m, i) => ({
-        ...m,
-        id: generateId('m'),
-        section: i === 0 && m.section ? `${m.section} (Copy)` : m.section,
-        notes: m.notes.map(n => ({
-          ...n,
-          id: generateId('n'),
-          lyric: { ...n.lyric },
-        })),
-      }));
-
-      const newMeasures = [
-        ...song.measures.slice(0, maxMIdx + 1),
-        ...clonedMeasures,
-        ...song.measures.slice(maxMIdx + 1),
-      ];
-
-      const renumbered = renumberMeasures(newMeasures);
-      onUpdateSong({ ...song, measures: renumbered });
-      setSelectedCoord([maxMIdx + 1, 0]);
-      showNotice(`Duplicated Verse #${verse.verseIndex + 1} (${clonedMeasures.length} measures)`);
-      safeTimeout(() => {
-        scrollToCardElement(`verse-card-${verse.verseIndex + 1}`, { align: 'top' });
-      }, 100);
-    },
-    [song, onUpdateSong, showNotice, safeTimeout]
-  );
-
-  // Delete entire verse
-  const handleDeleteVerse = useCallback(
-    (verse: VerseItem) => {
-      const mIndices = new Set(verse.notes.map(n => n.measureIndex));
-      if (song.measures.length - mIndices.size < 1) {
-        showNotice('Cannot delete verse: the song must have at least one measure.');
-        return;
-      }
-
-      const newMeasures = song.measures.filter((_, idx) => !mIndices.has(idx));
-      const renumbered = renumberMeasures(newMeasures);
-      onUpdateSong({ ...song, measures: renumbered });
-      showNotice(`Deleted Verse #${verse.verseIndex + 1}`);
-    },
-    [song, onUpdateSong, showNotice]
-  );
-
-  // Add new verse (phrase) with 4 empty measures
-  const handleAddVerse = useCallback(() => {
-    const nextVerseNum = verses.length + 1;
-    const newMeasures: Measure[] = Array.from({ length: 4 }).map((_, i) => ({
-      id: generateId('m'),
-      measureNumber: song.measures.length + i + 1,
-      section: i === 0 ? `Verse ${nextVerseNum}` : undefined,
-      notes: [
-        { id: generateId('n'), pitch: 1, octave: 0, duration: 1, lyric: {} },
-        { id: generateId('n'), pitch: 2, octave: 0, duration: 1, lyric: {} },
-        { id: generateId('n'), pitch: 3, octave: 0, duration: 1, lyric: {} },
-        { id: generateId('n'), pitch: 5, octave: 0, duration: 1, lyric: {} },
-      ],
-    }));
-
-    const renumbered = renumberMeasures([...song.measures, ...newMeasures]);
-    onUpdateSong({ ...song, measures: renumbered });
-    showNotice(`Added new Verse #${nextVerseNum} (4 measures)`);
-  }, [verses, song, onUpdateSong, showNotice]);
-
   // Undo / Redo triggers with user feedback
   const handleUndo = useCallback(() => {
     if (!onUndo) return false;
@@ -2097,7 +1538,7 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
     return success;
   }, [onRedo, showNotice]);
 
-  // Jump to specific measure from SectionRail or Organizer
+  // Jump to specific measure from SectionRail
   const handleJumpToMeasure = useCallback((mIdx: number) => {
     const m = song.measures[mIdx];
     let targetNoteIdx = 0;
@@ -2411,18 +1852,6 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
               <span className="hidden sm:inline">Transcribe</span>
             </button>
 
-            {/* Organizer Modal */}
-            <button
-              id="composer-score-organizer-btn"
-              type="button"
-              onClick={() => setIsOrganizerOpen(true)}
-              className="flex items-center gap-1 px-2.5 py-1 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 border border-zinc-200/90 dark:border-zinc-700 rounded-lg font-bold transition-all active:scale-95 cursor-pointer touch-manipulation h-8"
-              title="Open Measure & Verse Organizer"
-            >
-              <Layers className="w-3.5 h-3.5 text-amber-500" />
-              <span className="hidden sm:inline">Organizer</span>
-            </button>
-
             {/* Measure Insert / Delete */}
             <div className="flex items-center bg-zinc-100 dark:bg-zinc-900/90 p-0.5 rounded-lg border border-zinc-200 dark:border-zinc-700/80 h-8">
               <button
@@ -2509,41 +1938,11 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
           audioEngine={audioEngine}
           previewNoteAudio={(k, n) => audioEngine.previewNote(k, n)}
           onOpenKeyboardModal={handleOpenKeyboardModal}
-          onOpenOrganizer={() => setIsOrganizerOpen(true)}
           onAutoHarmonize={handleAutoHarmonizeSong}
           onUpdateMeasureChord={handleUpdateMeasureChord}
           displayMode={displayMode}
         />
       </div>
-
-      {/* Consolidated Organizer & Layout Inspector Modal (Verses & Measures) */}
-      <MeasureOrganizerModal
-        isOpen={isOrganizerOpen}
-        onClose={() => setIsOrganizerOpen(false)}
-        song={song}
-        onMoveMeasure={handleMoveMeasureOrder}
-        onDuplicateMeasure={handleDuplicateMeasure}
-        onSelectMeasure={handleJumpToMeasure}
-        onToggleLineBreak={handleToggleMeasureLineBreak}
-        onUpdateBarlineType={handleUpdateBarlineType}
-        onAutoFillRest={handleAutoFillMeasureRest}
-        onBatchAutoFillAllRests={handleBatchFixAllIncompleteMeasures}
-        onDeleteMeasure={handleDeleteMeasure}
-        onAddMeasure={handleAddMeasure}
-        initialTab="measure"
-        verses={verses}
-        playingVerseIdx={playingVerseIdx}
-        onTogglePlayVerse={handleTogglePlayVerse}
-        onMoveVerse={handleMoveVerseOrder}
-        onSelectVerse={handleJumpToVerse}
-        onToggleVerseLineBreak={handleToggleVerseLineBreak}
-        onUpdateVerseSection={handleUpdateVerseSection}
-        onAutoFillVerseRests={handleAutoFillVerseRests}
-        onDistributeVerseLyrics={handleDistributeVerseLyrics}
-        onDuplicateVerse={handleDuplicateVerse}
-        onDeleteVerse={handleDeleteVerse}
-        onAddVerse={handleAddVerse}
-      />
 
       {/* Keyboard-to-Score Real-Time Screen Piano & Musical Typing Modal */}
       {isKeyboardModalOpen && (

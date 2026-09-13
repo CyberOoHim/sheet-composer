@@ -80,7 +80,6 @@ export interface RealSheetCanvasProps {
 
   // Modals & Advanced Tools
   onOpenKeyboardModal?: () => void;
-  onOpenOrganizer?: () => void;
   onAutoHarmonize?: () => void;
   onUpdateMeasureChord?: (measureIndex: number, chord: string) => void;
 
@@ -119,7 +118,6 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
   audioEngine,
   previewNoteAudio,
   onOpenKeyboardModal,
-  onOpenOrganizer,
   onAutoHarmonize,
   onUpdateMeasureChord,
   displayMode = 'hanlo_major_roman',
@@ -1738,7 +1736,6 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
         onTogglePianoBed={() => setShowPianoBed(p => !p)}
         showPianoBed={showPianoBed}
         onOpenKeyboardModal={onOpenKeyboardModal}
-        onOpenOrganizer={onOpenOrganizer}
         onAddMeasure={handleAddMeasureClick}
         onDeleteSelectedMeasure={handleDeleteMeasureClick}
         onToggleLineBreak={handleToggleLineBreakClick}
