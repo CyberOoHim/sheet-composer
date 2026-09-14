@@ -167,8 +167,8 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [activeSheetPicker]);
 
-  // Virtual Piano Bed state
-  const [showPianoBed, setShowPianoBed] = useState<boolean>(false);
+  // Mutually exclusive Floating HUD Drawer (Piano Bed, Ornaments, Chords)
+  const [activeHudDrawer, setActiveHudDrawer] = useState<'none' | 'piano' | 'ornaments' | 'chords'>('none');
 
   // References
   const canvasWrapperRef = useRef<HTMLDivElement>(null);
@@ -1710,17 +1710,20 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
         onUpdateMeasureChord={handleUpdateMeasureChord}
         chordSuggestions={chordSuggestions}
         onAutoHarmonize={handleAutoHarmonize}
-        onTogglePianoBed={() => setShowPianoBed(p => !p)}
-        showPianoBed={showPianoBed}
+        activeDrawer={activeHudDrawer}
+        onToggleDrawer={drawer => setActiveHudDrawer(prev => (prev === drawer ? 'none' : drawer))}
+        onCloseDrawer={() => setActiveHudDrawer('none')}
+        onTogglePianoBed={() => setActiveHudDrawer(prev => (prev === 'piano' ? 'none' : 'piano'))}
+        showPianoBed={activeHudDrawer === 'piano'}
         pianoBedSlot={
-          showPianoBed ? (
+          activeHudDrawer === 'piano' ? (
             <div className="w-full max-w-4xl px-2 sm:px-4 animate-in fade-in slide-in-from-bottom-2 duration-150">
               <div className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xl p-2 sm:p-2.5 relative">
                 <button
                   type="button"
-                  onClick={() => setShowPianoBed(false)}
+                  onClick={() => setActiveHudDrawer('none')}
                   className="absolute top-2 right-2 w-7 h-7 flex items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors z-10 cursor-pointer"
-                  title="Close Piano Bed"
+                  title="Close Piano Bed (Esc)"
                 >
                   <X className="w-4 h-4" />
                 </button>
