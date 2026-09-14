@@ -1,4 +1,17 @@
-import { ArticulationType, GraceNote, InstrumentType, NumberedNotationNote, KeySignature, Measure, NoteDuration, PitchNumber, Song, TimeSignature, VerseItem, VerseNoteRef } from '@/types/song';
+import type {
+  ArticulationType,
+  GraceNote,
+  InstrumentType,
+  NumberedNotationNote,
+  KeySignature,
+  Measure,
+  NoteDuration,
+  PitchNumber,
+  Song,
+  TimeSignature,
+  VerseItem,
+  VerseNoteRef,
+} from '../types/song.ts';
 
 // Semitones relative to C4 (MIDI note 60)
 export const KEY_SEMITONES: Record<string, number> = {

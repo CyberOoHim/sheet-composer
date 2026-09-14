@@ -1,7 +1,7 @@
 'use client';
 
-import { Song } from '@/types/song';
-import { PRESET_SONGS } from '@/lib/presets';
+import type { Song } from '../types/song.ts';
+import { PRESET_SONGS } from './presets.ts';
 
 export const DB_NAME = 'taigi_composer_db';
 export const DB_VERSION = 1;

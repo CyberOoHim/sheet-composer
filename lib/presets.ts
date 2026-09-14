@@ -1,4 +1,4 @@
-import { Song } from '@/types/song';
+import type { Song } from '../types/song.ts';
 
 export const PRESET_SONGS: Song[] = [
   {

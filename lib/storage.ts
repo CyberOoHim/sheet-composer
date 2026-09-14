@@ -1,7 +1,7 @@
 'use client';
 
-import { Song, LyricDisplayMode, InstrumentType, EditorEditMode, NoteEditSubMode, Measure, NumberedNotationNote } from '@/types/song';
-import { PRESET_SONGS } from '@/lib/presets';
+import type { Song, LyricDisplayMode, InstrumentType, EditorEditMode, NoteEditSubMode, Measure, NumberedNotationNote } from '../types/song.ts';
+import { PRESET_SONGS } from './presets.ts';
 
 export const STORAGE_KEYS = {
   ACTIVE_TAB: 'taigi_composer_active_tab',

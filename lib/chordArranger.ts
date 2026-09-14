@@ -1,17 +1,17 @@
-import {
+import type {
   KeySignature,
   Measure,
   NumberedNotationNote,
   Song,
   TimeSignature,
   VerseItem,
-} from '@/types/song';
+} from '../types/song.ts';
 import {
   KEY_SEMITONES,
   getMeasureChords,
   formatMeasureChords,
   isNonNotationItem,
-} from './taigiUtils';
+} from './taigiUtils.ts';
 
 export interface CandidateChord {
   chord: string;

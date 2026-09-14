@@ -5,8 +5,8 @@ import {
   suggestChordsForMeasure,
   autoArrangeSongChords,
   autoArrangeVerseChords,
-} from '@/lib/chordArranger';
-import { Measure, NumberedNotationNote, Song, VerseItem } from '@/types/song';
+} from '../lib/chordArranger.ts';
+import type { Measure, NumberedNotationNote, Song, VerseItem } from '../types/song.ts';
 
 function makeNote(pitch: number | 'empty', duration: number, lyricText: string = ''): NumberedNotationNote {
   return {

@@ -1,6 +1,6 @@
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert';
-import { PRESET_SONGS, createFreshSong } from '../lib/presets';
+import { PRESET_SONGS, createFreshSong } from '../lib/presets.ts';
 import {
   isSongModifiedFromPreset,
   saveSongToDB,
@@ -13,11 +13,11 @@ import {
   saveActiveSongToDB,
   getActiveSongFromDB,
   migrateLocalStorageToDB,
-} from '../lib/indexedDb';
+} from '../lib/indexedDb.ts';
 import {
   getStoredAutosaveInterval,
   setStoredAutosaveInterval,
-} from '../lib/storage';
+} from '../lib/storage.ts';
 
 // Minimal in-memory mock for IndexedDB
 class MockIDBRequest {

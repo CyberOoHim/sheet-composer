@@ -1,8 +1,8 @@
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { getChordNotes, getEffectiveMeasureChords, getMeasureChords, formatMeasureChords } from '@/lib/taigiUtils';
-import { getStoredChordEnabled, setStoredChordEnabled, getStoredBackingVolume, setStoredBackingVolume, STORAGE_KEYS } from '@/lib/storage';
-import { Song, Measure } from '@/types/song';
+import { getChordNotes, getEffectiveMeasureChords, getMeasureChords, formatMeasureChords } from '../lib/taigiUtils.ts';
+import { getStoredChordEnabled, setStoredChordEnabled, getStoredBackingVolume, setStoredBackingVolume, STORAGE_KEYS } from '../lib/storage.ts';
+import type { Song, Measure } from '../types/song.ts';
 
 function makeMockSong(measures: Measure[], key = 'C'): Song {
   return {
@@ -104,7 +104,12 @@ describe('Chord Storage & Persistence', () => {
       dispatchEvent: () => true,
     };
     (globalThis as any).localStorage = mockLocalStorage;
-    (globalThis as any).Event = class { constructor(public type: string) {} };
+    (globalThis as any).Event = class {
+      type: string;
+      constructor(type: string) {
+        this.type = type;
+      }
+    };
   });
 
   it('defaults chordEnabled to true', () => {
