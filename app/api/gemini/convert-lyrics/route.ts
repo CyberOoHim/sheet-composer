@@ -14,6 +14,12 @@ import {
   getServerGeminiApiKey,
 } from '@/lib/geminiServerAuth';
 
+export const dynamic = 'force-static';
+
+export async function GET() {
+  return NextResponse.json({ status: 'ok', endpoint: 'convert-lyrics' });
+}
+
 export async function POST(req: Request) {
   try {
     const limited = rateLimitResponse(req, 'generate');

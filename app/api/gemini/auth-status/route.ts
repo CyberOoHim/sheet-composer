@@ -13,7 +13,7 @@ import {
 const isStaticExport =
   process.env.STATIC_EXPORT === 'true' || process.env.GITHUB_PAGES === 'true';
 
-export const dynamic = 'force-dynamic';
+export const dynamic = 'force-static';
 
 export async function GET(req: Request) {
   if (isStaticExport) {

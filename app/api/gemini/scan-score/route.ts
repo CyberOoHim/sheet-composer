@@ -49,6 +49,12 @@ function normalizePitch(p: unknown): PitchNumber {
   return 1;
 }
 
+export const dynamic = 'force-static';
+
+export async function GET() {
+  return NextResponse.json({ status: 'ok', endpoint: 'scan-score' });
+}
+
 export async function POST(req: Request) {
   try {
     const limited = rateLimitResponse(req, 'generate');
