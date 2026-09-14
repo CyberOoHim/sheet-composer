@@ -383,8 +383,12 @@ export const PianoBed: React.FC<PianoBedProps> = ({
     if (disabled) return;
     isPointerDownRef.current = true;
 
-    const el = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null;
-    const keyEl = el?.closest('[data-midi]') as HTMLElement | null;
+    const targetEl = (e.target as HTMLElement | null)?.closest('[data-midi]') as HTMLElement | null;
+    let keyEl = targetEl;
+    if (!keyEl && typeof document !== 'undefined') {
+      const el = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null;
+      keyEl = el?.closest('[data-midi]') as HTMLElement | null;
+    }
     if (keyEl) {
       const midiStr = keyEl.getAttribute('data-midi');
       if (midiStr) {

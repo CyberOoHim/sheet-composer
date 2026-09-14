@@ -575,13 +575,16 @@ export class AudioEngine {
     if (isNonNotationItem(note)) return; // Punctuation, annotations, and whitespace produce no sound
     this.initContext();
     if (!this.ctx || !this.melodyGain) return;
+    if (this.ctx.state === 'suspended' || (this.ctx.state as string) === 'interrupted') {
+      this.ctx.resume().catch(() => {});
+    }
 
     const freq = getPitchFrequency(key, note.pitch, note.octave, note.accidental, this.options.transpose);
     if (freq <= 0) return;
 
     const effectiveBpm = 80 * this.options.tempoMultiplier;
     const durationSec = (note.duration * (60 / effectiveBpm));
-    const playDuration = Math.min(durationSec, 1.4);
+    const playDuration = Math.max(0.35, Math.min(durationSec, 1.4));
 
     this.playMelodyNoteWithDetails(
       key,

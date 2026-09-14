@@ -916,6 +916,11 @@ export const KeyboardToScoreModal: React.FC<KeyboardToScoreModalProps> = ({
   // Handle touch piano note events
   const handlePianoNoteDown = useCallback(
     (midi: number, sourceId?: string) => {
+      audioEngine.unlockOnUserGesture();
+      if (audioEngine.getAudioContextState() === 'suspended') {
+        audioEngine.ensureContextActive().catch(() => {});
+      }
+
       if (step === 'RECORDING') {
         if (keyEngineRef.current) {
           keyEngineRef.current.noteOn(midi, 0.9, undefined, sourceId);

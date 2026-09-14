@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { NumberedNotationNote, KeySignature, PitchNumber, InstrumentType } from '@/types/song';
 import { AudioEngine } from '@/lib/audioEngine';
 import { KEY_SEMITONES, SCALE_DEGREE_SEMITONES, INSTRUMENT_OPTIONS } from '@/lib/taigiUtils';
@@ -18,8 +18,10 @@ interface PianoKeyboardProps {
   onSetInstrument?: (inst: InstrumentType) => void;
 }
 
-// 12 chromatic note names
-const CHROMATIC_NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+// 12 chromatic note names for sharp keys vs flat keys
+const CHROMATIC_NOTE_NAMES_SHARP = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+const CHROMATIC_NOTE_NAMES_FLAT = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
+const FLAT_KEY_SIGNATURES = new Set(['F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb']);
 
 interface KeyDefinition {
   isBlack: boolean;
@@ -69,6 +71,8 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = React.memo(({
 
   // Base key semitone relative to C4 (0 = C)
   const baseKeySemitone = KEY_SEMITONES[keySignature] ?? 0;
+  const isFlatKey = FLAT_KEY_SIGNATURES.has(keySignature);
+  const noteNameList = isFlatKey ? CHROMATIC_NOTE_NAMES_FLAT : CHROMATIC_NOTE_NAMES_SHARP;
 
   // Helper to compute absolute note name and octave from Numbered Notation scale degree + key
   const getNoteDetails = useMemo(() => {
@@ -87,7 +91,7 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = React.memo(({
 
       const noteIndex = ((midiNote % 12) + 12) % 12;
       const calcOctave = Math.floor(midiNote / 12) - 1;
-      const rawName = CHROMATIC_NOTE_NAMES[noteIndex];
+      const rawName = noteNameList[noteIndex];
 
       const solfegeMap: Record<string, string> = {
         '1': 'Do',
@@ -118,7 +122,7 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = React.memo(({
         midiNote,
       };
     };
-  }, [baseKeySemitone]);
+  }, [baseKeySemitone, noteNameList]);
 
   // Generate keys for a single octave
   const generateOctaveKeys = useCallback((octaveNum: number) => {
@@ -210,7 +214,7 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = React.memo(({
     return activeOctaves.map(oct => generateOctaveKeys(oct));
   }, [activeOctaves, generateOctaveKeys]);
 
-  // Check if a key is currently selected
+  // Check if a key is currently selected in the score
   const isKeyActive = (keyDef: KeyDefinition) => {
     if (!currentNote) return false;
     if (currentNote.pitch === 'empty' || currentNote.pitch === 0) return false;
@@ -236,22 +240,95 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = React.memo(({
     return false;
   };
 
-  // Handle key press
-  const handleKeyClick = (keyDef: KeyDefinition) => {
-    onSelectPitch(keyDef.pitch, keyDef.octave, keyDef.accidental);
+  // Active key pressed state for instantaneous visual feedback on pointer down
+  const [activePointerKeyId, setActivePointerKeyId] = useState<string | null>(null);
+  const activeVoiceRef = useRef<{ id: string; startTime: number } | null>(null);
+  const isPointerDownRef = useRef<boolean>(false);
 
-    // Audio preview with chosen instrument
-    const tempNote: NumberedNotationNote = {
-      id: 'preview',
-      pitch: keyDef.pitch,
-      octave: keyDef.octave,
-      accidental: keyDef.accidental,
-      duration: currentNote?.duration || 1,
-      lyric: {},
-      instrument: currentNote?.instrument || activeInstrument,
+  // Play sustained note and update score note immediately on key touch/click
+  const startKeySoundAndSelect = useCallback(
+    (keyDef: KeyDefinition) => {
+      // 1. Audio context wake-up on user gesture
+      audioEngine.unlockOnUserGesture();
+      if (audioEngine.getAudioContextState() === 'suspended') {
+        audioEngine.ensureContextActive().catch(() => {});
+      }
+
+      const keyId = `${keyDef.octave}-${keyDef.pitch}-${keyDef.accidental || ''}`;
+      setActivePointerKeyId(keyId);
+
+      // Stop previous sustained note smoothly if one was still sounding
+      if (activeVoiceRef.current) {
+        audioEngine.stopSustainedNote(activeVoiceRef.current.id, 0.04);
+        activeVoiceRef.current = null;
+      }
+
+      const voiceId = `piano-key-${keyId}`;
+      const tempNote: NumberedNotationNote = {
+        id: `piano-press-${keyId}`,
+        pitch: keyDef.pitch,
+        octave: keyDef.octave,
+        accidental: keyDef.accidental,
+        duration: 1,
+        lyric: {},
+        instrument: activeInstrument,
+      };
+
+      // Play sustained note with the user's chosen instrument
+      audioEngine.startSustainedNote(keySignature, tempNote, voiceId, activeInstrument);
+      activeVoiceRef.current = { id: voiceId, startTime: Date.now() };
+
+      // Update current note in score (without advancing note or triggering duplicate audio)
+      onSelectPitch(keyDef.pitch, keyDef.octave, keyDef.accidental);
+    },
+    [audioEngine, activeInstrument, keySignature, onSelectPitch]
+  );
+
+  // Stop note sound cleanly when key is released
+  const endKeySound = useCallback(() => {
+    setActivePointerKeyId(null);
+    if (activeVoiceRef.current) {
+      const { id: voiceId, startTime } = activeVoiceRef.current;
+      activeVoiceRef.current = null;
+      const elapsed = Date.now() - startTime;
+      const minRingMs = 220; // Minimum audible ring for quick taps
+      const remaining = Math.max(0, minRingMs - elapsed);
+      if (remaining > 0) {
+        setTimeout(() => {
+          audioEngine.stopSustainedNote(voiceId, 0.12);
+        }, remaining);
+      } else {
+        audioEngine.stopSustainedNote(voiceId, 0.12);
+      }
+    }
+  }, [audioEngine]);
+
+  // Global safety handlers to release active note if pointer leaves window or releases outside
+  useEffect(() => {
+    const handleGlobalPointerUp = () => {
+      if (isPointerDownRef.current) {
+        isPointerDownRef.current = false;
+        endKeySound();
+      }
     };
-    audioEngine.previewNote(keySignature, tempNote);
-  };
+
+    window.addEventListener('pointerup', handleGlobalPointerUp);
+    window.addEventListener('pointercancel', handleGlobalPointerUp);
+    window.addEventListener('touchend', handleGlobalPointerUp);
+    window.addEventListener('touchcancel', handleGlobalPointerUp);
+    window.addEventListener('blur', handleGlobalPointerUp);
+
+    return () => {
+      window.removeEventListener('pointerup', handleGlobalPointerUp);
+      window.removeEventListener('pointercancel', handleGlobalPointerUp);
+      window.removeEventListener('touchend', handleGlobalPointerUp);
+      window.removeEventListener('touchcancel', handleGlobalPointerUp);
+      window.removeEventListener('blur', handleGlobalPointerUp);
+      if (activeVoiceRef.current) {
+        audioEngine.stopSustainedNote(activeVoiceRef.current.id, 0.05);
+      }
+    };
+  }, [audioEngine, endKeySound]);
 
   return (
     <div
@@ -399,7 +476,12 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = React.memo(({
           <button
             id="piano-key-rest"
             type="button"
-            onClick={() => {
+            onPointerDown={(e) => {
+              e.preventDefault();
+              onSelectPitch(0, 0, '');
+            }}
+            onClick={(e) => {
+              e.preventDefault();
               onSelectPitch(0, 0, '');
             }}
             className={`flex-1 flex flex-col items-center justify-center p-2 rounded-xl border transition-all active:scale-95 cursor-pointer touch-manipulation min-h-[48px] ${
@@ -416,7 +498,12 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = React.memo(({
           <button
             id="piano-key-empty"
             type="button"
-            onClick={() => {
+            onPointerDown={(e) => {
+              e.preventDefault();
+              onSelectPitch('empty', 0, '');
+            }}
+            onClick={(e) => {
+              e.preventDefault();
               onSelectPitch('empty', 0, '');
             }}
             className={`flex-1 flex flex-col items-center justify-center p-2 rounded-xl border border-dashed transition-all active:scale-95 cursor-pointer touch-manipulation min-h-[48px] ${
@@ -434,7 +521,8 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = React.memo(({
         {/* Realistic Piano Keyboard Bed */}
         <div
           id="piano-keys-bed"
-          className="flex-1 flex items-stretch bg-zinc-950 p-1.5 rounded-xl border border-zinc-800 shadow-inner relative min-w-[340px]"
+          style={{ touchAction: 'none' }}
+          className="flex-1 flex items-stretch bg-zinc-950 p-1.5 rounded-xl border border-zinc-800 shadow-inner relative min-w-[340px] select-none touch-none"
         >
           {octavesData.map((octData, octIdx) => {
             const octLabel =
@@ -460,6 +548,8 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = React.memo(({
                 <div className="relative flex w-full h-24 sm:h-28">
                   {/* WHITE KEYS */}
                   {octData.whiteKeys.map((wKey, wIdx) => {
+                    const keyId = `${octData.octaveNum}-${wKey.pitch}-${wKey.accidental || ''}`;
+                    const isDown = activePointerKeyId === keyId;
                     const active = isKeyActive(wKey);
                     const isFirstInOctave = wIdx === 0;
                     const isLastInOctave = wIdx === octData.whiteKeys.length - 1;
@@ -469,20 +559,44 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = React.memo(({
                         key={`w-${octData.octaveNum}-${wKey.pitch}`}
                         id={`piano-white-key-${octData.octaveNum}-${wKey.pitch}`}
                         type="button"
-                        onClick={() => handleKeyClick(wKey)}
-                        className={`group relative flex-1 flex flex-col items-center justify-end pb-2 pt-6 transition-all border-r last:border-r-0 cursor-pointer active:translate-y-0.5 active:shadow-none touch-manipulation ${
-                          active
-                            ? '!bg-amber-400 !border-amber-500 !text-zinc-950 ring-2 ring-amber-500 z-10 shadow-lg font-black'
+                        onPointerDown={(e) => {
+                          e.preventDefault();
+                          isPointerDownRef.current = true;
+                          startKeySoundAndSelect(wKey);
+                        }}
+                        onPointerEnter={() => {
+                          if (isPointerDownRef.current) {
+                            startKeySoundAndSelect(wKey);
+                          }
+                        }}
+                        onPointerLeave={() => {
+                          if (isPointerDownRef.current) {
+                            endKeySound();
+                          }
+                        }}
+                        onPointerUp={(e) => {
+                          e.preventDefault();
+                          isPointerDownRef.current = false;
+                          endKeySound();
+                        }}
+                        onClick={(e) => {
+                          e.preventDefault();
+                        }}
+                        className={`group relative flex-1 flex flex-col items-center justify-end pb-2 pt-6 transition-transform duration-75 border-r last:border-r-0 cursor-pointer select-none touch-none ${
+                          isDown
+                            ? '!bg-amber-400 !border-amber-600 !text-zinc-950 ring-2 ring-amber-500 z-10 shadow-inner font-black translate-y-1'
+                            : active
+                            ? '!bg-amber-200 dark:!bg-amber-300 !border-amber-500 !text-zinc-950 ring-2 ring-amber-400 z-10 shadow-md font-black'
                             : 'bg-linear-to-b from-zinc-100 via-white to-zinc-200 hover:from-amber-50 hover:to-amber-100 text-zinc-900 border-zinc-300 dark:border-zinc-400 shadow-[0_4px_3px_rgba(0,0,0,0.12)]'
                         } ${isFirstInOctave && octIdx === 0 ? 'rounded-bl-lg' : ''} ${
                           isLastInOctave && octIdx === octavesData.length - 1 ? 'rounded-br-lg' : ''
                         } rounded-b-md border-b-4 ${
-                          active ? 'border-b-amber-600' : 'border-b-zinc-400'
+                          isDown ? 'border-b-amber-600' : active ? 'border-b-amber-500' : 'border-b-zinc-400'
                         }`}
                         title={`Pitch: ${wKey.numberedNotationLabel} (${wKey.noteName} - ${wKey.solfege})`}
                       >
                         {/* Active Dot Indicator */}
-                        {active && (
+                        {(active || isDown) && (
                           <div className="absolute top-2 w-2 h-2 rounded-full bg-amber-600 animate-ping" />
                         )}
 
@@ -490,7 +604,7 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = React.memo(({
                         {wKey.octave > 0 && (
                           <span
                             className={`w-1.5 h-1.5 rounded-full mb-0.5 ${
-                              active ? 'bg-zinc-950' : 'bg-zinc-900'
+                              isDown || active ? 'bg-zinc-950' : 'bg-zinc-900'
                             }`}
                           />
                         )}
@@ -499,7 +613,7 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = React.memo(({
                         {(labelMode === 'both' || labelMode === 'numberedNotations' || (labelMode as string) === 'numberedNotation') && (
                           <span
                             className={`font-mono text-base sm:text-lg font-black leading-none ${
-                              active ? 'text-zinc-950 scale-110' : 'text-zinc-900'
+                              isDown || active ? 'text-zinc-950 scale-110' : 'text-zinc-900'
                             }`}
                           >
                             {wKey.numberedNotationLabel}
@@ -510,7 +624,7 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = React.memo(({
                         {wKey.octave < 0 && (
                           <span
                             className={`w-1.5 h-1.5 rounded-full mt-0.5 ${
-                              active ? 'bg-zinc-950' : 'bg-zinc-900'
+                              isDown || active ? 'bg-zinc-950' : 'bg-zinc-900'
                             }`}
                           />
                         )}
@@ -519,7 +633,7 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = React.memo(({
                         {(labelMode === 'both' || labelMode === 'note') && (
                           <span
                             className={`text-[9px] sm:text-[10px] font-semibold mt-0.5 leading-tight ${
-                              active ? 'text-zinc-900 font-bold' : 'text-zinc-600'
+                              isDown || active ? 'text-zinc-900 font-bold' : 'text-zinc-600'
                             }`}
                           >
                             {wKey.noteName}
@@ -531,6 +645,8 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = React.memo(({
 
                   {/* BLACK KEYS (OVERLAYED WITH EXACT PIANO SPACING) */}
                   {octData.blackKeys.map((bKey) => {
+                    const bKeyId = `${octData.octaveNum}-${bKey.pitch}-${bKey.accidental || ''}`;
+                    const isDown = activePointerKeyId === bKeyId;
                     const active = isKeyActive(bKey);
 
                     return (
@@ -538,20 +654,49 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = React.memo(({
                         key={`b-${octData.octaveNum}-${bKey.pitch}-${bKey.accidental}`}
                         id={`piano-black-key-${octData.octaveNum}-${bKey.pitch}`}
                         type="button"
-                        onClick={() => handleKeyClick(bKey)}
+                        onPointerDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          isPointerDownRef.current = true;
+                          startKeySoundAndSelect(bKey);
+                        }}
+                        onPointerEnter={(e) => {
+                          e.stopPropagation();
+                          if (isPointerDownRef.current) {
+                            startKeySoundAndSelect(bKey);
+                          }
+                        }}
+                        onPointerLeave={(e) => {
+                          e.stopPropagation();
+                          if (isPointerDownRef.current) {
+                            endKeySound();
+                          }
+                        }}
+                        onPointerUp={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          isPointerDownRef.current = false;
+                          endKeySound();
+                        }}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }}
                         style={{
                           left: `${bKey.leftPercent}%`,
                           width: '9.2%',
                         }}
-                        className={`absolute top-0 h-14 sm:h-16 z-20 flex flex-col items-center justify-end pb-1.5 rounded-b-sm border transition-all cursor-pointer shadow-md active:translate-y-0.5 touch-manipulation ${
-                          active
-                            ? '!bg-amber-400 !border-amber-500 !text-zinc-950 ring-2 ring-amber-400 font-black shadow-lg border-b-4 border-b-amber-600'
+                        className={`absolute top-0 h-14 sm:h-16 z-20 flex flex-col items-center justify-end pb-1.5 rounded-b-sm border transition-transform duration-75 cursor-pointer select-none touch-none ${
+                          isDown
+                            ? '!bg-amber-400 !border-amber-500 !text-zinc-950 ring-2 ring-amber-400 font-black shadow-none border-b-2 border-b-amber-600 translate-y-1'
+                            : active
+                            ? '!bg-amber-500/95 !border-amber-400 !text-zinc-950 ring-2 ring-amber-400 font-black shadow-lg border-b-4 border-b-amber-600'
                             : 'bg-linear-to-b from-zinc-800 via-zinc-900 to-black hover:from-zinc-700 hover:to-zinc-900 text-zinc-100 border-zinc-950 border-b-4 border-b-black shadow-[0_4px_6px_rgba(0,0,0,0.6)]'
                         }`}
                         title={`Black Key: ${bKey.numberedNotationLabel} / ${bKey.accidentalLabel} (${bKey.noteName} - ${bKey.solfege})`}
                       >
                         {/* Top Active Indicator */}
-                        {active && (
+                        {(active || isDown) && (
                           <div className="absolute top-1.5 w-1.5 h-1.5 rounded-full bg-zinc-950 animate-pulse" />
                         )}
 
@@ -559,7 +704,7 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = React.memo(({
                         {bKey.octave > 0 && (
                           <span
                             className={`w-1 h-1 rounded-full mb-0.5 ${
-                              active ? 'bg-zinc-950' : 'bg-amber-400'
+                              isDown || active ? 'bg-zinc-950' : 'bg-amber-400'
                             }`}
                           />
                         )}
@@ -568,7 +713,7 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = React.memo(({
                         {(labelMode === 'both' || labelMode === 'numberedNotations' || (labelMode as string) === 'numberedNotation') && (
                           <span
                             className={`font-mono text-[10px] sm:text-xs font-black tracking-tighter leading-none ${
-                              active ? 'text-zinc-950' : 'text-amber-300'
+                              isDown || active ? 'text-zinc-950' : 'text-amber-300'
                             }`}
                           >
                             {bKey.numberedNotationLabel}
@@ -579,7 +724,7 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = React.memo(({
                         {bKey.octave < 0 && (
                           <span
                             className={`w-1 h-1 rounded-full mt-0.5 ${
-                              active ? 'bg-zinc-950' : 'bg-amber-400'
+                              isDown || active ? 'bg-zinc-950' : 'bg-amber-400'
                             }`}
                           />
                         )}
@@ -588,7 +733,7 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = React.memo(({
                         {(labelMode === 'both' || labelMode === 'note') && (
                           <span
                             className={`text-[8px] font-mono leading-none mt-0.5 ${
-                              active ? 'text-zinc-900 font-bold' : 'text-zinc-400'
+                              isDown || active ? 'text-zinc-900 font-bold' : 'text-zinc-400'
                             }`}
                           >
                             {bKey.noteName.replace(/([0-9])/, '')}

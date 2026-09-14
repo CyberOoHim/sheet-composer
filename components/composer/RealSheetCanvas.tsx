@@ -214,7 +214,7 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
 
   // Helper to update current selected note
   const updateCurrentNote = useCallback(
-    (updater: (note: NumberedNotationNote) => NumberedNotationNote) => {
+    (updater: (note: NumberedNotationNote) => NumberedNotationNote, shouldPreviewAudio = true) => {
       if (!currentMeasure || !currentNote) return;
       const updated = updater({ ...currentNote });
 
@@ -229,7 +229,7 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
         onUpdateSong({ ...song, measures: newMeasures });
       }
 
-      if (previewNoteAudio && updated.pitch !== 0 && updated.pitch !== 'empty') {
+      if (shouldPreviewAudio && previewNoteAudio && updated.pitch !== 0 && updated.pitch !== 'empty') {
         previewNoteAudio(song.key, updated);
       }
     },
@@ -475,18 +475,21 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
     }
   }, [onAutoHarmonize, song, onUpdateSong]);
 
-  // Virtual Piano key pitch selection
+  // Virtual Piano key pitch selection (updates selected note without jumping or duplicate sound)
   const handleSelectPitchFromPiano = useCallback(
     (pitch: PitchNumber, octave: number, accidental: '' | '#' | 'b') => {
-      updateCurrentNote(note => ({
-        ...note,
-        pitch,
-        octave,
-        accidental,
-      }));
-      stepToNextNote();
+      updateCurrentNote(
+        note => ({
+          ...note,
+          pitch,
+          octave,
+          accidental,
+        }),
+        false // PianoKeyboard plays live sound directly; avoid duplicate sound
+      );
+      // Keeps focus on current note so user can hear pitch and inspect without unexpected jumps
     },
-    [updateCurrentNote, stepToNextNote]
+    [updateCurrentNote]
   );
 
   // Measure operations
