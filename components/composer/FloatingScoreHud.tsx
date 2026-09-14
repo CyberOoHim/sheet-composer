@@ -26,7 +26,9 @@ import {
   Check,
   X,
   Disc,
+  Command,
 } from 'lucide-react';
+import { KeyboardShortcutsModal } from './KeyboardShortcutsModal';
 
 export interface FloatingScoreHudProps {
   // Playback
@@ -75,6 +77,7 @@ export interface FloatingScoreHudProps {
   // Piano Bed & Keyboard Transcription
   onTogglePianoBed?: () => void;
   showPianoBed?: boolean;
+  pianoBedSlot?: React.ReactNode;
   onOpenKeyboardModal?: () => void;
 
   // Measure operations
@@ -143,6 +146,7 @@ export const FloatingScoreHud: React.FC<FloatingScoreHudProps> = ({
   onAutoHarmonize,
   onTogglePianoBed,
   showPianoBed,
+  pianoBedSlot,
   onOpenKeyboardModal,
   onAddMeasure,
   onDeleteSelectedMeasure,
@@ -168,11 +172,11 @@ export const FloatingScoreHud: React.FC<FloatingScoreHudProps> = ({
   availableVerseRows = [1, 2, 3],
 }) => {
   const [activePopover, setActivePopover] = React.useState<'none' | 'ornaments' | 'chords'>('none');
-  const effectivePopover = showPianoBed ? 'none' : activePopover;
+  const [showShortcutsModal, setShowShortcutsModal] = React.useState<boolean>(false);
 
   // Close active popover on Escape key
   React.useEffect(() => {
-    if (effectivePopover === 'none') return;
+    if (activePopover === 'none') return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setActivePopover('none');
@@ -180,12 +184,12 @@ export const FloatingScoreHud: React.FC<FloatingScoreHudProps> = ({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [effectivePopover]);
+  }, [activePopover]);
 
   return (
     <>
       {/* Click-away backdrop for active HUD popover */}
-      {effectivePopover !== 'none' && (
+      {activePopover !== 'none' && (
         <div
           id="floating-score-hud-popover-backdrop"
           className="fixed inset-0 z-30 bg-transparent"
@@ -195,11 +199,11 @@ export const FloatingScoreHud: React.FC<FloatingScoreHudProps> = ({
 
       <div
         id="floating-score-hud-container"
-        className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 max-w-[96vw] w-auto print:hidden flex flex-col items-center gap-2"
+        className="fixed bottom-0 sm:bottom-1.5 left-1/2 -translate-x-1/2 z-40 w-full max-w-5xl px-2 pointer-events-none print:hidden flex flex-col items-center gap-1.5"
       >
-        {/* Floating Popover Container for Ornaments & Chords */}
-        {effectivePopover === 'ornaments' && (
-        <div className="p-3 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md rounded-2xl border border-zinc-200/90 dark:border-zinc-800 shadow-2xl flex flex-col gap-2 max-w-[92vw] w-80 text-xs animate-in fade-in zoom-in-95 duration-150">
+        {/* Floating Popover Container for Ornaments & Chords (positioned above PianoBed and Ribbon) */}
+        {activePopover === 'ornaments' && (
+        <div className="pointer-events-auto p-2.5 sm:p-3 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md rounded-2xl border border-zinc-200/90 dark:border-zinc-800 shadow-2xl flex flex-col gap-2 max-w-[92vw] w-80 max-h-[35vh] overflow-y-auto text-xs animate-in fade-in zoom-in-95 duration-150">
           <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-1.5 font-bold">
             <span className="flex items-center gap-1.5 text-zinc-800 dark:text-zinc-200">
               <Sparkles className="w-3.5 h-3.5 text-amber-500" />
@@ -321,8 +325,8 @@ export const FloatingScoreHud: React.FC<FloatingScoreHudProps> = ({
       )}
 
       {/* Chords Popover */}
-      {effectivePopover === 'chords' && (
-        <div className="p-3 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md rounded-2xl border border-zinc-200/90 dark:border-zinc-800 shadow-2xl flex flex-col gap-2.5 max-w-[92vw] w-72 text-xs animate-in fade-in zoom-in-95 duration-150">
+      {activePopover === 'chords' && (
+        <div className="pointer-events-auto p-2.5 sm:p-3 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md rounded-2xl border border-zinc-200/90 dark:border-zinc-800 shadow-2xl flex flex-col gap-2.5 max-w-[92vw] w-72 max-h-[35vh] overflow-y-auto text-xs animate-in fade-in zoom-in-95 duration-150">
           <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-1.5 font-bold">
             <span className="flex items-center gap-1.5 text-zinc-800 dark:text-zinc-200">
               <Music className="w-3.5 h-3.5 text-amber-500" />
@@ -393,7 +397,14 @@ export const FloatingScoreHud: React.FC<FloatingScoreHudProps> = ({
         </div>
       )}
 
-      <div className="flex flex-col items-center gap-1.5 p-1.5 sm:p-2 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md rounded-2xl border border-zinc-200/90 dark:border-zinc-800 shadow-2xl transition-all duration-200">
+      {/* Docked Piano Bed Slot (positioned directly above HUD Ribbon, never colliding) */}
+      {pianoBedSlot && (
+        <div className="pointer-events-auto w-full flex justify-center">
+          {pianoBedSlot}
+        </div>
+      )}
+
+      <div className="pointer-events-auto flex flex-col items-center gap-1 p-1 sm:p-1.5 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md rounded-2xl border border-zinc-200/90 dark:border-zinc-800 shadow-2xl transition-all duration-200">
         {/* Main Ribbon Buttons */}
         <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap justify-center">
           {/* Play/Stop Sheet Button */}
@@ -716,7 +727,7 @@ export const FloatingScoreHud: React.FC<FloatingScoreHudProps> = ({
               type="button"
               onClick={() => setActivePopover(prev => (prev === 'ornaments' ? 'none' : 'ornaments'))}
               className={`flex items-center gap-1 px-2.5 h-7 sm:h-8 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                effectivePopover === 'ornaments'
+                activePopover === 'ornaments'
                   ? 'bg-amber-500 text-zinc-950 font-black shadow-2xs'
                   : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'
               }`}
@@ -732,7 +743,7 @@ export const FloatingScoreHud: React.FC<FloatingScoreHudProps> = ({
               type="button"
               onClick={() => setActivePopover(prev => (prev === 'chords' ? 'none' : 'chords'))}
               className={`flex items-center gap-1 px-2.5 h-7 sm:h-8 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                effectivePopover === 'chords'
+                activePopover === 'chords'
                   ? 'bg-amber-500 text-zinc-950 font-black shadow-2xs'
                   : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'
               }`}
@@ -900,27 +911,26 @@ export const FloatingScoreHud: React.FC<FloatingScoreHudProps> = ({
                 )}
               </button>
             )}
+            {/* Keyboard Shortcuts Guide Trigger */}
+            <button
+              id="floating-hud-shortcuts-btn"
+              type="button"
+              onClick={() => setShowShortcutsModal(true)}
+              className="p-1 h-7 sm:h-8 w-7 sm:w-8 rounded-lg text-zinc-700 dark:text-zinc-300 hover:bg-amber-500 hover:text-zinc-950 flex items-center justify-center transition-all cursor-pointer"
+              title="Keyboard Shortcuts Guide (快捷鍵指南)"
+            >
+              <Command className="w-3.5 h-3.5 text-amber-500" />
+            </button>
           </div>
-        </div>
-
-        {/* Subtle helper shortcut hint */}
-        <div className="text-[10px] text-zinc-400 dark:text-zinc-500 font-mono hidden md:flex items-center gap-3">
-          <span>Type 1-7 for pitch</span>
-          <span>•</span>
-          <span>0 for rest</span>
-          <span>•</span>
-          <span>- for sustain dash</span>
-          <span>•</span>
-          <span>/ halves duration</span>
-          <span>•</span>
-          <span>* doubles duration</span>
-          <span>•</span>
-          <span>. toggles dot</span>
-          <span>•</span>
-          <span>Arrows move caret</span>
         </div>
       </div>
     </div>
+
+    {/* Keyboard Shortcuts Modal */}
+    <KeyboardShortcutsModal
+      isOpen={showShortcutsModal}
+      onClose={() => setShowShortcutsModal(false)}
+    />
   </>
 );
 };

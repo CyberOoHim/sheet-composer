@@ -1674,30 +1674,7 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
         </footer>
       </div>
 
-      {/* Docked Virtual Piano Bed */}
-      {showPianoBed && (
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-40 w-full max-w-4xl px-4 animate-in fade-in slide-in-from-bottom-4 duration-200">
-          <div className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xl p-3 relative">
-            <button
-              type="button"
-              onClick={() => setShowPianoBed(false)}
-              className="absolute top-2 right-2 w-7 h-7 flex items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors z-10 cursor-pointer"
-              title="Close Piano Bed"
-            >
-              <X className="w-4 h-4" />
-            </button>
-            <PianoKeyboard
-              keySignature={song.key}
-              currentNote={currentNote || null}
-              onSelectPitch={handleSelectPitchFromPiano}
-              audioEngine={audioEngine || defaultAudioEngine}
-              onOpenKeyboardToScore={onOpenKeyboardModal}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Floating HUD / Score Ribbon */}
+      {/* Floating HUD / Score Ribbon with Docked Piano Bed Slot */}
       <FloatingScoreHud
         isPlaying={isPlaying}
         onTogglePlay={onTogglePlay || (() => {})}
@@ -1735,6 +1712,29 @@ export const RealSheetCanvas: React.FC<RealSheetCanvasProps> = ({
         onAutoHarmonize={handleAutoHarmonize}
         onTogglePianoBed={() => setShowPianoBed(p => !p)}
         showPianoBed={showPianoBed}
+        pianoBedSlot={
+          showPianoBed ? (
+            <div className="w-full max-w-4xl px-2 sm:px-4 animate-in fade-in slide-in-from-bottom-2 duration-150">
+              <div className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xl p-2 sm:p-2.5 relative">
+                <button
+                  type="button"
+                  onClick={() => setShowPianoBed(false)}
+                  className="absolute top-2 right-2 w-7 h-7 flex items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors z-10 cursor-pointer"
+                  title="Close Piano Bed"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+                <PianoKeyboard
+                  keySignature={song.key}
+                  currentNote={currentNote || null}
+                  onSelectPitch={handleSelectPitchFromPiano}
+                  audioEngine={audioEngine || defaultAudioEngine}
+                  onOpenKeyboardToScore={onOpenKeyboardModal}
+                />
+              </div>
+            </div>
+          ) : null
+        }
         onOpenKeyboardModal={onOpenKeyboardModal}
         onAddMeasure={handleAddMeasureClick}
         onDeleteSelectedMeasure={handleDeleteMeasureClick}

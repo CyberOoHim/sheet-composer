@@ -31,6 +31,7 @@ import {
 import { useGeminiAuth } from '@/hooks/useGeminiAuth';
 import { UiZoomControl } from '@/components/UiZoomControl';
 import { ChordPlaybackControl } from '@/components/ChordPlaybackControl';
+import { KeyboardShortcutsModal } from '@/components/composer/KeyboardShortcutsModal';
 
 
 interface HeaderBarProps {
@@ -627,118 +628,10 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
       )}
 
       {/* Keyboard Shortcuts Modal */}
-      {showKeyboardShortcuts && (
-        <div
-          id="shortcuts-modal-backdrop"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
-        >
-          <div
-            id="shortcuts-modal-card"
-            className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl p-6 flex flex-col gap-4"
-          >
-            <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-3">
-              <div className="flex items-center gap-2 font-bold text-sm text-zinc-900 dark:text-zinc-100">
-                <Keyboard className="w-4 h-4 text-amber-500" />
-                <span>Keyboard Shortcuts Guide</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowKeyboardShortcuts(false)}
-                className="p-1 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 rounded-lg cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 gap-2.5 text-xs text-zinc-600 dark:text-zinc-400">
-              <div className="flex items-center justify-between p-2 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200/60 dark:border-zinc-700/60">
-                <span>Play / Pause</span>
-                <kbd className="px-2 py-0.5 rounded bg-zinc-200 dark:bg-zinc-700 font-mono font-bold text-zinc-800 dark:text-zinc-200">Space</kbd>
-              </div>
-
-              <div className="flex items-center justify-between p-2 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200/60 dark:border-zinc-700/60">
-                <span>Undo</span>
-                <kbd className="px-2 py-0.5 rounded bg-zinc-200 dark:bg-zinc-700 font-mono font-bold text-zinc-800 dark:text-zinc-200">Ctrl + Z / ⌘Z</kbd>
-              </div>
-
-              <div className="flex items-center justify-between p-2 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200/60 dark:border-zinc-700/60">
-                <span>Redo</span>
-                <kbd className="px-2 py-0.5 rounded bg-zinc-200 dark:bg-zinc-700 font-mono font-bold text-zinc-800 dark:text-zinc-200">Ctrl + Y / ⌘⇧Z</kbd>
-              </div>
-
-              <div className="flex items-center justify-between p-2 rounded-lg bg-amber-500/10 dark:bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200">
-                <span className="font-bold">Save Score (IndexedDB)</span>
-                <kbd className="px-2 py-0.5 rounded bg-amber-500/20 dark:bg-amber-500/30 font-mono font-bold text-amber-800 dark:text-amber-200">Ctrl + S / ⌘S</kbd>
-              </div>
-
-              <div className="flex items-center justify-between p-2 rounded-lg bg-amber-500/10 dark:bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200">
-                <span className="font-bold">Lyric Search / Spotlight</span>
-                <kbd className="px-2 py-0.5 rounded bg-amber-500/20 dark:bg-amber-500/30 font-mono font-bold text-amber-800 dark:text-amber-200">Ctrl + K / ⌘K</kbd>
-              </div>
-
-              <div className="flex items-center justify-between p-2 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200/60 dark:border-zinc-700/60">
-                <span>Pitch Input (Numbered 1-7)</span>
-                <kbd className="px-2 py-0.5 rounded bg-zinc-200 dark:bg-zinc-700 font-mono font-bold text-zinc-800 dark:text-zinc-200">Number Keys 1 ~ 7</kbd>
-              </div>
-
-              <div className="flex items-center justify-between p-2 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200/60 dark:border-zinc-700/60">
-                <span>Rest Note (0)</span>
-                <kbd className="px-2 py-0.5 rounded bg-zinc-200 dark:bg-zinc-700 font-mono font-bold text-zinc-800 dark:text-zinc-200">Number Key 0</kbd>
-              </div>
-
-              <div className="flex items-center justify-between p-2 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200/60 dark:border-zinc-700/60">
-                <span>Empty / Spacer Note</span>
-                <kbd className="px-2 py-0.5 rounded bg-zinc-200 dark:bg-zinc-700 font-mono font-bold text-zinc-800 dark:text-zinc-200">E / Backspace</kbd>
-              </div>
-
-              <div className="flex items-center justify-between p-2 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200/60 dark:border-zinc-700/60">
-                <span>Navigate Notes</span>
-                <kbd className="px-2 py-0.5 rounded bg-zinc-200 dark:bg-zinc-700 font-mono font-bold text-zinc-800 dark:text-zinc-200">← / → Arrow Keys</kbd>
-              </div>
-
-              <div className="flex items-center justify-between p-2 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200/60 dark:border-zinc-700/60">
-                <span>Move Note (Backward / Forward)</span>
-                <kbd className="px-2 py-0.5 rounded bg-zinc-200 dark:bg-zinc-700 font-mono font-bold text-zinc-800 dark:text-zinc-200">Alt + ← / Alt + →</kbd>
-              </div>
-
-              <div className="flex items-center justify-between p-2 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200/60 dark:border-zinc-700/60">
-                <span>Insert Note (Before / After)</span>
-                <kbd className="px-2 py-0.5 rounded bg-zinc-200 dark:bg-zinc-700 font-mono font-bold text-zinc-800 dark:text-zinc-200">Shift + I (Before) / I (After)</kbd>
-              </div>
-
-              <div className="flex items-center justify-between p-2 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200/60 dark:border-zinc-700/60">
-                <span>Next Lyric (羅馬字 / 漢羅)</span>
-                <kbd className="px-2 py-0.5 rounded bg-zinc-200 dark:bg-zinc-700 font-mono font-bold text-zinc-800 dark:text-zinc-200">Tab / Space / Enter</kbd>
-              </div>
-
-              <div className="flex items-center justify-between p-2 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200/60 dark:border-zinc-700/60">
-                <span>UI Text Zoom In</span>
-                <kbd className="px-2 py-0.5 rounded bg-zinc-200 dark:bg-zinc-700 font-mono font-bold text-zinc-800 dark:text-zinc-200">Alt + + / Option + +</kbd>
-              </div>
-
-              <div className="flex items-center justify-between p-2 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200/60 dark:border-zinc-700/60">
-                <span>UI Text Zoom Out</span>
-                <kbd className="px-2 py-0.5 rounded bg-zinc-200 dark:bg-zinc-700 font-mono font-bold text-zinc-800 dark:text-zinc-200">Alt + - / Option + -</kbd>
-              </div>
-
-              <div className="flex items-center justify-between p-2 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200/60 dark:border-zinc-700/60">
-                <span>Reset UI Text Zoom (100%)</span>
-                <kbd className="px-2 py-0.5 rounded bg-zinc-200 dark:bg-zinc-700 font-mono font-bold text-zinc-800 dark:text-zinc-200">Alt + 0 / Option + 0</kbd>
-              </div>
-            </div>
-
-            <div className="flex justify-end pt-2">
-              <button
-                type="button"
-                onClick={() => setShowKeyboardShortcuts(false)}
-                className="px-4 py-2 rounded-xl bg-amber-500 text-zinc-950 font-bold text-xs hover:bg-amber-400 transition-colors cursor-pointer"
-              >
-                Got It
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <KeyboardShortcutsModal
+        isOpen={showKeyboardShortcuts}
+        onClose={() => setShowKeyboardShortcuts(false)}
+      />
     </header>
   );
 };
